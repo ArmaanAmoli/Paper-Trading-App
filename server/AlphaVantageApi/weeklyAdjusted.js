@@ -1,9 +1,9 @@
 import { request } from "request";
 import process from 'node:process';
 
-export async function IntraDayRequest(symbol, interval) {
+export async function weeklyAjusted(symbol) {
     const apikey = process.env.MY_API_KEY;
-    let url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=${interval}&apikey=${apikey}`;
+    let url = `https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY_ADJUSTED&symbol=${symbol}&apikey=${apikey}`;
 
     return new Promise((resolve, reject) => {
         request.get(
