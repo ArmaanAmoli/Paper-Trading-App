@@ -2,13 +2,17 @@ import express, { application } from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
 import { SignUp, login } from './queryManager.js';
+import jwt from 'jsonwebtoken';
 
+const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
 const port = 3000;
 
 await mongoose.connect(String(process.env.MONGO_URL));
 
+//MIDDLEWARES
 application.use(express.json());
+
 const validateEmail = (req,res,next)=>{
     const {email} = req.body;
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,6 +26,21 @@ const validateEmail = (req,res,next)=>{
 
 }
 
+const verifyToken = (req,res,next)=>{
+    const authHeader = req.headers['authorization'];
+    if(!authHeader) return res.status(401).json({message:"No token provided"});
+    const token = authHeader.split(' ')[1];
+    if(!token) return res.status(401).json({message:"Invalid token format"});
+    try{
+        const decoded = jwt.verify(token,JWT_SECRET);
+        req.user = decoded;
+        next();
+    }catch(err){
+        return res.status(401).json({ message: "Token is invalid or expired" , error:String(err)});
+    }
+}
+
+//Request Handlers
 server.post('/sign-up', validateEmail , async(req,res,next)=>{
     try{
         await SignUp(req.body);
@@ -33,14 +52,23 @@ server.post('/sign-up', validateEmail , async(req,res,next)=>{
 
 server.post('/login', validateEmail , async(req,res,next)=>{
     try{
-        const isValidlogin = await login(req.body); 
-        if(isValidlogin){
-            res.status(200).json({message:"Login Success"});
+        const user = await login(req.body); 
+        if(!user){
+            res.status(401).json({message:"Incorrect Password"});
             return;
         }
-        else{
-            res.status(401).json({message:"Incorrect Password"});
-        }
+        const token = jwt.sign(
+            {
+                userId: user._id,
+                email:user.email
+            },
+            JWT_SECRET,
+            {expiresIn:"1h"}
+        );
+        res.status(200).json({
+            message:"Login Success",
+            token
+        });
     }catch(err){
         next(err);
     }
