@@ -1,36 +1,89 @@
 import mongoose from "mongoose";
 import process from 'node:process';
-import {User, Portfolio, Transaction} from "./mongoSchema.js"
+import { User, Portfolio, Transaction } from "./mongoSchema.js"
 import bcrypt from "bcrypt";
 
-mongoose.connect(String(process.env.MONGO_URL)).then(()=>{
+mongoose.connect(String(process.env.MONGO_URL)).then(() => {
     console.log("CONNECTED");
-}).catch(err =>{
+}).catch(err => {
     console.log(err);
 })
 
-export async function SignUp(details){
-    const {email , password , username} = details;
+export async function SignUp(details) {
+    const { email, password, username } = details;
     const passwordHash = await bcrypt.hash(password, 10); //SaltRounds = 10
-    const newUser = new User({username:username , email:email , passwordHash:passwordHash, createdAt:Date.now(), lastLogin:Date.now()});
+    const newUser = new User({ username: username, email: email, passwordHash: passwordHash, createdAt: Date.now(), lastLogin: Date.now() });
     await newUser.save();
 }
 
-export async function login(details){
-    const {email , password} = details;
-    const userData = await User.findOne({email:email});
-    if(!userData) return null;
-    const match = await bcrypt.compare(password , userData.passwordHash);
-    if(!match){
+export async function login(details) {
+    const { email, password } = details;
+    const userData = await User.findOne({ email: email });
+    if (!userData) return null;
+    const match = await bcrypt.compare(password, userData.passwordHash);
+    if (!match) {
         return null;
     }
-    return userData; 
+    return userData;
 }
 
-export async function portfolio(userId){
-    const positions = await Portfolio.find({userId});
+export async function portfolio(userId) {
+    const positions = await Portfolio.find({ userId });
     return ({
-        count:positions.length,
+        count: positions.length,
         positions
     });
+}
+
+export async function buy(positionDetails, userId) {
+    const { symbol, qty, price } = positionDetails;
+    const filter = { userId: userId, symbol: symbol };
+    const portfolioBefore = await Portfolio.findOne(filter);
+    if (!portfolioBefore) {
+        //Adding the new shares to portfolio
+        const newPosition = new Portfolio({
+            userId: userId,
+            symbol: symbol,
+            shares: qty,
+            avgPrice: price,
+            positionType: 'long',
+            lastUpdated: Date.now()
+        });
+        await newPosition.save();
+    }
+    else { // If an old position already exist
+
+        const oldQty = portfolioBefore.shares;
+        const oldPositionType = portfolioBefore.positionType;
+        const oldAvgPrice = portfolioBefore.avgPrice;
+
+        let newQty = 0;
+        let newPositionType = oldPositionType;
+        let newAvgPrice = 0;
+
+        if (oldPositionType === 'long') { //Add shares to already existing long position
+            newQty = qty + oldQty;
+            newAvgPrice = (((oldQty * oldAvgPrice) + (qty * price)) / newQty);
+        }
+        else { // Old existing position is short
+            if (qty < oldQty) { //if old quantity is greater than new quantity in buy order position type remains short
+                newQty = oldQty - qty;
+                newAvgPrice = oldAvgPrice;
+                newPositionType = 'short';
+            }
+            else { // if old quantity is less than new quantity in buy order the position turns long
+                newQty = qty - oldQty;
+                newAvgPrice = price;
+                newPositionType = 'long';
+            }
+        }
+        const update = {
+            avgPrice: newAvgPrice,
+            shares: newQty,
+            positionType: newPositionType,
+            lastUpdated: Date.now()
+        };
+        await Portfolio.updateOne(filter, { $set: update });
+
+    }
 }
