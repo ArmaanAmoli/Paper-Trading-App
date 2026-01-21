@@ -26,3 +26,11 @@ export async function login(details){
     }
     return userData; 
 }
+
+export async function portfolio(userId){
+    const positions = await Portfolio.find({userId});
+    return ({
+        count:positions.length,
+        positions
+    });
+}

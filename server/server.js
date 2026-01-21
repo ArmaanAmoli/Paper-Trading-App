@@ -1,7 +1,7 @@
 import express, { application } from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login } from './queryManager.js';
+import { SignUp, login, portfolio } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -73,6 +73,16 @@ server.post('/login', validateEmail , async(req,res,next)=>{
         next(err);
     }
 });
+
+server.get('/portfolio', verifyToken, async(req, res , next)=>{
+    try{
+        const userID = req.user.userId;
+        const positions = await portfolio(userID);
+        res.status(200).json(positions)
+    }catch(err){
+        next(err);
+    }
+})
 
 // Global Error Handler Middleware
 server.use((err,res) => {
