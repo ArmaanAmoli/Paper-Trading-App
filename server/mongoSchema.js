@@ -4,6 +4,7 @@ const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     passwordHash: { type: String, required: true },
+    balance:{type:Number,default:1000000},
     createdAt: { type: Date, default: Date.now },
     lastLogin: { type: Date }
 });
@@ -20,14 +21,14 @@ const PortfolioSchema = new mongoose.Schema({
 });
 const Portfolio = mongoose.model('Portfolio', PortfolioSchema);
 
-const TransactionSchema = new mongoose.Schema({
+const TradeSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     symbol: { type: String, require: true },
     shares: { type: Number, require: true },
     price: { type: Number, require: true },
-    type: { type: String, enum: ['buy', 'sell'], default: 'long' },
+    type: { type: String, enum: ['buy', 'sell'], require: true },
     timestamp: { type: Date, default: Date.now }
 });
-const Transaction = mongoose.model('Transaction', TransactionSchema);
+const Trade = mongoose.model('Trade', TradeSchema);
 
-export { User, Portfolio, Transaction };
+export { User, Portfolio, Trade };

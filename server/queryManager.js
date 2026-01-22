@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import process from 'node:process';
-import { User, Portfolio, Transaction } from "./mongoSchema.js"
+import { User, Portfolio, Trade } from "./mongoSchema.js"
 import bcrypt from "bcrypt";
 
 mongoose.connect(String(process.env.MONGO_URL)).then(() => {
@@ -39,6 +39,13 @@ export async function buy(positionDetails, userId) {
     const { symbol, qty, price } = positionDetails;
     const filter = { userId: userId, symbol: symbol };
     const portfolioBefore = await Portfolio.findOne(filter);
+    const { balance } = await User.findById(userId);
+
+    let oldBalance = balance;
+    if (oldBalance < price * qty) {
+        return 0;
+    }
+
     if (!portfolioBefore) {
         //Adding the new shares to portfolio
         const newPosition = new Portfolio({
@@ -64,6 +71,7 @@ export async function buy(positionDetails, userId) {
         if (oldPositionType === 'long') { //Add shares to already existing long position
             newQty = qty + oldQty;
             newAvgPrice = (((oldQty * oldAvgPrice) + (qty * price)) / newQty);
+
         }
         else { // Old existing position is short
             if (qty < oldQty) { //if old quantity is greater than new quantity in buy order position type remains short
@@ -86,4 +94,76 @@ export async function buy(positionDetails, userId) {
         await Portfolio.updateOne(filter, { $set: update });
 
     }
+    let newBalance = oldBalance - (price * qty);
+    const update = {
+        balance: newBalance
+    }
+    await User.findByIdAndUpdate(userId, update);
+    return 1;
+
+}
+
+export async function sell(positionDetails, userId) {
+
+    const { symbol, qty, price } = positionDetails;
+    const filter = { userId: userId, symbol: symbol };
+    const portfolioBefore = await Portfolio.findOne(filter);
+
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error("User not found");
+    }
+    const balance = user.balance;
+
+    if (!portfolioBefore) {
+        //Adding the new shares to portfolio
+        const newPosition = new Portfolio({
+            userId: userId,
+            symbol: symbol,
+            shares: qty,
+            avgPrice: price,
+            positionType: 'short',
+            lastUpdated: Date.now()
+        });
+        await newPosition.save();
+    }
+    else {
+        const oldQty = portfolioBefore.shares;
+        const oldPositionType = portfolioBefore.positionType;
+        const oldAvgPrice = portfolioBefore.avgPrice;
+
+        let newQty = 0;
+        let newPositionType = oldPositionType;
+        let newAvgPrice = 0;
+
+        if (oldPositionType === 'short') { //Add shares to already existing short position
+            newQty = qty + oldQty;
+            newAvgPrice = (((oldQty * oldAvgPrice) + (qty * price)) / newQty);
+        }
+        else { // Old existing position is long
+            if (qty < oldQty) { //if old quantity is greater than new quantity in buy order position type remains long
+                newQty = oldQty - qty;
+                newAvgPrice = oldAvgPrice;
+                newPositionType = 'long';
+            }
+            else { // if old quantity is less than new quantity in buy order the position turns long
+                newQty = qty - oldQty;
+                newAvgPrice = price;
+                newPositionType = 'short';
+            }
+        }
+        const update = {
+            avgPrice: newAvgPrice,
+            shares: newQty,
+            positionType: newPositionType,
+            lastUpdated: Date.now()
+        };
+        await Portfolio.updateOne(filter, { $set: update });
+    }
+    let newBalance = balance + (price * qty);
+    const update = {
+        balance: newBalance
+    }
+    await User.findByIdAndUpdate(userId, update);
+    return 1;
 }
