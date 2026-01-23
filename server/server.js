@@ -1,7 +1,7 @@
 import express, { application } from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, buy, sell } from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -88,7 +88,7 @@ server.post('/buy', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
-        const b = await buy(positionDetails, userId)
+        const b = await executeTrade(positionDetails, userId)
         if (b === 1) res.status(200).json({ message: "Order Successfull" });
         else res.status(422).json({ message: "Not enough balance" });
     } catch (err) {
@@ -100,7 +100,7 @@ server.post('/sell', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
-        const b = await sell(positionDetails, userId)
+        const b = await executeTrade(positionDetails, userId)
         if (b === 1) res.status(200).json({ message: "Order Successfull" });
         else res.status(422).json({ message: "Something went wrong" });
     } catch (err) {
