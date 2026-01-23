@@ -4,7 +4,7 @@ const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     passwordHash: { type: String, required: true },
-    balance:{type:Number,default:1000000},
+    balance: { type: Number, default: 1000000 },
     createdAt: { type: Date, default: Date.now },
     lastLogin: { type: Date }
 });
@@ -27,7 +27,8 @@ const TradeSchema = new mongoose.Schema({
     shares: { type: Number, require: true },
     price: { type: Number, require: true },
     type: { type: String, enum: ['buy', 'sell'], require: true },
-    timestamp: { type: Date, default: Date.now }
+    timestamp: { type: Date, default: Date.now },
+    realizedPL: { type: Number, required: true }
 });
 const Trade = mongoose.model('Trade', TradeSchema);
 
