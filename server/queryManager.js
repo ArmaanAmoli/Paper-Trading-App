@@ -36,7 +36,7 @@ export async function portfolio(userId) {
 }
 
 
-async function newTradeF(userId, symbol, shares, price, type, realizedPL) {
+async function newTradeF(userId, symbol, shares, price, type, realizedPL, session) {
     const newTrade = new Trade({
         userId: userId,
         symbol: symbol,
@@ -46,80 +46,93 @@ async function newTradeF(userId, symbol, shares, price, type, realizedPL) {
         timestamp: Date.now(),
         realizedPL: realizedPL
     })
-    await newTrade.save();
+    await newTrade.save({ session });
 }
 
 export async function executeTrade(positionDetails, userId) {
+    const session = await mongoose.startSession();
+    try {
+        session.startTransaction();
+        const { symbol, qty, price, side } = positionDetails;
+        const filter = { userId: userId, symbol: symbol };
 
-    const { symbol, qty, price, side } = positionDetails;
-    const filter = { userId: userId, symbol: symbol };
+        const user = await User.findById(userId).session(session);
+        if (!user) throw new Error("User not found");
 
-    const user = await User.findById(userId);
-    if (!user) throw new Error("User not found");
+        const delta = side === "buy" ? qty : -qty;
 
-    const delta = side === "buy" ? qty : -qty;
+        let realizedPL = 0;
+        let newShares = delta;
+        let newAvgPrice = price;
 
-    let realizedPL = 0;
-    let newShares = delta;
-    let newAvgPrice = price;
+        const portfolio = await Portfolio.findOne(filter).session(session);
+        if (portfolio) { //Existing Position
+            const oldShares = portfolio.shares;
+            const oldAvg = portfolio.avgPrice;
 
-    const portfolio = await Portfolio.findOne(filter);
-    if (portfolio) { //Existing Position
-        const oldShares = portfolio.shares;
-        const oldAvg = portfolio.avgPrice;
+            //same Direction Add
+            if (Math.sign(oldShares) === Math.sign(delta)) {
+                newShares = oldShares + delta;
+                newAvgPrice = ((Math.abs(oldShares) * oldAvg) + (Math.abs(delta) * price)) / Math.abs(newShares);
+                portfolio.shares = newShares;
+                portfolio.avgPrice = newAvgPrice;
+                portfolio.positionType = newShares > 0 ? "long" : "short";
+                portfolio.lastUpdated = Date.now();
+                await portfolio.save({ session });
+            }
+            else {
+                const closedQty = Math.min(Math.abs(oldShares), Math.abs(delta));
 
-        //same Direction Add
-        if (Math.sign(oldShares) === Math.sign(delta)) {
-            newShares = oldShares + delta;
-            newAvgPrice = ((Math.abs(oldShares) * oldAvg) + (Math.abs(delta) * price)) / Math.abs(newShares);
+                // realized PnL
+                realizedPL =
+                    oldShares > 0
+                        ? closedQty * (price - oldAvg)     // closing long
+                        : closedQty * (oldAvg - price);    // closing short
+
+                newShares = oldShares + delta;
+                // flipped → reset avg price
+                if (Math.sign(newShares) !== Math.sign(oldShares) && newShares !== 0) {
+                    newAvgPrice = price;
+                } else {
+                    newAvgPrice = oldAvg;
+                }
+
+                if (newShares === 0) {
+                    await Portfolio.deleteOne(filter, { session });
+                } else {
+                    await Portfolio.updateOne(filter, {
+                        $set: {
+                            shares: newShares,
+                            avgPrice: newAvgPrice,
+                            positionType: newShares > 0 ? "long" : "short",
+                            lastUpdated: Date.now()
+                        }
+                    }, { session });
+                }
+            }
         }
         else {
-            const closedQty = Math.min(Math.abs(oldShares), Math.abs(delta));
-
-            // realized PnL
-            realizedPL =
-                oldShares > 0
-                    ? closedQty * (price - oldAvg)     // closing long
-                    : closedQty * (oldAvg - price);    // closing short
-
-            newShares = oldShares + delta;
-            // flipped → reset avg price
-            if (Math.sign(newShares) !== Math.sign(oldShares) && newShares !== 0) {
-                newAvgPrice = price;
-            } else {
-                newAvgPrice = oldAvg;
-            }
-
-            if (newShares === 0) {
-                await Portfolio.deleteOne(filter);
-            } else {
-                await Portfolio.updateOne(filter, {
-                    $set: {
-                        shares: newShares,
-                        avgPrice: newAvgPrice,
-                        positionType: newShares > 0 ? "long" : "short",
-                        lastUpdated: Date.now()
-                    }
-                });
-            }
+            await Portfolio.create([{
+                userId,
+                symbol,
+                shares: delta,
+                avgPrice: price,
+                positionType: delta > 0 ? "long" : "short",
+                lastUpdated: Date.now()
+            }], { session });
         }
-    }
-    else {
-        await Portfolio.create({
-            userId,
-            symbol,
-            shares: delta,
-            avgPrice: price,
-            positionType: delta > 0 ? "long" : "short",
-            lastUpdated: Date.now()
-        });
-    }
-    await newTradeF(userId, symbol, qty, price, side, realizedPL);
+        await newTradeF(userId, symbol, qty, price, side, realizedPL, session);
 
-    const cashDelta = side === "buy" ? -price * qty : price * qty;
-    user.balance += cashDelta;
-    await user.save();
-
-    return 1;
+        const cashDelta = side === "buy" ? -price * qty : price * qty;
+        user.balance += cashDelta;
+        await user.save({ session });
+        await session.commitTransaction();
+        return { success: true };
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        session.endSession()
+    }
 
 }
