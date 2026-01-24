@@ -53,7 +53,15 @@ export async function executeTrade(positionDetails, userId) {
     const session = await mongoose.startSession();
     try {
         session.startTransaction();
-        const { symbol, qty, price, side } = positionDetails;
+        const { symbol, qty, price, side , orderId } = positionDetails;
+
+        //checking for duplicate transaction
+        const existing = await Trade.findOne({orderId}).session(session);
+        if(existing){
+            await session.abortTransaction();
+            return {success: true, duplicate:true};
+        }
+
         const filter = { userId: userId, symbol: symbol };
 
         const user = await User.findById(userId).session(session);
