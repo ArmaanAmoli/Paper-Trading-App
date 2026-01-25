@@ -1,9 +1,11 @@
 import './styles/login.css'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 
 
+
 export default function Signup() {
+    const navigate = useNavigate();
     const [userInfo, setUserInfo] = useState({
         username: '',
         email: '',
@@ -19,7 +21,7 @@ export default function Signup() {
     };
 
     const RegisterUser = async () => {
-        const res = await fetch("http://localhost:3000/sign-up", {
+        const res = await fetch("http://localhost:3000/sign-up", { //########################################################################
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -30,6 +32,10 @@ export default function Signup() {
         });
         const data = await res.json();
         console.log(data);
+        
+        if(data.message ==="User Registered"){
+            navigate('/')
+        }
     }
 
     return (
