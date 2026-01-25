@@ -1,4 +1,27 @@
-.login-page{
+.login-div{
+    display: flex;
     border: solid;
-    border-color: white;
+    border: solid rgba(255, 255, 255, 0.178);
+    box-shadow: -1px -.5px 2px rgba(255, 255, 255, 0.616);
+    border-width: .5px;
+    border-radius: 38px;
+    flex-direction: column;
+    width: 80vw;
+    max-width: 400px;
+    height: 80vh;
+    max-height: 700px;
+    padding: 20px;
+    gap: 20px;
+    align-items: left;
+}
+.login-page{
+    height: 95vh;
+    width:97vw;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    padding: 10px;
+}
+input:focus {
+    outline: none; /* removes the default outline */
 }
