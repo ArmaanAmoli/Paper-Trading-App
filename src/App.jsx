@@ -1,17 +1,12 @@
 //import { useState } from 'react'
-
-//import './App.css'
+import './App.css'
+import Login from './pages/login.jsx'
 
 function App() {
 
   return (
     <>
-      <div className="landing-page">
-
-        <div className="charts"></div>
-        <div className="watch-list"></div>
-        
-      </div>
+      <Login />
     </>
   )
 }
