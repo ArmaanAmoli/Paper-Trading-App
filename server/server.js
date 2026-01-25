@@ -1,20 +1,38 @@
-import express, { application } from 'express';
+import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
 import { SignUp, login, portfolio, executeTrade } from './queryManager.js';
 import jwt from 'jsonwebtoken';
+import cors from "cors";
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
 const port = 3000;
 
-await mongoose.connect(String(process.env.MONGO_URL));
+try {
+    await mongoose.connect(process.env.MONGO_URL);
+    console.log("MongoDB connected");
+} catch (err) {
+    console.error("MongoDB FAILED", err);
+    process.exit(1);
+}
 
 //MIDDLEWARES
-application.use(express.json());
+server.use(express.json());
+
+// server.use(cors({
+//     origin: "http://localhost:5173",
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     allowedHeaders: ["Content-Type", "Authorization"]
+// }));
+server.use(cors());
+
 
 const validateEmail = (req, res, next) => {
     const { email } = req.body;
+    if(!email){
+        return res.status(400).json({message: "Email is Required"})
+    }
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (pattern.test(email)) {
         return next();
@@ -28,8 +46,8 @@ const validateEmail = (req, res, next) => {
 
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    if (!authHeader) return res.status(401).json({ message: "No token provided" });
-    const token = authHeader.split(' ')[1];
+    if (!authHeader.startWith("Bearer ")) return res.status(401).json({ message: "No token provided" });
+    const token = authHeader.split(" ")[1];
     if (!token) return res.status(401).json({ message: "Invalid token format" });
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
@@ -109,10 +127,10 @@ server.post('/sell', verifyToken, async (req, res, next) => {
 })
 
 // Global Error Handler Middleware
-server.use((err, res) => {
+server.use((err, req, res, next) => {
     console.error(`Error Stack: ${err.stack}`);
     const statusCode = err.status || 500; // If error already have a status code if not give it 500(Server Error)
-    res.status(statusCode).send("Server Error");
+    res.status(statusCode).json({message:err.message||"server Error"})
 });
 
 server.listen(port, (error) => {

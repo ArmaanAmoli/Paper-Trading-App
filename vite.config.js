@@ -9,4 +9,11 @@ export default defineConfig({
       usePolling: true,
     },
   },
+  proxy:{
+    "/sign-up":"http://localhost:3000",
+    "/login":"http://localhost:3000",
+    "/portfolio":"http://localhost:3000",
+    "/buy":"http://localhost:3000",
+    "/sell":"http://localhost:3000",
+  }
 });
