@@ -1,12 +1,12 @@
 //import { useState } from 'react'
 import './App.css'
-import Login from './pages/login.jsx'
+import AppRouter from './routes/AppRouter.jsx' 
 
 function App() {
 
   return (
     <>
-      <Login />
+      <AppRouter/>
     </>
   )
 }
