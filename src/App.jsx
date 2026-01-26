@@ -4,11 +4,7 @@ import AppRouter from './routes/AppRouter.jsx';
 // import { useNavigate } from 'react-router-dom';
 
 function App() {
-  return (
-    <>
-      <AppRouter />
-    </>
-  )
+  return <AppRouter/>
 }
 
 export default App

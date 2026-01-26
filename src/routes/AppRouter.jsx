@@ -5,13 +5,13 @@ import LandingPage from "../pages/landingPage.jsx";
 
 const AppRouter = ()=>{
     return(
-        <BrowserRouter>
+
         <Routes>
             <Route path="/" element={<Login/>}/>
             <Route path="/signup" element={<Signup/>}/>
             <Route path="/landing-page" element={<LandingPage/>}/>
         </Routes>
-        </BrowserRouter>
+
     )
 }
 export default AppRouter

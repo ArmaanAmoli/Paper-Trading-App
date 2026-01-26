@@ -1,14 +1,25 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import './styles/login.css';
 
 export default function Login() {
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem("token")
+
+        if (token) {
+            navigate("/landing-page")
+        }
+    }, [navigate])
+
     const [err, setErr] = useState('');
     const [userInfo, setUserInfo] = useState({
         email: '',
         password: ''
     });
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setUserInfo((prev) => ({
@@ -65,7 +76,7 @@ export default function Login() {
                             onChange={handleChange}
                             placeholder="Password" />
                     </div>
-                    
+
                     {/* Display error message here */}
                     {err && <p className="error">{err}</p>}
 
