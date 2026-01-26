@@ -1,0 +1,25 @@
+.Landing-Page{
+    width: 99vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+.content{
+    display: flex;
+    flex-direction: column;
+    width: 75%;
+    height: 100%;
+    border: solid white 1px;
+    flex-wrap: nowrap;
+    
+}
+
+.below-nav{
+    display: flex;
+    border: solid white 1px;
+    width: 100%;
+    margin-top: 60px;
+}
+.stock-list{
+    position: fixed;
+}

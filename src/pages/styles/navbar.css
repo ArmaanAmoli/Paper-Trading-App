@@ -3,16 +3,18 @@ nav {
     display: flex; /* make nav horizontal */
     justify-content: center; /* center ul inside nav */
     align-items: center; /* vertically align items */
-    padding: -0px 20px; /* some space inside nav */
+    padding: 2px 0px; /* some space inside nav */
     border: 0.5px solid rgba(255, 255, 255, 0.178); /* subtle border */
-    box-shadow: -2px -1px 3px rgba(255, 255, 255, 0.363); /* soft shadow */
+    box-shadow: -.5px -.25px 5px rgba(255, 255, 255, 0.123); /* soft shadow */
     border-radius: 38px;
     background-color: #000000; /* dark background for contrast */
     font-size: large;
     resize: none;
+    width: 100%;
     position: fixed;
-    width:100%;
     overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.459);
+    backdrop-filter: blur(5px);
 }
 
 /* UL CONTAINER */
