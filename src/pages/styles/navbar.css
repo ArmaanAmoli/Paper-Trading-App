@@ -1,0 +1,101 @@
+/* NAVBAR CONTAINER */
+nav {
+    display: flex; /* make nav horizontal */
+    justify-content: center; /* center ul inside nav */
+    align-items: center; /* vertically align items */
+    padding: -0px 20px; /* some space inside nav */
+    border: 0.5px solid rgba(255, 255, 255, 0.178); /* subtle border */
+    box-shadow: -2px -1px 3px rgba(255, 255, 255, 0.363); /* soft shadow */
+    border-radius: 38px;
+    background-color: #000000; /* dark background for contrast */
+    font-size: large;
+    resize: none;
+    position: fixed;
+    width:100%;
+    overflow: hidden;
+}
+
+/* UL CONTAINER */
+ul {
+    display: flex; /* horizontal layout */
+    list-style: none; /* remove bullets */
+    justify-content: space-between; /* space between items */
+    align-items: center; /* vertically align li items */
+    width: 100%; /* make it full width of nav */
+    max-width: 1200px; /* limit max width */
+    gap: 20px; /* space between items (more consistent than margin) */
+    margin: 0; /* remove default margin */
+    padding: 0; /* remove default padding */
+    
+}
+
+/* LINK STYLING */
+li a {
+    color: white; /* make links white */
+    text-decoration: none; /* remove underline */
+    cursor: pointer;
+}
+
+li a:hover {
+    text-decoration: none; /* underline only on hover */
+}
+
+/* NAV-BAR-TABS HOVER EFFECT */
+.nav-bar-tabs {
+    padding: 10px 20px;
+    border-radius: 38px;
+    transition: all 0.2s ease; /* smooth hover transition */
+    border: 0.5px solid transparent;
+    transition: background-color 0.1s ease-in-out;
+}
+
+.nav-bar-tabs:hover {
+    padding: 10px 20px;
+    border-radius: 38px;
+    background-color: rgb(41, 41, 41);
+    box-shadow: -1px -0.5px 2px rgba(255, 255, 255, 0.616);
+    border: 0.5px solid rgba(255, 255, 255, 0.178);
+}
+
+/* SEARCH INPUT */
+.nav-search {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 0.5px solid rgba(255, 255, 255, 0);
+    background-color: #333;
+    box-shadow: -1px -0.5px 20px rgba(72, 3, 233, 0.808);
+    color: white;
+    width: 300px;
+}
+.nav-search:focus{
+    border: 0.5px solid rgba(255, 255, 255, 0);
+    background-color: #333;
+    box-shadow: -1px -0.5px 20px rgba(72, 3, 233, 0.808);
+}
+
+/* PROFILE BUTTON */
+.nav-profile-btn {
+    padding: none;
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    border: none;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* .nav-profile-btn:hover {
+    background-color: #555;
+    padding: 5px 15px;
+} */
+
+.profile-pic{
+    height: 50px;
+    width: 50px;
+}
