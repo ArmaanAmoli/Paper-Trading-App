@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-// import { useEffect } from "react";
+import { useEffect } from "react";
 import './styles/login.css';
+import isTokenExpired from "../routes/checkTokenExpiry.js";
 
 export default function Login() {
     const navigate = useNavigate();
 
-    // useEffect(() => {
-    //     const token = localStorage.getItem("token")
+    useEffect(() => {
+        const token = localStorage.getItem("token")
 
-    //     if (token) {
-    //         navigate("/landing-page")
-    //     }
-    // }, [navigate])
+        if (token && !isTokenExpired(token)) {
+            navigate("/landing-page")
+        }
+    }, [navigate])
 
     const [err, setErr] = useState('');
     const [userInfo, setUserInfo] = useState({
@@ -38,15 +39,12 @@ export default function Login() {
                 })
             });
             const data = await res.json();
-            if (data.message === "Login Success") {
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    console.log(data.message);
-                    navigate('/landing-page');
-                }
+            if (res.ok && data.token) {
+                localStorage.setItem('token', data.token);
+                console.log(data.message);
+                navigate('/landing-page',{replace:true});
             } else {
-                console.log("Wrong Password");
-                setErr("Incorrect Password");
+                setErr(data.message || "Invalid credentials");
             }
         } catch (Error) {
             console.error(Error);

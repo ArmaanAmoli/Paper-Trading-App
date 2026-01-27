@@ -1,5 +1,6 @@
 import Navbar from "./navbar";
 import "./styles/landing-page.css";
+import lineChart from "./Charts/lineChart.jsx";
 export default function LandingPage() {
     return (
         <>

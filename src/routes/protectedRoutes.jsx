@@ -1,17 +1,7 @@
 import { Outlet, Navigate } from "react-router-dom";
-
-const isTokenExpired = (token) => {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.exp * 1000 < Date.now();
-  } catch {
-    return true;
-  }
-};
-
-const token = localStorage.getItem("token");
-
+import isTokenExpired from "./checkTokenExpiry.js";
 const ProtectedRoutes = () =>{
+    const token = localStorage.getItem("token");
     return (!token || isTokenExpired(token)) ? <Navigate to="/" replace />:<Outlet/>;
 }
 
