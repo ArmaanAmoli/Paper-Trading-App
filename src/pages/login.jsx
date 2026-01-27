@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+// import { useEffect } from "react";
 import './styles/login.css';
 
 export default function Login() {
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const token = localStorage.getItem("token")
+    // useEffect(() => {
+    //     const token = localStorage.getItem("token")
 
-        if (token) {
-            navigate("/landing-page")
-        }
-    }, [navigate])
+    //     if (token) {
+    //         navigate("/landing-page")
+    //     }
+    // }, [navigate])
 
     const [err, setErr] = useState('');
     const [userInfo, setUserInfo] = useState({
