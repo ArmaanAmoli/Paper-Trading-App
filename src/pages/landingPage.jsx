@@ -14,8 +14,8 @@ export default function LandingPage() {
                                 <div><LineChart ticker="SPY" /></div>
                             </div>
                             <div className="C2">
-                                <div><LineChart ticker="MSFT" /></div>
-                                <div><LineChart ticker="NVDA" /></div>
+                                <div><LineChart ticker="GOOGL" /></div>
+                                <div><LineChart ticker="SPY" /></div>
                             </div>
                         </div>
 
