@@ -26,7 +26,7 @@
 .TOP-4-CHARTS {
     display: flex;
     flex-direction: column; /* stack C1 and C2 vertically */
-    gap: 20px; /* space between rows */
+    gap: 50px; /* space between rows */
     width: 100%;
     margin-top: 20px;
 }
