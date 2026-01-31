@@ -10,12 +10,12 @@ export default function LandingPage() {
                     <div className="content">
                         <div className="TOP-4-CHARTS">
                             <div className="C1">
-                                <div><LineChart ticker="GOOGL" /></div>
-                                <div><LineChart ticker="SPY" /></div>
+                                <div><LineChart ticker="^NSEI" /></div>
+                                <div><LineChart ticker="^GSPC" /></div>
                             </div>
                             <div className="C2">
-                                <div><LineChart ticker="GOOGL" /></div>
-                                <div><LineChart ticker="SPY" /></div>
+                                <div><LineChart ticker="^N225" /></div>
+                                <div><LineChart ticker="^DJI" /></div>
                             </div>
                         </div>
 

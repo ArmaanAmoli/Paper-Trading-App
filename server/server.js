@@ -4,6 +4,7 @@ import process from 'node:process';
 import { SignUp, login, portfolio, executeTrade } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
+import axios from 'axios';
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
@@ -88,6 +89,26 @@ server.post('/login', validateEmail, async (req, res, next) => {
             token
         });
     } catch (err) {
+        next(err);
+    }
+});
+
+server.get('/data', async (req, res, next)  =>{
+    try{
+        const query = req.query;
+        const ticker = query.ticker;
+        const interval = query.interval;
+        const period = query.period;
+        const fastAPIRes = await axios.get('http://127.0.0.1:8000/data',{
+            params:{
+                ticker:ticker,
+                period:period,
+                interval:interval
+            }
+        });
+        console.log(fastAPIRes.data);
+        res.json(fastAPIRes.data);
+    }catch(err){
         next(err);
     }
 });
