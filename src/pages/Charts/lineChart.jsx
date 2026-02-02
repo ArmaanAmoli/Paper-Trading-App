@@ -26,7 +26,7 @@ export default function LineChart({ ticker }) {
         
         const dataFromYahoo = async () =>{
             try {
-                let dataFromYahooJSON =  await fetchData(ticker , '1d' , '1y');
+                let dataFromYahooJSON =  await fetchData(ticker , '1d' , '2y');
                 
                 // --- FIX 1: Corrected console log & ensured data is an array
                 if (Array.isArray(dataFromYahooJSON)) {
@@ -50,6 +50,7 @@ export default function LineChart({ ticker }) {
         if (!data.length) return;
 
         const chart = createChart(chartContainer.current, {
+            autosize: true,
             width: chartContainer.current.clientWidth,
             height: 300,
 
@@ -91,7 +92,6 @@ export default function LineChart({ ticker }) {
 
     return (
     <>
-    <h3>{ticker}</h3>
     <div ref={chartContainer} />
     </>);
 }

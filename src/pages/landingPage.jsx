@@ -4,30 +4,21 @@ import LineChart from "./Charts/lineChart.jsx";
 export default function LandingPage() {
     return (
         <>
-            <div className="Landing-Page">
+            <div className="page">
                 <Navbar />
-                <div className="below-nav">
+                <div className="Landing-Page">
                     <div className="content">
-                        <div className="TOP-4-CHARTS">
-                            <div className="C1">
-                                <div><LineChart ticker="^NSEI" /></div>
-                                <div><LineChart ticker="^GSPC" /></div>
-                            </div>
-                            <div className="C2">
-                                <div><LineChart ticker="^N225" /></div>
-                                <div><LineChart ticker="^DJI" /></div>
-                            </div>
-                        </div>
-
+                        <div className="chart-area">NSEI<LineChart ticker="^NSEI" /></div>
+                        <div className="chart-area">^GSPC<LineChart ticker="^GSPC" /></div>
+                        <div className="chart-area">^N225<LineChart ticker="^N225" /></div>
+                        <div className="chart-area">^DJI<LineChart ticker="^DJI" /></div>
                     </div>
 
-                    <div className="stock-list">
+                    <div className="stock-list"></div>
 
-                    </div>
                 </div>
-
-
             </div>
+
 
         </>
     );

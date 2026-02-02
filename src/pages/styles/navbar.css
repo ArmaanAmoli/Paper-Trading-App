@@ -11,10 +11,12 @@ nav {
     font-size: large;
     resize: none;
     width: 100%;
-    position: fixed;
-    overflow: hidden;
+    /* position: fixed;
+    overflow: hidden; */
     background-color: rgba(0, 0, 0, 0.459);
     backdrop-filter: blur(5px);
+    flex-shrink: 0; /* Prevents the navbar from squishing */
+    z-index: 10;
 }
 
 /* UL CONTAINER */
