@@ -92,7 +92,18 @@ server.post('/login', validateEmail, async (req, res, next) => {
         next(err);
     }
 });
-
+server.get('/quote' , async (req, res, next)=>{
+    try{
+        const query = req.query;
+        const ticker = query.ticker;
+        const fastAPIRes = await axios.get('http://127.0.0.1:8000/quote',{
+            params:{
+                ticker:ticker
+            }
+        });
+        res.json(fastAPIRes.data);
+    }catch(err){next(err)}
+})
 server.get('/data', async (req, res, next)  =>{
     try{
         const query = req.query;
@@ -106,7 +117,7 @@ server.get('/data', async (req, res, next)  =>{
                 interval:interval
             }
         });
-        console.log(fastAPIRes.data);
+        //console.log(fastAPIRes.data);
         res.json(fastAPIRes.data);
     }catch(err){
         next(err);

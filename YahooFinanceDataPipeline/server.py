@@ -23,6 +23,25 @@ async def get_hourly_data(
     except Exception as e:
         raise HTTPException(status_code=500 , detail = str(e))
 
+
+@app.get("/quote/")
+async def get_quote(ticker: str):
+    try:
+        stock = yf.Ticker(ticker)
+        info =stock.info
+        current_price = info.get('currentPrice')
+        prev_close = info.get('previousClose')
+        change = current_price - prev_close
+        per_change = (change/prev_close)*100
+        response = {
+            "currentPrice":round(current_price,2),
+            "change":round(change,3),
+            "percentChange":round(per_change,3)
+        }
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500 , detail = str(e))
+
 if __name__ =="__main__":
     print("Server Running in http://127.0.0.1:8000")
     uvicorn.run("server:app", host = "127.0.0.1" , port=8000, reload=True)
