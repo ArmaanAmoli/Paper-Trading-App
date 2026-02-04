@@ -34,3 +34,11 @@
 .ticker:hover{
     background-color: rgba(255, 255, 255, 0.123);
 }
+
+
+.Symbol, .price, .change, .per-change{
+    display: flex;
+    width: 50px;
+    align-items: center;
+    justify-content: center;
+}

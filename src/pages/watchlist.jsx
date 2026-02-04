@@ -12,6 +12,8 @@ export default function Watchlist() {
             </div>
 
             <Ticker name="RR.L"/>
+            <Ticker name="^FTSE"/>
+            <Ticker name="LLY"/>
         </div>
     );
 }

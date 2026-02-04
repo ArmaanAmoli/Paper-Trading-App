@@ -26,10 +26,10 @@ export default function Ticker({ name }) {
             <p className = "price">
                 {quote.currentPrice}
             </p>
-            <p className = "change">
+            <p className = "change" style={{color:quote.change<0?'red':'#8bf31c'}}>
                 {quote.change}
             </p>
-            <p className = "per-change">
+            <p className = "per-change" style={{color:quote.percentChange<0?'red':'#8bf31c'}} >
                 {quote.percentChange}%
             </p>
 

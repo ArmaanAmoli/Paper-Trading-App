@@ -6,7 +6,7 @@ import uvicorn
 
 app = FastAPI()
 
-@app.get("/data/")
+@app.get("/data")
 async def get_hourly_data(
     ticker: str,
     period: Annotated[str, Query(..., description="e.g., '1d', '5d', '1mo', '3mo', '1y', 'max'")],
@@ -24,13 +24,20 @@ async def get_hourly_data(
         raise HTTPException(status_code=500 , detail = str(e))
 
 
-@app.get("/quote/")
+@app.get("/quote")
 async def get_quote(ticker: str):
     try:
         stock = yf.Ticker(ticker)
         info =stock.info
-        current_price = info.get('currentPrice')
-        prev_close = info.get('previousClose')
+        if info is None or 'currentPrice' not in info:
+            hist = stock.history(period="1d" , interval = "1m")
+            if(hist.empty):
+                raise ValueError("No price data found for the ticker.")
+            current_price = stock.fast_info['last_price']
+            prev_close = stock.fast_info['previous_close']
+        else:  
+            current_price = info.get('currentPrice')
+            prev_close = info.get('previousClose')
         change = current_price - prev_close
         per_change = (change/prev_close)*100
         response = {
