@@ -3,6 +3,7 @@ import Login from "../pages/login.jsx";
 import Signup from "../pages/signup.jsx";
 import LandingPage from "../pages/landingPage.jsx";
 import ProtectedRoutes from "./protectedRoutes.jsx";
+import StockMainChart from "../pages/stockChart.jsx";
 
 const AppRouter = () => {
     return (
@@ -13,6 +14,7 @@ const AppRouter = () => {
             {/* Protected routes wrapped inside the parent route */}
             <Route element={<ProtectedRoutes />}>
                 <Route path="/landing-page" element={<LandingPage />} />
+                <Route path="/chart/:ticker" element={<StockMainChart/>}/>
             </Route>
 
         </Routes>

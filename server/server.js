@@ -117,7 +117,7 @@ server.get('/data', async (req, res, next)  =>{
                 interval:interval
             }
         });
-        //console.log(fastAPIRes.data);
+        console.log(fastAPIRes.data);
         res.json(fastAPIRes.data);
     }catch(err){
         next(err);

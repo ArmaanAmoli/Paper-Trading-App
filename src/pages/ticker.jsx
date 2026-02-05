@@ -1,7 +1,14 @@
 import "./styles/watchlist.css";
 import { fetchQuote } from "./Charts/dataRequester";
 import { useEffect , useState} from "react";
+import { useNavigate } from 'react-router-dom';
 export default function Ticker({ name }) {
+    const navigate = useNavigate();
+
+    const handleDivClick = ()=>{
+        navigate(`/chart/${name}`)
+    }
+
     const [quote , setQuote] = useState([]);
     useEffect(()=>{
         if(!name) return;
@@ -19,7 +26,7 @@ export default function Ticker({ name }) {
         return ()=> clearInterval(intervalID);
     },[name]);
     return (
-        <div className="ticker">
+        <div className="ticker" onClick={handleDivClick}>
             <p className = "Symbol">
                 {name}
             </p>
