@@ -7,7 +7,7 @@ export default function StockMainChart(){
         <>
             <div className="chart-page">
                 <div className="Chart">
-                    <CandleStickChartComponent ticker = {ticker} interval='1d' period='max'/>
+                    <CandleStickChartComponent ticker = {ticker} interval='1h' period='max'/>
                 </div>
                 <div className="Sidebar">
                 </div>

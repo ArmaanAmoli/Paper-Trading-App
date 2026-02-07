@@ -1,4 +1,5 @@
 from fastapi import FastAPI , Query , HTTPException
+from fastapi.responses import FileResponse
 from typing import Annotated, List
 import pandas as pd
 import yfinance as yf
@@ -48,6 +49,10 @@ async def get_quote(ticker: str):
         return response
     except Exception as e:
         raise HTTPException(status_code=500 , detail = str(e))
+    
+# @app.get("/favicon.ico", include_in_schema=False)
+# async def favicon():
+#     return FileResponse("favicon.ico")
 
 if __name__ =="__main__":
     print("Server Running in http://127.0.0.1:8000")
