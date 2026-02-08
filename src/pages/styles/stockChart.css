@@ -5,6 +5,8 @@ body {
     display: flex;
     width: 100vw;
     height: 100vh;
+    
+    
 }
 .Sidebar{
     display: flex;
@@ -13,10 +15,37 @@ body {
     border-left: solid rgba(255, 255, 255, 0.329) 1px;
     flex-direction: column;
     height: 100%;
+    padding: 5px;
+    padding-right: 10px;
+    gap: 15px;
 }
 .Chart{
     display: flex;
     flex:1;
     min-width: 0;
-    height: 100%;
+    height: 99%;
+    
+}
+.Sidebar-Button{
+    height: 40px;
+    width:100%;
+    background-color: black;
+    border: none;
+}
+
+.Sidebar-Button:hover{
+    background-color: rgba(255, 255, 255, 0.13);
+}
+
+#watchlist{
+    background-image: url("../../assets/Icons/watchlist.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+#place-order{
+    background-image: url("../../assets/Icons/order.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
 }

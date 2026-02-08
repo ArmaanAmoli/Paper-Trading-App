@@ -10,6 +10,8 @@ export default function StockMainChart(){
                     <CandleStickChartComponent ticker = {ticker} interval='1h' period='max'/>
                 </div>
                 <div className="Sidebar">
+                    <button className="Sidebar-Button" id="watchlist" ></button>
+                    <button className="Sidebar-Button" id="place-order"></button>
                 </div>
                 
             </div>

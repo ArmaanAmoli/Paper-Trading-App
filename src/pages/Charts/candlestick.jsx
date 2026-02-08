@@ -93,7 +93,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                 secondsVisible: false,
             },
             width: chartContainerRef.current.clientWidth,
-            height: 500,
+            height: chartContainerRef.current.clientHeight,
         });
 
         const series = chart.addSeries(CandlestickSeries, {
@@ -143,7 +143,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
 
 
     return (
-        <div ref={chartContainerRef} style={{ width: "100%", height: "100%" }}></div>
+        <div ref={chartContainerRef} style={{ width: "100%", height: "100%"}}></div>
     );
 
 }
