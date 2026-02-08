@@ -5,7 +5,7 @@ body {
     display: flex;
     width: 100vw;
     height: 100vh;
-    
+    flex-direction: row;
     
 }
 .Sidebar{
@@ -20,10 +20,12 @@ body {
     gap: 15px;
 }
 .Chart{
-    display: flex;
-    flex:1;
+    /* display: flex; */
+    flex:1 1 0px;
     min-width: 0;
-    height: 99%;
+    height: 100%;
+    position: relative; /* Keeps the chart internal elements contained here */
+    overflow: hidden;
     
 }
 .Sidebar-Button{
@@ -48,4 +50,11 @@ body {
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
+}
+.watchlist, .orderform {
+    flex: 0 0 250px; /* Fixed width, do not grow or shrink */
+    height: 100%;
+    width: 250px;
+    background-color: #f11515; /* Match your theme */
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
