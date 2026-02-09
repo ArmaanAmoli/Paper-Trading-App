@@ -22,7 +22,7 @@
     border: solid;
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.137);
-    width: 25%;
+    width: 100%;
     overflow: scroll;
     display: flex;
     flex-direction: column;

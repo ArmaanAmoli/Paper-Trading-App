@@ -14,7 +14,10 @@ export default function LandingPage() {
                         <div className="chart-area">^N225<LineChart ticker="^N225" /></div>
                         <div className="chart-area">^DJI<LineChart ticker="^DJI" /></div>
                     </div>
-                    <Watchlist/>
+                    <div className="watchlist">
+                        <Watchlist/>
+                    </div>
+                    
                 </div>
             </div>
 

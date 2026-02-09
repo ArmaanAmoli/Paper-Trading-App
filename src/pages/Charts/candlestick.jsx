@@ -15,8 +15,6 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
     const seriesRef = useRef(null);
     const initializedRef = useRef(false);
     const [data, SetData] = useState([]);
-
-    
     const mergePriceIntoLastCandle = useCallback((price) => {
         SetData(prevData => {
             if (!seriesRef.current || !prevData.length) return prevData;
@@ -79,6 +77,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
     useEffect(() => {
         if (!chartContainerRef.current || chartRef.current) return;
         const chart = createChart(chartContainerRef.current, {
+            autoSize:true,
             layout: {
                 background: '#161616',
                 textColor: 'rgba(255, 255, 255, 0.9)',
@@ -143,7 +142,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
 
 
     return (
-        <div ref={chartContainerRef} style={{ width: "100%", height: "100%"}}></div>
+        <div ref={chartContainerRef} style={{ width: "100%", height: "100%"} }></div>
     );
 
 }

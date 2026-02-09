@@ -6,8 +6,24 @@ body {
     width: 100vw;
     height: 100vh;
     flex-direction: row;
+    justify-content: flex-start;
     
 }
+/* .main-components{
+    width: 100%;
+    height:100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar{
+    width:100%;
+    height: 50px;
+    display: flex;
+}
+
+.main-info */
+
 .Sidebar{
     display: flex;
     width: 5%;
@@ -23,11 +39,22 @@ body {
     /* display: flex; */
     flex:1 1 0px;
     min-width: 0;
-    height: 100%;
+    height: 99%;
     position: relative; /* Keeps the chart internal elements contained here */
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+}
+.top-bar{
+    width: 100%;
+    height: 35px;
+    display: flex;
+    border-bottom: solid white 1px;
     
 }
+
 .Sidebar-Button{
     height: 40px;
     width:100%;
@@ -52,9 +79,11 @@ body {
     background-size: contain;
 }
 .watchlist, .orderform {
-    flex: 0 0 250px; /* Fixed width, do not grow or shrink */
-    height: 100%;
+    flex: 0 0 400px; /* Fixed width, do not grow or shrink */
+    height: 99%;
     width: 250px;
-    background-color: #f11515; /* Match your theme */
+    background-color: black; /* Match your theme */
     border-left: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
 }
