@@ -8,6 +8,9 @@ export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
     const { ticker } = useParams();
     const location = useLocation();
+
+    const [Interval, setInterval] = useState('1h');
+    console.log(Interval);
     const toggleWatchlist = () => {
         setActivePanel(prev => prev === 'watchlist' ? 'none' : 'watchlist');
     }
@@ -19,10 +22,25 @@ export default function StockMainChart() {
     return (
         <>
             <div className="chart-page">
-                
+                <div className="Drawing-Sidebar">
+                </div>
                 <div className="Chart"  key={location.pathname}>
-                    <div className="top-bar"></div>
-                    <CandleStickChartComponent ticker={ticker} interval='30m' period='max' />
+                    <div className="top-bar">
+                        <button className='interval-button' style={{ backgroundColor: Interval === '1m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('1m')}>1m</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '2m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('2m')}>2m</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '5m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('5m')}>5m</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '15m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('15m')}>15m</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '30m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('30m')}>30m</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '60m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('60m')}>60m</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '90m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('90m')}>90m</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '1d' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('1d')}>1d</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '5d' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('5d')}>5d</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '1wk' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('1wk')}>1wk</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '1mo' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('1mo')}>1mo</button>
+                        <button className='interval-button' style={{ backgroundColor: Interval === '3mo' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={()=>setInterval('3mo')}>3mo</button>
+
+                    </div>
+                    <CandleStickChartComponent ticker={ticker} interval={Interval} period='max' key={Interval} />
                 </div>
 
                 {activePanel === 'watchlist' && <div className="watchlist"><Watchlist/></div>}
