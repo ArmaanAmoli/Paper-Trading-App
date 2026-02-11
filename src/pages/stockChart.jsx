@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Watchlist from './watchlist.jsx';
 import "./styles/stockChart.css"
 import { useState } from 'react';
+import OrderForm from './orderForm.jsx';
 export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
     const { ticker } = useParams();
@@ -44,7 +45,7 @@ export default function StockMainChart() {
                 </div>
 
                 {activePanel === 'watchlist' && <div className="watchlist"><Watchlist/></div>}
-                {activePanel === 'orderform' && <div className="orderform">Order Form Content</div>}
+                {activePanel === 'orderform' && <div className="orderform"><OrderForm/></div>}
 
 
                 <div className="Sidebar">

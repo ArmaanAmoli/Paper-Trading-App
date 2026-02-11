@@ -1,0 +1,88 @@
+.Order-Form {
+    width: 100%;
+    height: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-left: solid rgba(255, 255, 255, 0.185) 1px;
+    display: flex;
+    flex-direction: column;
+}
+
+.Select-buy-sell {
+    width: 100%;
+    height: 60px;
+    border: solid rgba(255, 255, 255, 0.171) 2px;
+    display: flex;
+    border-radius: 38px;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    /* box-shadow: -2px 1px 10px rgba(255, 255, 255, 0.404); */
+    text-shadow: 1px 0px 1px rgba(0, 0, 0, 0.226);
+}
+
+.Position-type-button {
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#sell-side {
+    border-left: solid rgba(255, 255, 255, 0.116) 1px;
+    color: #FF5252;
+}
+
+#sell-side:hover {
+    background-color: #ff52523d !important;
+}
+
+#buy-side:hover {
+    background-color: #2195f342 !important;
+}
+
+#buy-side {
+    color: #0849fd;
+}
+
+.Qty {
+    width: 100%;
+    margin-top: 40px;
+    height: 40px;
+    border: solid rgba(255, 255, 255, 0) 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.qty-input {
+    width: 75%;
+    height: 100%;
+    font-size: medium;
+    border: solid rgba(255, 255, 255, 0.199) 2px;
+    border-radius: 38px;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-color: black;
+    color: white;
+}
+.qty-input:active {
+    border: solid rgba(255, 255, 255, 0.199) 2px;
+}
+
+.qty-input[type=number] {
+    appearance: none;
+}
+.placeOrder{
+    margin-top: 40px;
+    width: 75%;
+    height: 40px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: black;
+    color: white;
+    border: solid rgba(255, 255, 255, 0.199) 2px;
+    border-radius: 38px;
+}
+
