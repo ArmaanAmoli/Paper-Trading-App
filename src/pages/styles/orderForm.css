@@ -86,3 +86,8 @@
     border-radius: 38px;
 }
 
+.market-price{
+    display: flex;
+    border: none;
+    margin-top: 30px;
+}

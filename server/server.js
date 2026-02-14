@@ -138,6 +138,7 @@ server.post('/buy', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
+        //positionDetails.price = await () =>{}
         const b = await executeTrade(positionDetails, userId)
         if (b.success) res.status(200).json({ message: "Order Successfull" });
         else res.status(422).json({ message: "Not enough balance" });
