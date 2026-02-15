@@ -5,6 +5,8 @@ import { SignUp, login, portfolio, executeTrade } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
+import { getQuote } from './getQuote.js';
+import {v4 as uuidv4} from 'uuid';
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
@@ -117,7 +119,7 @@ server.get('/data', async (req, res, next)  =>{
                 interval:interval
             }
         });
-        console.log(fastAPIRes.data);
+        // console.log(fastAPIRes.data);
         res.json(fastAPIRes.data);
     }catch(err){
         next(err);
@@ -138,7 +140,9 @@ server.post('/buy', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
-        //positionDetails.price = await () =>{}
+        const {currentPrice} = await getQuote(positionDetails.symbol);
+        positionDetails.price = currentPrice;
+        positionDetails.orderId = uuidv4();
         const b = await executeTrade(positionDetails, userId)
         if (b.success) res.status(200).json({ message: "Order Successfull" });
         else res.status(422).json({ message: "Not enough balance" });

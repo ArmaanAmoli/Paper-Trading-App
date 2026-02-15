@@ -1,11 +1,15 @@
-import {useState } from "react";
+import { useState } from "react";
 import "./styles/orderForm.css";
 import { useParams } from "react-router-dom";
-
+import { placeOrder } from "./placeOrder.js";
 import Ticker from "./ticker.jsx";
 export default function OrderForm() {
     const [orderType, setOrderType] = useState('buy');
-    const {ticker} = useParams();
+    const { ticker } = useParams();
+    const [qty, setQty] = useState(0);
+    function handleChangeInQty(event) {
+        setQty(event.target.value);
+    }
     return (
         <div className="Order-Form">
 
@@ -23,14 +27,15 @@ export default function OrderForm() {
             </div>
 
             <div className="Qty">
-                <input inputMode="numeric" pattern="[0-9]*" placeholder="Quantity" className="qty-input"></input>
+                <input value={qty} onChange={handleChangeInQty} inputMode="numeric" pattern="[0-9]*" placeholder="Quantity" className="qty-input"></input>
             </div>
 
             <div className="market-price">
                 <Ticker name={ticker} />
             </div>
 
-            <button className="placeOrder" style={orderType === 'buy' ? { backgroundColor: '#2195f342' } : { backgroundColor: '#ff52523d' }}>Place Order</button>
+            <button className="placeOrder" style={orderType === 'buy' ? { backgroundColor: '#2195f342' } : { backgroundColor: '#ff52523d' }}
+                onClick={async () => { await placeOrder(ticker, qty, orderType) }}>Place Order</button>
 
         </div>
     );
