@@ -36,7 +36,7 @@ export async function portfolio(userId) {
 }
 
 
-async function newTradeF(userId, symbol, shares, price, type, realizedPL, session) {
+async function newTradeF(userId, symbol, shares, price, type, realizedPL, session , orderId) {
     const newTrade = new Trade({
         userId: userId,
         symbol: symbol,
@@ -44,7 +44,8 @@ async function newTradeF(userId, symbol, shares, price, type, realizedPL, sessio
         price: price,
         type: type,
         timestamp: Date.now(),
-        realizedPL: realizedPL
+        realizedPL: realizedPL,
+        orderId:orderId
     })
     await newTrade.save({ session });
 }
@@ -53,7 +54,8 @@ export async function executeTrade(positionDetails, userId) {
     const session = await mongoose.startSession();
     try {
         session.startTransaction();
-        const { symbol, qty, price, side , orderId } = positionDetails;
+        let { symbol, qty, price, side , orderId } = positionDetails;
+        qty = Number(qty);
 
         //checking for duplicate transaction
         const existing = await Trade.findOne({orderId}).session(session);
@@ -67,7 +69,7 @@ export async function executeTrade(positionDetails, userId) {
         const user = await User.findById(userId).session(session);
         if (!user) throw new Error("User not found");
 
-        const delta = side === "buy" ? qty : -qty;
+        const delta = side === "buy" ? qty : -1*qty;
 
         let realizedPL = 0;
         let newShares = delta;
@@ -129,7 +131,7 @@ export async function executeTrade(positionDetails, userId) {
                 lastUpdated: Date.now()
             }], { session });
         }
-        await newTradeF(userId, symbol, qty, price, side, realizedPL, session);
+        await newTradeF(userId, symbol, qty, price, side, realizedPL, session,orderId);
 
         const cashDelta = side === "buy" ? -price * qty : price * qty;
         user.balance += cashDelta;

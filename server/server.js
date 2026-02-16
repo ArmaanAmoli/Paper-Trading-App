@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
 import { getQuote } from './getQuote.js';
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
@@ -49,7 +49,7 @@ const validateEmail = (req, res, next) => {
 
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    if (!authHeader.startWith("Bearer ")) return res.status(401).json({ message: "No token provided" });
+    if (!authHeader.startsWith("Bearer ")) return res.status(401).json({ message: "No token provided" });
     const token = authHeader.split(" ")[1];
     if (!token) return res.status(401).json({ message: "Invalid token format" });
     try {
@@ -144,8 +144,8 @@ server.post('/buy', verifyToken, async (req, res, next) => {
         positionDetails.price = currentPrice;
         positionDetails.orderId = uuidv4();
         const b = await executeTrade(positionDetails, userId)
-        if (b.success) res.status(200).json({ message: "Order Successfull" });
-        else res.status(422).json({ message: "Not enough balance" });
+        if (b.success) return res.status(200).json({ message: "Order Successfull" });
+        else return res.status(422).json({ message: "Not enough balance" });
     } catch (err) {
         next(err);
     }
@@ -155,9 +155,14 @@ server.post('/sell', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
+        const {currentPrice} = await getQuote(positionDetails.symbol);
+        positionDetails.price = currentPrice;
+        positionDetails.orderId = uuidv4();
         const b = await executeTrade(positionDetails, userId)
-        if (b === 1) res.status(200).json({ message: "Order Successfull" });
-        else res.status(422).json({ message: "Something went wrong" });
+        if (b.success) return res.status(200).json({ message: "Order Successfull" });
+        else {
+            return res.status(422).json({ message: "Something went wrong" });
+        }
     } catch (err) {
         next(err);
     }

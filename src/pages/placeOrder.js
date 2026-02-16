@@ -15,8 +15,8 @@ export async function placeOrder(ticker, Qty, side) {
         qty: Qty,
         side: side
     }
-    const url = `http:/localhost:3000/${side}`;
-    const response = axios.get(url, data , config);
+    const url = `http://localhost:3000/${side}`;
+    const response = axios.post(url, data , config);
     console.log(response);
 
 }
