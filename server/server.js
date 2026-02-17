@@ -94,7 +94,7 @@ server.post('/login', validateEmail, async (req, res, next) => {
         next(err);
     }
 });
-server.get('/quote' , async (req, res, next)=>{
+server.get('/quote' ,verifyToken, async (req, res, next)=>{
     try{
         const query = req.query;
         const ticker = query.ticker;
@@ -106,7 +106,7 @@ server.get('/quote' , async (req, res, next)=>{
         res.json(fastAPIRes.data);
     }catch(err){next(err)}
 })
-server.get('/data', async (req, res, next)  =>{
+server.get('/data',verifyToken, async (req, res, next)  =>{
     try{
         const query = req.query;
         const ticker = query.ticker;
