@@ -16,7 +16,7 @@ export default function Navbar() {
                     </Link>
                 </li>
                 <li>
-                    <Link className="nav-bar-tabs" to="/">
+                    <Link className="nav-bar-tabs" to="/portfolio">
                         Portfolio
                     </Link>
                 </li>
