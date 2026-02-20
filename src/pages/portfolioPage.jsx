@@ -1,49 +1,46 @@
 import { useState } from "react";
 import { useEffect } from "react";
-import { getQuote } from "../../server/getQuote";
 import Navbar from "./navbar";
-import axios from "axios";
-import { data } from "react-router-dom";
+import api from './api.js';
 import { fetchQuote } from "./Charts/dataRequester";
-
+import './styles/portfolioPage.css'
 export default function PortfolioPage() {
     const [assetList, setAssetList] = useState([]);
-    const [prices , setPrices] = useState({});
-    const token = localStorage.getItem('token');
+    const [prices, setPrices] = useState({});
     useEffect(() => {
+        
         async function getPortfolio() {
             try {
-                const portfolio = await axios.get("http://localhost:3000/portfolio", {
-                    headers: {
-                        'authorization': `Bearer ${token}`
-                    }
-                }
-                )
+                const portfolio = await api.get("/portfolio");
                 console.log(portfolio.data.positions);
                 setAssetList(portfolio.data.positions);
                 return
             }
             catch (err) {
-                console.log(err);
+                console.log(err)
             }
         }
         getPortfolio();
-    }, [token]);
+        const intervalID = setInterval(getPortfolio, 10000);
+        return () => clearInterval(intervalID);
+    }, []);
 
-    useEffect(()=>{
-        if(assetList.length === 0) return;
-        async function updatePrices(){
+    useEffect(() => {
+        if (assetList.length === 0) return;
+        async function updatePrices() {
             const updatedData = {};
-            for(const item of assetList){
-                try{
-                    const quote = await getQuote(item.symbol);
-                    updatedData[item.symbol] = {Pnl: quote.currentPrice-item.avgPrice};
-                }catch(e){console.log(e)};
+            for (const item of assetList) {
+                try {
+                    const quote = await fetchQuote(item.symbol);
+                    updatedData[item.symbol] = { 'Pnl': ((quote.currentPrice - item.avgPrice) * item.shares).toFixed(2), 'pChange': ((quote.currentPrice - item.avgPrice) * 100 / item.avgPrice).toFixed(2) };
+                } catch (e) { console.log(e) };
             }
-            setPrices(prev=>({...prev , ...updatePrices}));
+            setPrices(prev => ({ ...prev, ...updatedData }));
         };
         updatePrices();
-    })
+        const intervalID = setInterval(updatePrices, 10000);
+        return () => clearInterval(intervalID);
+    }, [assetList])
 
     return (
         <>
@@ -51,8 +48,8 @@ export default function PortfolioPage() {
                 <Navbar />
                 <div className="Portfolio-of-user">
                     <table className="Asset-Table">
-                        <thead>
-                            <tr>
+                        <thead className="headings">
+                            <tr >
                                 <th>S.No</th>
                                 <th>Symbol</th>
                                 {/* <th>Full Name</th> */}
@@ -63,20 +60,12 @@ export default function PortfolioPage() {
                         </thead>
                         <tbody>
                             {assetList.map((item, index) => (
-                                <tr key={item.symbol}>
+                                <tr key={item.symbol} className="row">
                                     <td>{index + 1}</td>
                                     <td>{item.symbol}</td>
                                     <td>{item.shares}</td>
-                                    <td>{setInterval(
-                                        async () => {
-                                            const { currentPrice } = getQuote(item.symbol);
-                                            return currentPrice;
-                                        }, 5000)}</td>
-                                    <td>{setInterval(
-                                        async () => {
-                                            const { percentChange } = getQuote(item.symbol);
-                                            return percentChange;
-                                        }, 5000)}</td>
+                                    <td>{prices[item.symbol]?.Pnl ?? '...'}</td>
+                                    <td>{prices[item.symbol]?.pChange ?? '...'}</td>
                                 </tr>
                             ))}
                         </tbody>

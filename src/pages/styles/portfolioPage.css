@@ -1,0 +1,96 @@
+/* Page background */
+.portfolio-page {
+    min-height: 100vh;
+    background: #0f172a;
+    color: white;
+    padding: 20px;
+}
+
+/* Container */
+.portfolio-container {
+    width: 90%;
+    margin: 40px auto;
+}
+
+/* Title */
+.portfolio-title {
+    font-size: 28px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+/* Table */
+.asset-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1e293b;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Sticky header */
+.asset-table thead {
+    background: #111827;
+    position: sticky;
+    top: 0;
+}
+
+.asset-table th {
+    padding: 18px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #94a3b8;
+}
+
+/* Rows */
+.asset-table td {
+    padding: 18px;
+    border-top: 1px solid #334155;
+    font-size: 15px;
+}
+
+/* Symbol styling */
+.symbol {
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* Hover effect */
+.asset-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.asset-table tbody tr:hover {
+    background: #334155;
+    transform: scale(1.01);
+}
+
+/* Profit / Loss */
+.profit {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.loss {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Smooth fade animation */
+.asset-table tbody tr {
+    animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
