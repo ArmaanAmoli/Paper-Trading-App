@@ -1,96 +1,342 @@
-/* Page background */
-.portfolio-page {
+
+/* ============================================
+   CSS VARIABLES (Custom Properties)
+   Think of these like constants in JavaScript.
+   Define once at the top, use everywhere.
+   If you want to change the green accent color,
+   you only change it here — not in 50 places.
+   ============================================ */
+:root {
+    --black: #000000;           /* Pure OLED black — saves battery on OLED screens */
+    --surface: #0a0a0a;         /* Slightly lighter black for card backgrounds */
+    --border: #1a1a1a;          /* Subtle border color, visible but not distracting */
+    --border-bright: #2a2a2a;   /* Brighter border for hover states */
+    --green: #00ff88;           /* Profit green — bright and punchy on black */
+    --red: #ff3b5c;             /* Loss red */
+    --white: #e8e8e8;           /* Soft white — pure white (#fff) is harsh on OLED */
+    --muted: #555555;           /* Muted gray for less important text */
+
+}
+
+/* ============================================
+   GLOBAL RESET
+   Browsers add default padding/margin to elements.
+   box-sizing: border-box means padding is INCLUDED
+   in the element's width, not added on top of it.
+   This makes layout calculations much more predictable.
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ============================================
+   PAGE WRAPPER
+   This is the outermost div that wraps everything.
+   min-height: 100vh means it always fills the full
+   viewport height (vh = viewport height).
+   ============================================ */
+.Portfolio-page {
+    background-color: var(--black);
     min-height: 100vh;
-    background: #0f172a;
-    color: white;
-    padding: 20px;
+    font-family: var(--font-mono);
+    color: var(--white);
+
+    /* 
+       A very subtle scanline effect using repeating-linear-gradient.
+       This creates thin horizontal lines like an old CRT monitor,
+       giving it a terminal/trading screen vibe.
+       The lines are only 3% opacity so they're barely visible.
+    */
+    background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 136, 0.015) 2px,
+        rgba(0, 255, 136, 0.015) 4px
+    );
 }
 
-/* Container */
-.portfolio-container {
-    width: 90%;
-    margin: 40px auto;
+/* ============================================
+   PORTFOLIO CONTAINER
+   Centers the table on the page with some padding.
+   max-width stops it from stretching too wide on
+   large monitors — easier to read.
+   ============================================ */
+.Portfolio-of-user {
+    padding: 40px 32px;
+    max-width: 1100px;
+
+    /* 
+       margin: 0 auto centers a block element horizontally.
+       The top/bottom margin is 0, left/right is auto.
+       Auto margin splits equally on both sides = centered.
+    */
+    margin: 0 auto;
 }
 
-/* Title */
-.portfolio-title {
-    font-size: 28px;
-    margin-bottom: 20px;
-    font-weight: 600;
-    color: #f1f5f9;
-}
-
-/* Table */
-.asset-table {
+/* ============================================
+   TABLE
+   width: 100% makes the table fill its container.
+   border-collapse: collapse merges the borders of
+   adjacent cells into one border instead of two.
+   border-spacing: 0 removes gaps between cells.
+   ============================================ */
+.Asset-Table {
     width: 100%;
     border-collapse: collapse;
-    background: #1e293b;
-    border-radius: 14px;
+    border-spacing: 0;
+
+    /* 
+       A very subtle green glow around the entire table.
+       box-shadow takes: x-offset y-offset blur-radius color
+       Multiple shadows separated by commas stack on each other.
+    */
+    box-shadow:
+        0 0 0 1px var(--border),
+        0 0 40px rgba(0, 255, 136, 0.03);
+
+    /* Rounded corners on the table */
+    border-radius: 8px;
+
+    /* overflow:hidden clips the row backgrounds to the rounded corners */
     overflow: hidden;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
-/* Sticky header */
-.asset-table thead {
-    background: #111827;
-    position: sticky;
-    top: 0;
+/* ============================================
+   TABLE HEADER ROW
+   The <thead> section with column labels.
+   ============================================ */
+.headings tr {
+    background-color: var(--surface);
+
+    /* 
+       border-bottom adds a line under the header row
+       to visually separate it from the data rows.
+    */
+    border-bottom: 1px solid white;
 }
 
-.asset-table th {
-    padding: 18px;
-    font-size: 13px;
+/* ============================================
+   HEADER CELLS (<th>)
+   ============================================ */
+.Asset-Table thead th {
+    padding: 16px 20px;
+    text-align: left;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+
+    /* 
+       letter-spacing adds space between characters.
+       Great for uppercase labels — looks very professional.
+    */
+    letter-spacing: 2px;
     text-transform: uppercase;
+    /* color: var(--green); */
+    color: white;
+
+    /* 
+       opacity makes the header slightly transparent,
+       so it's clearly a label, not data.
+    */
+    opacity: 0.7;
+}
+
+/* ============================================
+   DATA ROWS (<tr> inside <tbody>)
+   ============================================ */
+.Asset-Table tbody tr {
+    /* 
+       border-bottom on each row creates the horizontal
+       grid lines you see in tables.
+    */
+    border-bottom: 1px solid var(--border);
+
+    /* 
+       transition tells the browser to animate any
+       property changes smoothly over 0.15 seconds.
+       This is what makes the hover effect smooth.
+    */
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    cursor: default;
+}
+
+/* ============================================
+   ROW HOVER EFFECT
+   :hover is a pseudo-class that applies styles
+   when the user's mouse is over the element.
+   ============================================ */
+.Asset-Table tbody tr:hover {
+    background-color: var(--surface);
+    border-color: var(--border-bright);
+}
+
+/* 
+   :last-child targets only the final row in tbody.
+   We remove its bottom border since the table itself
+   already has a border — otherwise you'd see a double line.
+*/
+.Asset-Table tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* ============================================
+   DATA CELLS (<td>)
+   ============================================ */
+.Asset-Table tbody td {
+    padding: 14px 20px;
+    font-size: 13px;
+    color: var(--white);
+
+    /* 
+       white-space: nowrap prevents cell content from
+       wrapping to a new line — keeps rows single-line.
+    */
+    white-space: nowrap;
+}
+
+/* ============================================
+   SERIAL NUMBER COLUMN (1st column)
+   The S.No column should be subtle/muted
+   since it's just an index, not real data.
+   
+   :nth-child(1) targets the 1st <td> in each row.
+   ============================================ */
+.Asset-Table tbody td:nth-child(1) {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+/* ============================================
+   SYMBOL COLUMN (2nd column)
+   Stock tickers like AAPL, TSLA should stand out.
+   ============================================ */
+.Asset-Table tbody td:nth-child(2) {
+    color: var(--white);
+    font-weight: bold;
+    font-size: 14px;
     letter-spacing: 1px;
-    color: #94a3b8;
 }
 
-/* Rows */
-.asset-table td {
-    padding: 18px;
-    border-top: 1px solid #334155;
-    font-size: 15px;
-}
-
-/* Symbol styling */
-.symbol {
-    font-weight: 600;
-    letter-spacing: 1px;
-}
-
-/* Hover effect */
-.asset-table tbody tr {
-    transition: all 0.3s ease;
-}
-
-.asset-table tbody tr:hover {
-    background: #334155;
-    transform: scale(1.01);
-}
-
-/* Profit / Loss */
-.profit {
-    color: #22c55e;
+/* ============================================
+   SIDE COLUMN (3rd column - long/short)
+   We'll color these with a data attribute trick below.
+   ============================================ */
+.Asset-Table tbody td:nth-child(3) {
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    font-family: var(--font-ui);
     font-weight: 600;
 }
 
-.loss {
-    color: #ef4444;
-    font-weight: 600;
+/* ============================================
+   PnL COLUMN (5th column)
+   Color positive PnL green and negative red.
+   
+   We use a CSS trick: if the content starts with '-'
+   we make it red, otherwise green.
+   
+   NOTE: For this to work dynamically based on value,
+   you can add a class in React like:
+   className={prices[item.symbol]?.Pnl < 0 ? 'negative' : 'positive'}
+   ============================================ */
+.Asset-Table tbody td:nth-child(5),
+.Asset-Table tbody td:nth-child(6) {
+    font-family: var(--font-mono);
 }
 
-/* Smooth fade animation */
-.asset-table tbody tr {
-    animation: fadeIn 0.4s ease-in;
+/* Add these classes in your JSX for color coding */
+.positive {
+    color: var(--green) !important;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.negative {
+    color: var(--red) !important;
+}
+
+/* ============================================
+   LONG/SHORT COLOR CLASSES
+   Add className="long-badge" or "short-badge"
+   to your <td> in React for colored side labels.
+   ============================================ */
+.long-badge {
+    color: var(--green) !important;
+}
+
+.short-badge {
+    color: var(--red) !important;
+}
+
+/* ============================================
+   LOADING STATE DOTS ('...')
+   When prices are loading they show '...'
+   This makes them pulse to show they're loading.
+   
+   @keyframes defines an animation sequence.
+   'loading-pulse' is just a name we gave it.
+   ============================================ */
+@keyframes loading-pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+/* 
+   Any td containing just '...' gets the pulse animation.
+   animation: name duration timing-function iteration-count
+*/
+.Asset-Table tbody td:has(~ td) {
+    animation: none;
+}
+
+/* Target cells showing loading dots */
+.loading-dot {
+    animation: loading-pulse 1.2s ease-in-out infinite;
+    color: var(--muted);
+}
+
+/* ============================================
+   EMPTY STATE
+   When assetList is empty, show a message.
+   Add this div in your JSX when assetList.length === 0
+   ============================================ */
+.empty-portfolio {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   Custom scrollbar to match the dark theme.
+   ::-webkit-scrollbar works in Chrome/Edge/Safari.
+   Firefox uses scrollbar-color property.
+   ============================================ */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--black);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-bright);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-color: var(--border-bright) var(--black);
+    scrollbar-width: thin;
 }

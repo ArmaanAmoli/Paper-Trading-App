@@ -16,7 +16,7 @@ const AppRouter = () => {
             <Route element={<ProtectedRoutes />}>
                 <Route path="/landing-page" element={<LandingPage />} />
                 <Route path="/chart/:ticker" element={<StockMainChart/>}/>
-                <Route path="/portfolio" element={<PortfolioPage/>}/>
+                <Route path="/userPortfolio" element={<PortfolioPage/>}/>
             </Route>
 
         </Routes>

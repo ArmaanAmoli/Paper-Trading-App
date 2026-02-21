@@ -8,7 +8,7 @@ export default function PortfolioPage() {
     const [assetList, setAssetList] = useState([]);
     const [prices, setPrices] = useState({});
     useEffect(() => {
-        
+
         async function getPortfolio() {
             try {
                 const portfolio = await api.get("/portfolio");
@@ -52,7 +52,7 @@ export default function PortfolioPage() {
                             <tr >
                                 <th>S.No</th>
                                 <th>Symbol</th>
-                                {/* <th>Full Name</th> */}
+                                <th>Side</th>
                                 <th>#</th>
                                 <th>Daily PnL</th>
                                 <th>%Return</th>
@@ -63,9 +63,16 @@ export default function PortfolioPage() {
                                 <tr key={item.symbol} className="row">
                                     <td>{index + 1}</td>
                                     <td>{item.symbol}</td>
-                                    <td>{item.shares}</td>
-                                    <td>{prices[item.symbol]?.Pnl ?? '...'}</td>
-                                    <td>{prices[item.symbol]?.pChange ?? '...'}</td>
+                                    <td className={item.shares > 0 ? 'long-badge' : 'short-badge'}>
+                                        {item.shares > 0 ? 'long' : 'short'}
+                                    </td>
+                                    <td>{Math.abs(item.shares)}</td>
+                                    <td className={Number(prices[item.symbol]?.Pnl) >= 0 ? 'positive' : 'negative'}>
+                                        {prices[item.symbol]?.Pnl ?? <span className="loading-dot">...</span>}
+                                    </td>
+                                    <td className={Number(prices[item.symbol]?.pChange) >= 0 ? 'positive' : 'negative'}>
+                                        {prices[item.symbol]?.pChange ?? <span className="loading-dot">...</span>}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
