@@ -48,6 +48,7 @@ async def get_quote(ticker: str):
         }
         return response
     except Exception as e:
+        print(str(e))
         raise HTTPException(status_code=500 , detail = str(e))
     
 # @app.get("/favicon.ico", include_in_schema=False)

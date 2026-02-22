@@ -7,6 +7,8 @@ import './styles/portfolioPage.css'
 export default function PortfolioPage() {
     const [assetList, setAssetList] = useState([]);
     const [prices, setPrices] = useState({});
+    const [totalPnl , setTotalPnl] = useState(null);
+    const [adjBalance , setBalance] = useState(null);
     useEffect(() => {
 
         async function getPortfolio() {
@@ -36,17 +38,26 @@ export default function PortfolioPage() {
                 } catch (e) { console.log(e) };
             }
             setPrices(prev => ({ ...prev, ...updatedData }));
+            let pnl = 0;
+            for(const item of assetList){
+                pnl = Math.round((pnl + Number(prices[item.symbol].Pnl)) * 100) / 100;
+            }
+            setTotalPnl(pnl);
         };
         updatePrices();
         const intervalID = setInterval(updatePrices, 10000);
         return () => clearInterval(intervalID);
-    }, [assetList])
+    }, [assetList , prices])
 
     return (
         <>
             <div className="Portfolio-page">
                 <Navbar />
                 <div className="Portfolio-of-user">
+                    <div className="Account-status">
+                        <h4>Total Pnl: {totalPnl}</h4>
+                        <h4>Balance: {}</h4>
+                    </div>
                     <table className="Asset-Table">
                         <thead className="headings">
                             <tr >
