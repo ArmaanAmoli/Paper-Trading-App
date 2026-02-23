@@ -28,8 +28,8 @@ export default function PortfolioPage() {
     }, []);
 
     useEffect(() => {
-        if (assetList.length === 0) return;
         async function updatePrices() {
+            if (assetList.length === 0) return;
             const updatedData = {};
             for (const item of assetList) {
                 try {
