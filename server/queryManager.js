@@ -146,3 +146,10 @@ export async function executeTrade(positionDetails, userId) {
     }
 
 }
+
+export async function GetUserData(userId) {
+    const userData = await User.findById(userId);
+    if(!userData) return null;
+    // console.log(userData);
+    return userData;
+}

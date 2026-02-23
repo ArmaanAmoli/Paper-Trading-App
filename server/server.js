@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade } from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade , GetUserData } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -134,6 +134,19 @@ server.get('/portfolio', verifyToken, async (req, res, next) => {
         const userID = req.user.userId;
         const positions = await portfolio(userID);
         res.status(200).json(positions)
+    } catch (err) {
+        next(err);
+    }
+})
+
+server.get('/user-data', verifyToken, async (req, res, next) => {
+    try {
+        const userID = req.user.userId;
+        console.log(userID);
+        const user = await GetUserData(userID);
+        console.log(userID);
+        console.log(user);
+        res.status(200).json(user);
     } catch (err) {
         next(err);
     }
