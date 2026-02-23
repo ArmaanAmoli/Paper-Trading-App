@@ -14,6 +14,7 @@ export default defineConfig({
       "/portfolio": "http://localhost:3000",
       "/buy": "http://localhost:3000",
       "/sell": "http://localhost:3000",
+      "/user-data": "http://localhost:3000",
     },
   },
 

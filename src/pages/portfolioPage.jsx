@@ -4,12 +4,20 @@ import Navbar from "./navbar";
 import api from './api.js';
 import { fetchQuote } from "./Charts/dataRequester";
 import './styles/portfolioPage.css'
+
 export default function PortfolioPage() {
     const [assetList, setAssetList] = useState([]);
     const [prices, setPrices] = useState({});
-    const [totalPnl , setTotalPnl] = useState(null);
-    const [adjBalance , setBalance] = useState(null);
+    const [totalPnl, setTotalPnl] = useState(null);
     useEffect(() => {
+        async function getUser(){
+            try{
+                const userData = await api.get("/user-data");
+                console.log(userData.data);
+            }catch(err){
+                console.log(err);
+            }
+        }
 
         async function getPortfolio() {
             try {
@@ -22,32 +30,44 @@ export default function PortfolioPage() {
                 console.log(err)
             }
         }
+        getUser();
         getPortfolio();
+        const intervalID2 = setInterval(getUser , 10000);
         const intervalID = setInterval(getPortfolio, 10000);
-        return () => clearInterval(intervalID);
+        return () => {clearInterval(intervalID);clearInterval(intervalID2);}
     }, []);
 
     useEffect(() => {
-        if (assetList.length === 0) return;
         async function updatePrices() {
-            const updatedData = {};
-            for (const item of assetList) {
-                try {
-                    const quote = await fetchQuote(item.symbol);
-                    updatedData[item.symbol] = { 'Pnl': ((quote.currentPrice - item.avgPrice) * item.shares).toFixed(2), 'pChange': ((quote.currentPrice - item.avgPrice) * 100 / item.avgPrice).toFixed(2) };
-                } catch (e) { console.log(e) };
+            if (assetList.length === 0) return;
+            try {
+                const quotes = await Promise.all(
+                    assetList.map(item => fetchQuote(item.symbol))); //.map() will return an array of pending promises which will be run at the same time
+
+                const updatedData = {};
+                let total = 0;
+
+                quotes.forEach((quotes, index) => {
+                    const item = assetList[index];
+                    const stockPnl = Number((quotes.currentPrice - item.avgPrice)*item.shares);
+
+                    updatedData[item.symbol] = {
+                        Pnl:stockPnl.toFixed(2),
+                        pChange:Number(((quotes.currentPrice - item.avgPrice) * 100 / item.avgPrice).toFixed(2))
+                    };
+
+                    total+=stockPnl;
+                });
+                setPrices(updatedData);
+                setTotalPnl(Number(total.toFixed(2)));
+            } catch (err) {
+                console.log(err);
             }
-            setPrices(prev => ({ ...prev, ...updatedData }));
-            let pnl = 0;
-            for(const item of assetList){
-                pnl = Math.round((pnl + Number(prices[item.symbol].Pnl)) * 100) / 100;
-            }
-            setTotalPnl(pnl);
-        };
+        }
         updatePrices();
-        const intervalID = setInterval(updatePrices, 10000);
-        return () => clearInterval(intervalID);
-    }, [assetList , prices])
+        const id = setInterval(updatePrices, 10000);
+        return ()=> clearInterval(id);
+    }, [assetList]);
 
     return (
         <>
@@ -55,8 +75,20 @@ export default function PortfolioPage() {
                 <Navbar />
                 <div className="Portfolio-of-user">
                     <div className="Account-status">
-                        <h4>Total Pnl: {totalPnl}</h4>
-                        <h4>Balance: {}</h4>
+
+                        <div className="Account-status-component">
+                            <h4>Unrealized P&L</h4>
+                            <h4>{totalPnl}</h4>
+                        </div>
+                        <div className="Account-status-component">
+                            <h4>Account Balance</h4>
+                            <h4>{totalPnl}</h4>
+                        </div>
+                        <div className="Account-status-component">
+                            <h4>Equity</h4>
+                            <h4>{totalPnl}</h4>
+                        </div>
+
                     </div>
                     <table className="Asset-Table">
                         <thead className="headings">
