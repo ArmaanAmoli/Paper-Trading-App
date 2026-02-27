@@ -340,3 +340,14 @@
     scrollbar-color: var(--border-bright) var(--black);
     scrollbar-width: thin;
 }
+
+.Account-status{
+    display: flex;
+    justify-content: space-around;
+}
+.Account-status-component{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}

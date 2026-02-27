@@ -9,12 +9,18 @@ export default function PortfolioPage() {
     const [assetList, setAssetList] = useState([]);
     const [prices, setPrices] = useState({});
     const [totalPnl, setTotalPnl] = useState(null);
+    const [userEquity, setUserEquity] = useState({});
     useEffect(() => {
-        async function getUser(){
-            try{
+
+        async function getUser() {
+            try {
                 const userData = await api.get("/user-data");
                 console.log(userData.data);
-            }catch(err){
+                setUserEquity({
+                    balance: userData.data.balance,
+                    equity: userData.data.balance
+                });
+            } catch (err) {
                 console.log(err);
             }
         }
@@ -32,12 +38,14 @@ export default function PortfolioPage() {
         }
         getUser();
         getPortfolio();
-        const intervalID2 = setInterval(getUser , 10000);
         const intervalID = setInterval(getPortfolio, 10000);
-        return () => {clearInterval(intervalID);clearInterval(intervalID2);}
+        return () => { clearInterval(intervalID); }
     }, []);
 
     useEffect(() => {
+
+
+
         async function updatePrices() {
             if (assetList.length === 0) return;
             try {
@@ -49,24 +57,30 @@ export default function PortfolioPage() {
 
                 quotes.forEach((quotes, index) => {
                     const item = assetList[index];
-                    const stockPnl = Number((quotes.currentPrice - item.avgPrice)*item.shares);
+                    const stockPnl = Number((quotes.currentPrice - item.avgPrice) * item.shares);
 
                     updatedData[item.symbol] = {
-                        Pnl:stockPnl.toFixed(2),
-                        pChange:Number(((quotes.currentPrice - item.avgPrice) * 100 / item.avgPrice).toFixed(2))
+                        Pnl: stockPnl.toFixed(2),
+                        pChange: Number(((quotes.currentPrice - item.avgPrice) * 100 / item.avgPrice).toFixed(2))
                     };
 
-                    total+=stockPnl;
+                    total += stockPnl;
                 });
+
                 setPrices(updatedData);
                 setTotalPnl(Number(total.toFixed(2)));
+                setUserEquity(prev => ({
+                    ...prev,
+                    equity: prev.balance + Number(total.toFixed(2))
+                }));
+
             } catch (err) {
                 console.log(err);
             }
         }
         updatePrices();
         const id = setInterval(updatePrices, 10000);
-        return ()=> clearInterval(id);
+        return () => clearInterval(id);
     }, [assetList]);
 
     return (
@@ -78,15 +92,15 @@ export default function PortfolioPage() {
 
                         <div className="Account-status-component">
                             <h4>Unrealized P&L</h4>
-                            <h4>{totalPnl}</h4>
+                            <h4 className={Number(totalPnl) >= 0 ? 'positive' : 'negative'} >{totalPnl}</h4>
                         </div>
                         <div className="Account-status-component">
                             <h4>Account Balance</h4>
-                            <h4>{totalPnl}</h4>
+                            <h4>{userEquity.balance}</h4>
                         </div>
                         <div className="Account-status-component">
                             <h4>Equity</h4>
-                            <h4>{totalPnl}</h4>
+                            <h4>{userEquity.equity}</h4>
                         </div>
 
                     </div>
