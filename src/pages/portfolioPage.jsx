@@ -55,13 +55,16 @@ export default function PortfolioPage() {
                 const updatedData = {};
                 let total = 0;
 
-                quotes.forEach((quotes, index) => {
+                quotes.forEach((quote, index) => {
                     const item = assetList[index];
-                    const stockPnl = Number((quotes.currentPrice - item.avgPrice) * item.shares);
+                    //const pnl = Number((quotes.currentPrice - item.avgPrice) * item.shares)
+                    const stockPnl = Number((quote.currentPrice - item.avgPrice) * item.shares);
+
+                    const priceChangePercent = Number (((quote.currentPrice - item.avgPrice) / item.avgPrice) * 100);
 
                     updatedData[item.symbol] = {
                         Pnl: stockPnl.toFixed(2),
-                        pChange: Number(((quotes.currentPrice - item.avgPrice) * 100 / item.avgPrice).toFixed(2))
+                        pChange: item.shares >=0 ? priceChangePercent.toFixed(2): -1*priceChangePercent.toFixed(2)
                     };
 
                     total += stockPnl;
