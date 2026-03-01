@@ -3,6 +3,7 @@ import process from 'node:process';
 import { User, Portfolio, Trade } from "./mongoSchema.js"
 import bcrypt from "bcrypt";
 
+
 mongoose.connect(String(process.env.MONGO_URL)).then(() => {
     console.log("CONNECTED");
 }).catch(err => {
@@ -76,6 +77,18 @@ export async function executeTrade(positionDetails, userId) {
         let newAvgPrice = price;
 
         const portfolio = await Portfolio.findOne(filter).session(session);
+
+        const isIncreasingShort = (side==="sell" && !portfolio) || (side=="sell"&&portfolio&&portfolio.shares<=0);
+
+        let requiredMargin = 0;
+        if(isIncreasingShort){
+            requiredMargin = 1.5*price*qty;
+            if(user.balance<requiredMargin){
+                await session.abortTransaction();
+                return {success:false , message:"Insufficient margin for short position"};
+            }
+        }
+
         if (portfolio) { //Existing Position
             const oldShares = portfolio.shares;
             const oldAvg = portfolio.avgPrice;
@@ -133,8 +146,20 @@ export async function executeTrade(positionDetails, userId) {
         }
         await newTradeF(userId, symbol, qty, price, side, realizedPL, session,orderId);
 
-        const cashDelta = side === "buy" ? -price * qty : price * qty;
+        let cashDelta = 0;
+        if(side == "buy"){
+            cashDelta = -price*qty;
+        }else{
+            if(portfolio && portfolio.shares > 0){
+                cashDelta = price*qty;
+            }
+            else{
+                cashDelta = price*qty;
+            }
+        }
+        //const cashDelta = side === "buy" ? -price * qty : price * qty;
         user.balance += cashDelta;
+        user.blockedMargin += requiredMargin;
         await user.save({ session });
         await session.commitTransaction();
         return { success: true };
