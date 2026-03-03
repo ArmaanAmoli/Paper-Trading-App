@@ -51,118 +51,6 @@ async function newTradeF(userId, symbol, shares, price, type, realizedPL, sessio
     await newTrade.save({ session });
 }
 
-// export async function executeTrade(positionDetails, userId) {
-//     const session = await mongoose.startSession();
-//     try {
-//         session.startTransaction();
-//         let { symbol, qty, price, side, orderId } = positionDetails;
-//         qty = Number(qty);
-
-//         //checking for duplicate transaction
-//         const existing = await Trade.findOne({ orderId }).session(session);
-//         if (existing) {
-//             await session.abortTransaction();
-//             return { success: true, duplicate: true };
-//         }
-
-//         const filter = { userId: userId, symbol: symbol };
-
-//         const user = await User.findById(userId).session(session);
-//         if (!user) throw new Error("User not found");
-
-//         const delta = side === "buy" ? qty : -1 * qty;
-
-//         let realizedPL = 0;
-//         let newShares = delta;
-//         let newAvgPrice = price;
-
-//         const portfolio = await Portfolio.findOne(filter).session(session);
-
-//         const isIncreasingShort = (side === "sell" && !portfolio) || (side == "sell" && portfolio && portfolio.shares <= 0);
-
-//         let requiredMargin = 0;
-//         if (isIncreasingShort) {
-//             requiredMargin = 1.5 * price * qty;
-//             const available = user.balance - user.blockedMargin;
-//             if (available < requiredMargin) {
-//                 await session.abortTransaction();
-//                 return { success: false, message: "Insufficient margin for short position" };
-//             }
-//         }
-
-//         if (portfolio) { //Existing Position
-//             const oldShares = portfolio.shares;
-//             const oldAvg = portfolio.avgPrice;
-
-//             //same Direction Add
-//             if (Math.sign(oldShares) === Math.sign(delta)) {
-//                 newShares = oldShares + delta;
-//                 newAvgPrice = ((Math.abs(oldShares) * oldAvg) + (Math.abs(delta) * price)) / Math.abs(newShares);
-//                 portfolio.shares = newShares;
-//                 portfolio.avgPrice = newAvgPrice;
-//                 portfolio.positionType = newShares > 0 ? "long" : "short";
-//                 portfolio.lastUpdated = Date.now();
-//                 await portfolio.save({ session });
-//             }
-//             else {
-//                 const closedQty = Math.min(Math.abs(oldShares), Math.abs(delta));
-
-//                 // realized PnL
-//                 realizedPL =
-//                     oldShares > 0
-//                         ? closedQty * (price - oldAvg)     // closing long
-//                         : closedQty * (oldAvg - price);    // closing short
-
-//                 newShares = oldShares + delta;
-//                 // flipped → reset avg price
-//                 if (Math.sign(newShares) !== Math.sign(oldShares) && newShares !== 0) {
-//                     newAvgPrice = price;
-//                 } else {
-//                     newAvgPrice = oldAvg;
-//                 }
-
-//                 if (newShares === 0) {
-//                     await Portfolio.deleteOne(filter, { session });
-//                 } else {
-//                     await Portfolio.updateOne(filter, {
-//                         $set: {
-//                             shares: newShares,
-//                             avgPrice: newAvgPrice,
-//                             positionType: newShares > 0 ? "long" : "short",
-//                             lastUpdated: Date.now()
-//                         }
-//                     }, { session });
-//                 }
-//             }
-//         }
-//         else {
-//             await Portfolio.create([{
-//                 userId,
-//                 symbol,
-//                 shares: delta,
-//                 avgPrice: price,
-//                 positionType: delta > 0 ? "long" : "short",
-//                 lastUpdated: Date.now()
-//             }], { session });
-//         }
-//         await newTradeF(userId, symbol, qty, price, side, realizedPL, session, orderId);
-
-//         let cashDelta = side === "buy" ? -price * qty : price * qty;
-
-//         user.balance += cashDelta;
-//         user.blockedMargin += requiredMargin;
-//         await user.save({ session });
-//         await session.commitTransaction();
-//         return { success: true };
-//     } catch (err) {
-//         await session.abortTransaction();
-//         throw err;
-//     } finally {
-//         session.endSession()
-//     }
-
-// }
-
 export async function executeTrade(positionDetails, userId) {
     const session = await mongoose.startSession();
     try {
@@ -203,7 +91,7 @@ export async function executeTrade(positionDetails, userId) {
         }
 
         // ================================
-        // 1️⃣ POSITION CALCULATION
+        // POSITION CALCULATION
         // ================================
 
         let closedQty = 0;
@@ -279,7 +167,7 @@ export async function executeTrade(positionDetails, userId) {
         }
 
         // ================================
-        //      CASH FLOW (ALWAYS SIMPLE)
+        //          CASH FLOW
         // ================================
 
         const tradeValue = price * qty;
@@ -295,28 +183,28 @@ export async function executeTrade(positionDetails, userId) {
         let shortReducedQty = 0;
 
         if (!portfolio && delta < 0) {
-            // 🔧 FIX: Fresh short
+            // Fresh short
             shortAddedQty = Math.abs(delta);
         }
         else if (portfolio) {
 
-            // 🔧 FIX: Increasing short
+            // Increasing short
             if (oldShares < 0 && delta < 0) {
                 shortAddedQty = Math.abs(delta);
             }
 
-            // 🔧 FIX: Flipping long → short
+            // Flipping long → short
             if (oldShares > 0 && newShares < 0) {
                 shortAddedQty = Math.abs(newShares);
             }
 
-            // 🔧 FIX: Reducing short
+            // Reducing short
             if (oldShares < 0 && delta > 0) {
                 shortReducedQty = closedQty;
             }
         }
 
-        // 🔧 FIX: Apply margin addition AFTER knowing shortAddedQty
+        // Apply margin addition AFTER knowing shortAddedQty
         if (shortAddedQty > 0) {
             const requiredMargin = 1.5 * price * shortAddedQty;
 
@@ -329,19 +217,19 @@ export async function executeTrade(positionDetails, userId) {
             user.blockedMargin += requiredMargin;
         }
 
-        // 🔧 FIX: Release margin when reducing short
+        // Release margin when reducing short
         if (shortReducedQty > 0) {
             const marginToRelease = 1.5 * oldAvg * shortReducedQty;
             user.blockedMargin -= marginToRelease;
         }
 
-        // 🔧 FIX: Prevent negative margin
+        // Prevent negative margin
         if (user.blockedMargin < 0) {
             user.blockedMargin = 0;
         }
 
         // ================================
-        // 4️⃣ SAVE TRADE
+        //           SAVE TRADE
         // ================================
 
         await newTradeF(
