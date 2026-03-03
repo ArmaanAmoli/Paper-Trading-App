@@ -3,6 +3,7 @@ import process from 'node:process';
 import { User, Portfolio, Trade } from "./mongoSchema.js"
 import bcrypt from "bcrypt";
 
+
 mongoose.connect(String(process.env.MONGO_URL)).then(() => {
     console.log("CONNECTED");
 }).catch(err => {
@@ -36,7 +37,7 @@ export async function portfolio(userId) {
 }
 
 
-async function newTradeF(userId, symbol, shares, price, type, realizedPL, session , orderId) {
+async function newTradeF(userId, symbol, shares, price, type, realizedPL, session, orderId) {
     const newTrade = new Trade({
         userId: userId,
         symbol: symbol,
@@ -45,7 +46,7 @@ async function newTradeF(userId, symbol, shares, price, type, realizedPL, sessio
         type: type,
         timestamp: Date.now(),
         realizedPL: realizedPL,
-        orderId:orderId
+        orderId: orderId
     })
     await newTrade.save({ session });
 }
@@ -54,55 +55,85 @@ export async function executeTrade(positionDetails, userId) {
     const session = await mongoose.startSession();
     try {
         session.startTransaction();
-        let { symbol, qty, price, side , orderId } = positionDetails;
+
+        let { symbol, qty, price, side, orderId } = positionDetails;
         qty = Number(qty);
 
-        //checking for duplicate transaction
-        const existing = await Trade.findOne({orderId}).session(session);
-        if(existing){
+        // Duplicate check
+        const existing = await Trade.findOne({ orderId }).session(session);
+        if (existing) {
             await session.abortTransaction();
-            return {success: true, duplicate:true};
+            return { success: true, duplicate: true };
         }
 
-        const filter = { userId: userId, symbol: symbol };
+        const filter = { userId, symbol };
 
         const user = await User.findById(userId).session(session);
         if (!user) throw new Error("User not found");
 
-        const delta = side === "buy" ? qty : -1*qty;
+        // 🔧 FIX: Ensure blockedMargin exists
+        if (!user.blockedMargin) user.blockedMargin = 0;
+
+        const delta = side === "buy" ? qty : -qty;
 
         let realizedPL = 0;
         let newShares = delta;
         let newAvgPrice = price;
 
         const portfolio = await Portfolio.findOne(filter).session(session);
-        if (portfolio) { //Existing Position
-            const oldShares = portfolio.shares;
-            const oldAvg = portfolio.avgPrice;
 
-            //same Direction Add
+        let oldShares = 0;
+        let oldAvg = 0;
+
+        if (portfolio) {
+            oldShares = portfolio.shares;
+            oldAvg = portfolio.avgPrice;
+        }
+
+        // ================================
+        // POSITION CALCULATION
+        // ================================
+
+        let closedQty = 0;
+
+        if (portfolio) {
+
             if (Math.sign(oldShares) === Math.sign(delta)) {
+                // Same direction add
                 newShares = oldShares + delta;
-                newAvgPrice = ((Math.abs(oldShares) * oldAvg) + (Math.abs(delta) * price)) / Math.abs(newShares);
+                newAvgPrice =
+                    ((Math.abs(oldShares) * oldAvg) +
+                        (Math.abs(delta) * price)) /
+                    Math.abs(newShares);
+
                 portfolio.shares = newShares;
                 portfolio.avgPrice = newAvgPrice;
                 portfolio.positionType = newShares > 0 ? "long" : "short";
                 portfolio.lastUpdated = Date.now();
+
+                // Tracking all changes and sending a mongo query to update DB
                 await portfolio.save({ session });
             }
             else {
-                const closedQty = Math.min(Math.abs(oldShares), Math.abs(delta));
+                // Opposite direction (closing or flipping)
 
-                // realized PnL
+                /*
+                for example you have 10 shares short -> -10 and you bought 11 shares then closing quantity will be 10.
+                Another example is if you have 10 shares short-> -10 and you brought 5 shares then closing quantity will be 5.
+                closing qty is the number of shares that reduces an existing position
+                */
+                closedQty = Math.min(Math.abs(oldShares), Math.abs(delta));
+
+                // Realized PnL
                 realizedPL =
                     oldShares > 0
-                        ? closedQty * (price - oldAvg)     // closing long
-                        : closedQty * (oldAvg - price);    // closing short
+                        ? closedQty * (price - oldAvg)
+                        : closedQty * (oldAvg - price);
 
                 newShares = oldShares + delta;
-                // flipped → reset avg price
+
                 if (Math.sign(newShares) !== Math.sign(oldShares) && newShares !== 0) {
-                    newAvgPrice = price;
+                    newAvgPrice = price; // flipped
                 } else {
                     newAvgPrice = oldAvg;
                 }
@@ -122,6 +153,7 @@ export async function executeTrade(positionDetails, userId) {
             }
         }
         else {
+            // New position
             await Portfolio.create([{
                 userId,
                 symbol,
@@ -130,26 +162,103 @@ export async function executeTrade(positionDetails, userId) {
                 positionType: delta > 0 ? "long" : "short",
                 lastUpdated: Date.now()
             }], { session });
-        }
-        await newTradeF(userId, symbol, qty, price, side, realizedPL, session,orderId);
 
-        const cashDelta = side === "buy" ? -price * qty : price * qty;
+            newShares = delta;
+        }
+
+        // ================================
+        //          CASH FLOW
+        // ================================
+
+        const tradeValue = price * qty;
+        const cashDelta = side === "buy" ? -tradeValue : tradeValue;
+
         user.balance += cashDelta;
+
+        // ================================
+        //          MARGIN LOGIC
+        // ================================
+
+        let shortAddedQty = 0;
+        let shortReducedQty = 0;
+
+        if (!portfolio && delta < 0) {
+            // Fresh short
+            shortAddedQty = Math.abs(delta);
+        }
+        else if (portfolio) {
+
+            // Increasing short
+            if (oldShares < 0 && delta < 0) {
+                shortAddedQty = Math.abs(delta);
+            }
+
+            // Flipping long → short
+            if (oldShares > 0 && newShares < 0) {
+                shortAddedQty = Math.abs(newShares);
+            }
+
+            // Reducing short
+            if (oldShares < 0 && delta > 0) {
+                shortReducedQty = closedQty;
+            }
+        }
+
+        // Apply margin addition AFTER knowing shortAddedQty
+        if (shortAddedQty > 0) {
+            const requiredMargin = 1.5 * price * shortAddedQty;
+
+            const available = user.balance - user.blockedMargin; // 🔧 FIX
+
+            if (available < requiredMargin) {
+                throw new Error("Insufficient margin for short position");
+            }
+
+            user.blockedMargin += requiredMargin;
+        }
+
+        // Release margin when reducing short
+        if (shortReducedQty > 0) {
+            const marginToRelease = 1.5 * oldAvg * shortReducedQty;
+            user.blockedMargin -= marginToRelease;
+        }
+
+        // Prevent negative margin
+        if (user.blockedMargin < 0) {
+            user.blockedMargin = 0;
+        }
+
+        // ================================
+        //           SAVE TRADE
+        // ================================
+
+        await newTradeF(
+            userId,
+            symbol,
+            qty,
+            price,
+            side,
+            realizedPL,
+            session,
+            orderId
+        );
+
         await user.save({ session });
+
         await session.commitTransaction();
         return { success: true };
+
     } catch (err) {
         await session.abortTransaction();
         throw err;
     } finally {
-        session.endSession()
+        session.endSession();
     }
-
 }
 
 export async function GetUserData(userId) {
     const userData = await User.findById(userId);
-    if(!userData) return null;
+    if (!userData) return null;
     // console.log(userData);
     return userData;
 }
