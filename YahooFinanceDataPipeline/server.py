@@ -50,6 +50,16 @@ async def get_quote(ticker: str):
     except Exception as e:
         print(str(e))
         raise HTTPException(status_code=500 , detail = str(e))
+
+@app.get("/getCurrency")
+async def get_currency(ticker:str):
+    try:
+        ticker = yf.Ticker(ticker)
+        return ticker.info.get('currency', 'Currency not found')
+    
+    except Exception as e:
+        print(str(e))
+        raise HTTPException(status_code=500 , detail = str(e))
     
 # @app.get("/favicon.ico", include_in_schema=False)
 # async def favicon():

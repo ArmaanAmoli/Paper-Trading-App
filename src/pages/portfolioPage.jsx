@@ -99,11 +99,11 @@ export default function PortfolioPage() {
                         </div>
                         <div className="Account-status-component">
                             <h4>Account Balance</h4>
-                            <h4>{userEquity.balance}</h4>
+                            <h4>{(userEquity.balance) ? userEquity.balance.toFixed(2): null}</h4>
                         </div>
                         <div className="Account-status-component">
                             <h4>Equity</h4>
-                            <h4>{userEquity.equity}</h4>
+                            <h4>{(userEquity.equity) ? userEquity.equity.toFixed(2):null}</h4>
                         </div>
 
                     </div>

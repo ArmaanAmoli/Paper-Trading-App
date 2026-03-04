@@ -208,7 +208,7 @@ export async function executeTrade(positionDetails, userId) {
         if (shortAddedQty > 0) {
             const requiredMargin = 1.5 * price * shortAddedQty;
 
-            const available = user.balance - user.blockedMargin; // 🔧 FIX
+            const available = user.balance - user.blockedMargin; // FIX
 
             if (available < requiredMargin) {
                 throw new Error("Insufficient margin for short position");

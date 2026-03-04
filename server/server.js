@@ -7,6 +7,7 @@ import cors from "cors";
 import axios from 'axios';
 import { getQuote } from './getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
+import { convertToUSD } from './currency.js';
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
