@@ -4,14 +4,14 @@ nav {
     justify-content: center; /* center ul inside nav */
     align-items: center; /* vertically align items */
     padding: 2px 0px; /* some space inside nav */
-    border: 0.5px solid rgba(255, 255, 255, 0.178); /* subtle border */
-    box-shadow: -.5px -.25px 5px rgba(255, 255, 255, 0.123); /* soft shadow */
-    border-radius: 38px;
+    border-bottom: 0.5px solid rgb(255, 255, 255); /* subtle border */
+    /* box-shadow: -.5px -.25px 5px rgba(255, 255, 255, 0.123); soft shadow */
+    /* border-radius: 38px; */
     background-color: #000000; /* dark background for contrast */
     font-size: large;
     resize: none;
     width: 100%;
-    /* position: fixed;
+    position: sticky;
     overflow: hidden; */
     background-color: rgba(0, 0, 0, 0.459);
     backdrop-filter: blur(5px);

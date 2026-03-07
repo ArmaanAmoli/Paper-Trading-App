@@ -1,12 +1,13 @@
 .page {
     display: flex;
     flex-direction: column;
-    height: 94vh; /* Lock height to viewport */
-    width: 99vw;
+    height: 100vh; /* Lock height to viewport */
+    width: 100vw;
     overflow: hidden; /* Prevent the whole page from scrolling */
 }
 .Landing-Page{
-    width:100%;
+    margin: 2px;
+    width: calc(100% - 4px);
     display: flex;
     height: 99%;
     overflow: hidden;
@@ -14,6 +15,7 @@
     
 }
 .content{
+    flex: 0 0 75%;  /* FIX: don't grow or shrink, stay exactly 75% */
     height: 100%;
     /* border: white solid; */
     width: 75%;
@@ -37,8 +39,10 @@
 }
 
 .watchlist{
+    flex: 0 0 25%;  /* FIX: don't grow or shrink, stay exactly 25% */
     width: 25%;
     height:100%;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
 }
