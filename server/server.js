@@ -1,13 +1,44 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade , GetUserData } from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
 import { getQuote } from './getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
 import { convertToUSD } from './currency.js';
+
+let rates = await convertToUSD();
+
+/* sample of rates json
+{
+    "USD": 1,
+    "AUD": 1.4817,
+    "BGN": 1.7741,
+    "CAD": 1.3168,
+    "CHF": 0.9774,
+    "CNY": 6.9454,
+    "EGP": 15.7361,
+    "EUR": 0.9013,
+    "GBP": 0.7679,
+    "...": 7.8536,
+    "...": 1.3127,
+    "...": 7.4722, etc. etc.
+}
+
+*/
+
+const TWENTY_FOUR_HOURS = 1000 * 60 * 60 * 24;
+setInterval(async () => {
+    try {
+        rates = await convertToUSD();
+    }
+    catch (err) {
+        console.log("Error in currency rate updation : ", err);
+    }
+    console.log(`${new Date()} : Rates updated`);
+}, TWENTY_FOUR_HOURS);
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
@@ -34,8 +65,8 @@ server.use(cors());
 
 const validateEmail = (req, res, next) => {
     const { email } = req.body;
-    if(!email){
-        return res.status(400).json({message: "Email is Required"})
+    if (!email) {
+        return res.status(400).json({ message: "Email is Required" })
     }
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (pattern.test(email)) {
@@ -98,34 +129,34 @@ server.post('/login', validateEmail, async (req, res, next) => {
         next(err);
     }
 });
-server.get('/quote' ,verifyToken, async (req, res, next)=>{
-    try{
+server.get('/quote', verifyToken, async (req, res, next) => {
+    try {
         const query = req.query;
         const ticker = query.ticker;
-        const fastAPIRes = await axios.get('http://127.0.0.1:8000/quote',{
-            params:{
-                ticker:ticker
+        const fastAPIRes = await axios.get('http://127.0.0.1:8000/quote', {
+            params: {
+                ticker: ticker
             }
         });
         res.json(fastAPIRes.data);
-    }catch(err){next(err)}
+    } catch (err) { next(err) }
 })
-server.get('/data',verifyToken, async (req, res, next)  =>{
-    try{
+server.get('/data', verifyToken, async (req, res, next) => {
+    try {
         const query = req.query;
         const ticker = query.ticker;
         const interval = query.interval;
         const period = query.period;
-        const fastAPIRes = await axios.get('http://127.0.0.1:8000/data',{
-            params:{
-                ticker:ticker,
-                period:period,
-                interval:interval
+        const fastAPIRes = await axios.get('http://127.0.0.1:8000/data', {
+            params: {
+                ticker: ticker,
+                period: period,
+                interval: interval
             }
         });
         // console.log(fastAPIRes.data);
         res.json(fastAPIRes.data);
-    }catch(err){
+    } catch (err) {
         next(err);
     }
 });
@@ -145,8 +176,11 @@ server.get('/user-data', verifyToken, async (req, res, next) => {
         const userID = req.user.userId;
         console.log(userID);
         const user = await GetUserData(userID);
-        console.log(userID);
-        console.log(user);
+
+        // console.log(userID);
+        // console.log(user);
+
+
         res.status(200).json(user);
     } catch (err) {
         next(err);
@@ -157,7 +191,7 @@ server.post('/buy', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
-        const {currentPrice} = await getQuote(positionDetails.symbol);
+        const { currentPrice } = await getQuote(positionDetails.symbol);
         positionDetails.price = currentPrice;
         positionDetails.orderId = uuidv4();
         const b = await executeTrade(positionDetails, userId)
@@ -172,7 +206,7 @@ server.post('/sell', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
-        const {currentPrice} = await getQuote(positionDetails.symbol);
+        const { currentPrice } = await getQuote(positionDetails.symbol);
         positionDetails.price = currentPrice;
         positionDetails.orderId = uuidv4();
         const b = await executeTrade(positionDetails, userId)
@@ -189,7 +223,7 @@ server.post('/sell', verifyToken, async (req, res, next) => {
 server.use((err, req, res, next) => {
     console.error(`Error Stack: ${err.stack}`);
     const statusCode = err.status || 500; // If error already have a status code if not give it 500(Server Error)
-    res.status(statusCode).json({message:err.message||"server Error"})
+    res.status(statusCode).json({ message: err.message || "server Error" })
 });
 
 server.listen(port, (error) => {
