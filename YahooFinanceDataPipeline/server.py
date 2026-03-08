@@ -4,9 +4,7 @@ from typing import Annotated, List
 import pandas as pd
 import yfinance as yf
 import uvicorn
-
 app = FastAPI()
-
 @app.get("/data")
 async def get_hourly_data(
     ticker: str,
