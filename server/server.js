@@ -7,38 +7,7 @@ import cors from "cors";
 import axios from 'axios';
 import { getQuote } from './getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
-import { convertToUSD } from './currency.js';
 
-let rates = await convertToUSD();
-
-/* sample of rates json
-{
-    "USD": 1,
-    "AUD": 1.4817,
-    "BGN": 1.7741,
-    "CAD": 1.3168,
-    "CHF": 0.9774,
-    "CNY": 6.9454,
-    "EGP": 15.7361,
-    "EUR": 0.9013,
-    "GBP": 0.7679,
-    "...": 7.8536,
-    "...": 1.3127,
-    "...": 7.4722, etc. etc.
-}
-
-*/
-
-const TWENTY_FOUR_HOURS = 1000 * 60 * 60 * 24;
-setInterval(async () => {
-    try {
-        rates = await convertToUSD();
-    }
-    catch (err) {
-        console.log("Error in currency rate updation : ", err);
-    }
-    console.log(`${new Date()} : Rates updated`);
-}, TWENTY_FOUR_HOURS);
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();

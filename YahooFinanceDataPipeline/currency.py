@@ -1,28 +1,45 @@
-import yfinance as yf
+import httpx
 import os
-import requests
 import json
 import asyncio
+import yfinance as yf
+from datetime import datetime , UTC
 
-async def get_current_rates():
+API_KEY = os.environ.get('EXCHANGE_RATE_API')
+FILE_PATH = "exchange_rates.json"
+
+async def fetch_rates():
+    global rates
+    url = f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/USD"
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        rates = {
+            "last_updated":datetime.datetime.now(UTC).isoformat(),
+            "rates":data["conversion_rates"]
+        }
+        with open(FILE_PATH , "w") as f:
+            json.dump(rates,f)
+        print("Exchange rate updated")
+    else:
+        print("Failed to fetch rates")
+
+async def update_rates_every_24h():
+    await fetch_rates()
+    while True:
+        await asyncio.sleep(86400)
+        await fetch_rates()
+
+async def get_currency(ticker):
     try:
-        api_key = os.environ['EXCHANGE_RATE_API']
-        print(f"API Key: {api_key}")
-    except KeyError:
-        print("Error: Required environment variable 'API_KEY' not set.")
-
-    url = f"https://v6.exchangerate-api.com/v6/{api_key}/latest/USD"
-
-    response = await requests.get(url)
-
-    if response.status_code in range(200,300):
-        data = response.json() # data is a python dict
-        print(data) # to be removed
-        data = data['conversion_rates']
-        return data
+        t = yf.Ticker(ticker)
+        info = await asyncio.to_thread(lambda: t.fast_info)
+        return info.get("currency", "USD")
+    except:
+        return "USD"
+        
     
-    return False
-
 
 '''
 {
