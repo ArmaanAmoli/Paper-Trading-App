@@ -4,7 +4,8 @@ from typing import Annotated, List
 import pandas as pd
 import yfinance as yf
 import uvicorn
-from currency import update_rates_every_24h , get_currency , rates
+import currency
+from currency import update_rates_every_24h , get_currency
 import asyncio
 from contextlib import asynccontextmanager
 
@@ -42,8 +43,12 @@ async def get_hourly_data(
         
         #currency conversion
         price_columns = ["Open" , "High" , "Low" , "Close"]
-        curr = await get_currency(ticker)
-        rate = rates["rates"][curr]
+        curr = (await get_currency(ticker)).strip().upper()
+        
+        # print("Ticker:", ticker, "Currency:", curr)
+        # print("Rate:", currency.rates["rates"].get(curr))
+        
+        rate = currency.rates["rates"].get(curr, 1)
         df[price_columns] = df[price_columns]/rate
         
         return df.to_dict(orient="records")
@@ -74,8 +79,17 @@ async def get_quote(ticker: str):
         change = current_price - prev_close
         per_change = (change/prev_close)*100
         
-        curr = await get_currency(ticker)
-        rate = rates["rates"][curr]
+        curr = (await get_currency(ticker)).strip().upper()
+        
+        #TESTING
+        
+        # print("Ticker:", ticker, "Currency:", curr)
+        # print("Rate:", currency.rates["rates"].get(curr))
+        # print(currency.rates["rates"].keys())
+        
+        
+        
+        rate = currency.rates["rates"].get(curr, 1)
         
         current_price = current_price/rate
         change = change / rate

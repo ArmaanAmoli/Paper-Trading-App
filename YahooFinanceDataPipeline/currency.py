@@ -6,8 +6,10 @@ import yfinance as yf
 from datetime import datetime , UTC
 
 API_KEY = os.environ.get('EXCHANGE_RATE_API')
-FILE_PATH = "exchange_rates.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FILE_PATH = os.path.join(BASE_DIR, "exchange_rates.json")
 
+rates = {"rates": {"USD": 1}}
 async def fetch_rates():
     global rates
     url = f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/USD"
@@ -16,7 +18,7 @@ async def fetch_rates():
     if response.status_code == 200:
         data = response.json()
         rates = {
-            "last_updated":datetime.datetime.now(UTC).isoformat(),
+            "last_updated":datetime.now(UTC).isoformat(),
             "rates":data["conversion_rates"]
         }
         with open(FILE_PATH , "w") as f:
@@ -24,6 +26,7 @@ async def fetch_rates():
         print("Exchange rate updated")
     else:
         print("Failed to fetch rates")
+
 
 async def update_rates_every_24h():
     await fetch_rates()
