@@ -4,7 +4,7 @@ body {
 }
 .chart-page{
     display: flex;
-    width: 99vw;
+    width: 100vw;
     height: 99vh;
     flex-direction: row;
     justify-content: center;
@@ -15,7 +15,7 @@ body {
 
 .Sidebar{
     display: flex;
-    width: 35px;
+    width: 50px;
     max-width: 60px;
     border-left: solid rgba(255, 255, 255, 0.329) 1px;
     flex-direction: column;
