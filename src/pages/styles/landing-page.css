@@ -3,7 +3,7 @@
     flex-direction: column;
     height: 100vh; /* Lock height to viewport */
     width: 100vw;
-    overflow: hidden; /* Prevent the whole page from scrolling */
+    overflow: scroll; /* Prevent the whole page from scrolling */
 }
 .Landing-Page{
     margin: 2px;

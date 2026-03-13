@@ -12,6 +12,13 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
+const watchlistSchema = new mongoose.Schema({
+    userId:{type:mongoose.Schema.Types.ObjectId , ref: 'User' , required: true},
+    symbols:{type:[String] , required:true , default:[]}
+});
+
+const Watchlist = mongoose.model('Watchlist' , watchlistSchema);
+
 const PortfolioSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     symbol: { type: String, required: true },
