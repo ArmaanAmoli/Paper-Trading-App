@@ -40,7 +40,7 @@
 .Portfolio-page {
     background-color: var(--black);
     min-height: 100vh;
-    font-family: var(--font-mono);
+    
     color: var(--white);
 
     /* 
@@ -124,7 +124,7 @@
 .Asset-Table thead th {
     padding: 16px 20px;
     text-align: left;
-    font-family: var(--font-ui);
+    
     font-size: 11px;
     font-weight: 600;
 
@@ -229,7 +229,6 @@
     text-transform: uppercase;
     font-size: 11px;
     letter-spacing: 1.5px;
-    font-family: var(--font-ui);
     font-weight: 600;
 }
 
@@ -244,10 +243,10 @@
    you can add a class in React like:
    className={prices[item.symbol]?.Pnl < 0 ? 'negative' : 'positive'}
    ============================================ */
-.Asset-Table tbody td:nth-child(5),
+/* .Asset-Table tbody td:nth-child(5),
 .Asset-Table tbody td:nth-child(6) {
-    font-family: var(--font-mono);
-}
+    
+} */
 
 /* Add these classes in your JSX for color coding */
 .positive {
