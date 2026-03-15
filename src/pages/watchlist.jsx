@@ -10,9 +10,9 @@ export default function Watchlist() {
         setSearchTabOpen(prev => !prev)
     }
     return (
-        <div className="relative">
+        <div >
             {
-                searchTabOpen && (createPortal(<SearchTabPopUp className="absolute z-1000 top-0"/> , document.body))
+                searchTabOpen && (createPortal(<SearchTabPopUp close={toggleSearchTab}/> , document.body))
             }
             <div className="stock-list">
                 <div className="py-10px flex flex-row justify-between w-full">
