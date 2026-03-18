@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import "./styles/navbar.css";
+import { useNavigate } from "react-router-dom";
 
 export default function Navbar() {
+    const navigate = useNavigate();
     return (
         <nav>
             <ul>
@@ -24,7 +26,7 @@ export default function Navbar() {
                     <input type="text" placeholder="Search" className="nav-search" />
                 </li>
                 <li>
-                    <button className="nav-profile-btn">
+                    <button className="nav-profile-btn" onClick={()=>{navigate("/userprofile")}}>
                         <img src="https://cdn-icons-png.flaticon.com/512/6325/6325109.png" alt="User profile picture" className="profile-pic"/>
                         </button>
                 </li>

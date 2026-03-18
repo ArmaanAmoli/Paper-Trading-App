@@ -5,6 +5,7 @@ import LandingPage from "../pages/landingPage.jsx";
 import ProtectedRoutes from "./protectedRoutes.jsx";
 import StockMainChart from "../pages/stockChart.jsx";
 import PortfolioPage from "../pages/portfolioPage.jsx";
+import UserProfile from "../pages/userProfile.jsx";
 
 const AppRouter = () => {
     return (
@@ -17,6 +18,7 @@ const AppRouter = () => {
                 <Route path="/landing-page" element={<LandingPage />} />
                 <Route path="/chart/:ticker" element={<StockMainChart/>}/>
                 <Route path="/userPortfolio" element={<PortfolioPage/>}/>
+                <Route path="/userprofile" element={<UserProfile/>}/>
             </Route>
 
         </Routes>

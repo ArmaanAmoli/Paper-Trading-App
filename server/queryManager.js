@@ -2,13 +2,14 @@ import mongoose from "mongoose";
 import process from 'node:process';
 import { User, Portfolio, Trade } from "./mongoSchema.js"
 import bcrypt from "bcrypt";
-
+import { ObjectId } from "mongodb";
 
 mongoose.connect(String(process.env.MONGO_URL)).then(() => {
     console.log("CONNECTED");
 }).catch(err => {
     console.log(err);
 })
+
 
 export async function SignUp(details) {
     const { email, password, username } = details;
@@ -261,4 +262,12 @@ export async function GetUserData(userId) {
     if (!userData) return null;
     // console.log(userData);
     return userData;
+}
+
+
+export async function GetTradeHistory(userID){
+    const tradeHistory = await Trade.find({"userId": new ObjectId(userID)});
+    
+    if(!tradeHistory) return null;
+    return tradeHistory;
 }

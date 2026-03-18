@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData } from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData , GetTradeHistory} from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -143,7 +143,7 @@ server.get('/portfolio', verifyToken, async (req, res, next) => {
 server.get('/user-data', verifyToken, async (req, res, next) => {
     try {
         const userID = req.user.userId;
-        console.log(userID);
+        //console.log(userID);
         const user = await GetUserData(userID);
 
         // console.log(userID);
@@ -154,6 +154,16 @@ server.get('/user-data', verifyToken, async (req, res, next) => {
     } catch (err) {
         next(err);
     }
+})
+
+server.get('/trade-history', verifyToken , async(req , res , next)=>{
+    try{
+        const userID = req.user.userId;
+        console.log(userID);
+        const tradeHistory = await GetTradeHistory(userID);
+        //console.log(tradeHistory);
+        res.status(200).json(tradeHistory);
+    }catch(err){next(err);}
 })
 
 server.post('/buy', verifyToken, async (req, res, next) => {

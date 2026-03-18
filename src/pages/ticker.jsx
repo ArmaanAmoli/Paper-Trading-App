@@ -6,7 +6,7 @@ export default function Ticker({ name }) {
     const navigate = useNavigate();
 
     const handleDivClick = ()=>{
-        navigate(`/chart/${name}`)
+        navigate(`/chart/${name}` , {replace:true});
     }
 
     const [quote , setQuote] = useState([]);
