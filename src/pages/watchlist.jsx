@@ -15,9 +15,9 @@ export default function Watchlist() {
                 searchTabOpen && (createPortal(<SearchTabPopUp close={toggleSearchTab}/> , document.body))
             }
             <div className="stock-list">
-                <div className="py-10px flex flex-row justify-between w-full">
+                <div className="py-2.5 flex flex-row justify-between w-full">
                     <h4>Watchlist</h4>
-                    <button className="pb-10 w-[30px] h-[30px] border-1 flex justify-center items-center rounded-full text-xl hover:bg-[#666666] " onClick={toggleSearchTab}>+</button>
+                    <button className="pb-10 w-[30px] h-[30px] border flex justify-center items-center rounded-full text-xl hover:bg-[#666666] " onClick={toggleSearchTab}>+</button>
                 </div>
 
                 <div className="heading-wl">
