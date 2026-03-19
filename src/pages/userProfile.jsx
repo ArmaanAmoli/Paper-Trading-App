@@ -60,8 +60,31 @@ export default function UserProfile(){
     if(!tradeHistory) return (<div>Loading...</div>);
     return(
 
-        <div className="w-screen h-dvh flex flex-col">
-            
+        <div className="w-screen h-dvh grid grid-cols-10 gap-1 grid-row-1"> 
+
+        {/* dividing the whole page into 10 columns assing 3 cols to profile Pic
+            and Name and 7 cols to other user info and their trade history*/}
+
+            <div className="grid grid-rows-10 col-span-2 sticky">
+                <div className="row-span-4 bg-blue-600 p-4">
+                    <div className="w-[250px] h-[250px] rounded-full aspect-square bg-blue-500 ">Profile Picture</div>
+                </div>
+                <div className="row-span-6 bg-blue-800">
+                    Name
+                    Email
+                    update profile
+                    Delete Account
+                </div>
+            </div>
+
+            <div className="grid grid-rows-10 col-span-8 bg-blue-400">
+                <div className="grid grid-cols-2 row-span-3 bg-blue-600 "> 
+                    <div className="col-span-1 bg-blue-700"> Current Balance</div>
+                    <div className="col-span-1"> Current Equity</div>
+                </div>
+                <div className="row-span-7 bg-blue-800">Trade History Table</div>
+
+            </div>
         </div>
     );
     

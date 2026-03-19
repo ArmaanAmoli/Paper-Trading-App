@@ -19,13 +19,12 @@
 }
 
 /* ============================================
-   GLOBAL RESET
-   Browsers add default padding/margin to elements.
-   box-sizing: border-box means padding is INCLUDED
-   in the element's width, not added on top of it.
-   This makes layout calculations much more predictable.
+   PAGE-SCOPED RESET
+   Keep reset local to the portfolio page so it does
+   not override Tailwind utilities in other views.
    ============================================ */
-* {
+.Portfolio-page,
+.Portfolio-page * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -334,8 +333,9 @@
     background: var(--muted);
 }
 
-/* Firefox scrollbar */
-* {
+/* Firefox scrollbar (scoped to portfolio page) */
+.Portfolio-page,
+.Portfolio-page * {
     scrollbar-color: var(--border-bright) var(--black);
     scrollbar-width: thin;
 }

@@ -20,7 +20,7 @@ nav {
 }
 
 /* UL CONTAINER */
-ul {
+nav ul {
     display: flex; /* horizontal layout */
     list-style: none; /* remove bullets */
     justify-content: space-between; /* space between items */
@@ -34,13 +34,13 @@ ul {
 }
 
 /* LINK STYLING */
-li a {
+nav li a {
     color: white; /* make links white */
     text-decoration: none; /* remove underline */
     cursor: pointer;
 }
 
-li a:hover {
+nav li a:hover {
     text-decoration: none; /* underline only on hover */
 }
 
