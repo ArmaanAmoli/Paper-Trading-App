@@ -35,6 +35,7 @@ export default function UserProfile(){
     const [userData , setUserData] = useState(null); // state of user personal data
     const [tradeHistory , setTradeHistory] = useState(null);
     const [error , setError] = useState(null);
+    const profilePic = "https://cdn-icons-png.flaticon.com/512/6325/6325109.png";
     useEffect(()=>{
         
         const fetchData = async()=>{
@@ -65,24 +66,47 @@ export default function UserProfile(){
         {/* dividing the whole page into 10 columns assing 3 cols to profile Pic
             and Name and 7 cols to other user info and their trade history*/}
 
-            <div className="grid grid-rows-10 col-span-2 sticky">
-                <div className="row-span-4 bg-blue-600 p-4">
-                    <div className="w-[250px] h-[250px] rounded-full aspect-square bg-blue-500 ">Profile Picture</div>
+            <div className="grid grid-rows-10 col-span-2 sticky ">
+
+                <div className="row-span-3 flex items-center justify-center">
+                    <div style={{ backgroundImage: `url('${profilePic}')` }} className="w-[225px] h-[225px] rounded-full aspect-square border bg-cover bg-center bg-no-repeat"></div>
                 </div>
-                <div className="row-span-6 bg-blue-800">
-                    Name
-                    Email
-                    update profile
-                    Delete Account
+
+                <div className="row-span-7 border-t grid grid-rows-5">
+
+                    <p className="row-span-1 flex flex-col justify-center items-center">
+                        <div className=' text-xl font-bold'>{userData.username}</div>
+                        <div>{userData.email}</div>
+                    </p>
+
+                    <div className="row-span-2 flex flex-col gap-4 justify-center items-center">
+                        <button className='border h-[50px] w-[200px] rounded-3xl'>Update Profile</button>
+                        <button className='border h-[50px] w-[200px] rounded-3xl'>Log out</button>
+                        <button className='border h-[50px] w-[200px] rounded-3xl text-red-400 hover:bg-red-300/10'>Delete Account</button>
+                    </div>
                 </div>
+                
             </div>
 
-            <div className="grid grid-rows-10 col-span-8 bg-blue-400">
-                <div className="grid grid-cols-2 row-span-3 bg-blue-600 "> 
-                    <div className="col-span-1 bg-blue-700"> Current Balance</div>
-                    <div className="col-span-1"> Current Equity</div>
+            <div className="grid grid-rows-10 col-span-8">
+                <div className="grid grid-cols-2 row-span-3 border "> 
+
+                    <div className="col-span-1 border ">
+                        <div className="w-full h-full bg-blue-500 flex flex-col">
+                            <div className='w-full h-1/2 border flex flex-col justify-center items-center'> <p>Balance</p> <p>${userData.balance}</p></div>
+                            <div className='w-full h-1/2 border flex flex-col justify-center items-center'> <p>Blocked Margin</p> <p>${userData.blockedMargin}</p></div>
+                        </div>
+                    </div>
+
+
+                    <div className="col-span-1">
+                        <div className="w-full h-full bg-blue-500 flex flex-col justify-center items-center">
+                            <p>Equity</p>
+                            <p>${userData.balance}</p>
+                        </div>
+                    </div>
                 </div>
-                <div className="row-span-7 bg-blue-800">Trade History Table</div>
+                <div className="row-span-7 border ">Trade History Table</div>
 
             </div>
         </div>
