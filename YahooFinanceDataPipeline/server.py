@@ -55,6 +55,18 @@ async def get_hourly_data(
     except Exception as e:
         raise HTTPException(status_code=500 , detail = str(e))
 
+@app.get("/search")
+async def get_search_results(query: str):
+    try:
+        results = await asyncio.to_thread(yf.Search , query=query)
+        if results.quotes is not None:
+            # print(results.quotes)
+            return results.quotes
+        else:
+            raise HTTPException(status_code=404 , detail="No results found")
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500 , detail=str(e))
 
 @app.get("/quote")
 async def get_quote(ticker: str):

@@ -16,6 +16,7 @@ export default defineConfig({
       "/sell": "http://localhost:3000",
       "/user-data": "http://localhost:3000",
       "/trade-history": "http://localhost:3000",
+      "/search":"http://localhost:3000",
     },
   },
 

@@ -10,7 +10,7 @@ export default function StockMainChart() {
     const { ticker } = useParams();
     const location = useLocation();
 
-    const [Interval, setInterval] = useState('1h');
+    const [Interval, setInterval] = useState('60m');
     console.log(Interval);
     const toggleWatchlist = () => {
         setActivePanel(prev => prev === 'watchlist' ? 'none' : 'watchlist');

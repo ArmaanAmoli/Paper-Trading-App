@@ -1,16 +1,44 @@
-export default function SearchTabPopUp({ close }){
-    return(
+import { useState } from "react";
+import api from "./api";
+
+export default function SearchTabPopUp({ close }) {
+    const [userInput, setUserInput] = useState("");
+    const [searchResult, setSearchResult] = useState(null);
+
+    const handleChange = (event) => {
+        setUserInput(event.target.value);
+    };
+
+    async function handleClick() {
+        const res = await api.get("/search", {
+            params: {
+                query: String(userInput),
+            }
+        }
+
+        );
+        console.log(res.data)
+        setSearchResult(res.data);
+    };
+    return (
 
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={close}>
 
-            <div className="flex h-[37.5rem] w-[28rem] flex-col rounded-2xl border border-gray-700 bg-black px-2.5 pb-2.5" onClick={(e) => e.stopPropagation()}>
+            <div className="h-[37.5rem] w-[28rem] grid grid-rows-10 rounded-3xl border border-gray-700 bg-black p-3" onClick={(e) => e.stopPropagation()}>
 
-                <div className="mx-auto mt-20 flex w-[95%] flex-row items-center justify-center gap-[5px] border border-white">
+                <div className="row-span-1 w-full grid grid-cols-10 ">
 
-                    <input className="border border-gray-600 px-[5px]" type="text" placeholder="Search..." />
-                    <button className="h-10 w-10 rounded-full border border-white">S</button>
+                    <input className="col-span-9 border border-gray-600/50 px-[10px] rounded-3xl"
+                        type="text" value={userInput} onChange={handleChange} placeholder="Search..." />
+
+                    <div className="col-span-1 flex justify-center items-center">
+                        <button className="h-[30px] w-[30px] rounded-full bg-cover bg-no-repeat
+                            bg-[url('../../src/assets/Icons/search-button.png')] cursor-pointer"
+                            onClick={handleClick}></button>
+                    </div>
+
                 </div>
-                
+
             </div>
         </div>
     );

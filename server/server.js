@@ -166,6 +166,24 @@ server.get('/trade-history', verifyToken , async(req , res , next)=>{
     }catch(err){next(err);}
 })
 
+server.get('/search' , verifyToken , async(req , res , next)=>{
+    const query = req.query.query;
+    // console.log(query)
+    try{
+        const fastAPIRes = await axios.get('http://127.0.0.1:8000/search', {
+            params: {
+                query: query,
+            }
+        
+        });
+        // console.log(fastAPIRes.data)
+        res.json(fastAPIRes.data);
+    }catch(err){
+        next(err);
+    }
+    
+})
+
 server.post('/buy', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;

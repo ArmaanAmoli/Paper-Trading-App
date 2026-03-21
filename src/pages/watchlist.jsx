@@ -3,9 +3,9 @@ import "./styles/watchlist.css";
 import { useState } from "react";
 import SearchTabPopUp from "./floatingSearchTab.jsx";
 import { createPortal } from "react-dom";
+
 export default function Watchlist() {
     const [searchTabOpen, setSearchTabOpen] = useState(false)
-
     const toggleSearchTab = () => {
         setSearchTabOpen(prev => !prev)
     }
@@ -15,9 +15,17 @@ export default function Watchlist() {
                 searchTabOpen && (createPortal(<SearchTabPopUp close={toggleSearchTab}/> , document.body))
             }
             <div className="stock-list">
-                <div className="py-2.5 flex flex-row justify-between w-full">
-                    <h4>Watchlist</h4>
-                    <button className="pb-10 w-[30px] h-[30px] border flex justify-center items-center rounded-full text-xl hover:bg-[#666666] " onClick={toggleSearchTab}>+</button>
+                <div className="py-2.5 grid grid-cols-10">
+                    <h4 className="col-span-8">Watchlist</h4>
+
+                    <button className="col-span-1 w-[30px] h-[30px] flex justify-center 
+                    items-center rounded-full cursor-pointer bg-cover bg-no-repeat
+                    bg-[url('../../src/assets/Icons/add-button.png')]" onClick={toggleSearchTab}></button>
+
+                    <button className="col-span-1 w-[30px] h-[30px] flex justify-center 
+                    items-center rounded-full cursor-pointer bg-cover bg-no-repeat
+                    bg-[url('../../src/assets/Icons/editpencil.png')]"></button>
+
                 </div>
 
                 <div className="heading-wl">
@@ -26,10 +34,12 @@ export default function Watchlist() {
                     <p>Change</p>
                     <p>%Change</p>
                 </div>
-
-                <Ticker name="RR.L" />
-                <Ticker name="^FTSE" />
-                <Ticker name="LLY" />
+                <div className="w-full h-full flex flex-col">
+                    <Ticker name="RR.L" />
+                    <Ticker name="^FTSE" />
+                    <Ticker name="LLY" />
+                </div>
+                
             </div>
         </div>
 
