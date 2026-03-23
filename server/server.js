@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData , GetTradeHistory} from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData , GetTradeHistory , GetUserWatchlist} from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -136,6 +136,17 @@ server.get('/portfolio', verifyToken, async (req, res, next) => {
         const positions = await portfolio(userID);
         res.status(200).json(positions)
     } catch (err) {
+        next(err);
+    }
+})
+
+server.get('/user-watchlist' , verifyToken , async (req , res , next)=>{
+    try{
+        const userID = req.user.userId;
+        const userWatchlist = await GetUserWatchlist(userID);
+        console.log(userWatchlist)
+        res.status(200).json(userWatchlist);
+    }catch(err){
         next(err);
     }
 })

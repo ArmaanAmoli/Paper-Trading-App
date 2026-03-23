@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import process from 'node:process';
-import { User, Portfolio, Trade } from "./mongoSchema.js"
+import { User, Portfolio, Trade , Watchlist} from "./mongoSchema.js"
 import bcrypt from "bcrypt";
 import { ObjectId } from "mongodb";
 
@@ -270,4 +270,21 @@ export async function GetTradeHistory(userID){
     
     if(!tradeHistory) return null;
     return tradeHistory;
+}
+
+
+// STILL NEED TO BE TESTED
+export async function GetUserWatchlist(userID) {
+    const userWatchlist = await Watchlist.find({"userId": new ObjectId(userID)});
+    if(!userWatchlist)return null;
+    return userWatchlist;
+}
+
+// STILL NEED TO BE TESTED
+export async function AddToWatchlist(userID , symbol){
+    Watchlist.updateOne(
+        {"userId": new ObjectId(userID)},
+        {$addToSet:symbol},
+        {upsert:true}
+    );
 }

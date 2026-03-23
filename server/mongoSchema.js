@@ -41,4 +41,4 @@ const TradeSchema = new mongoose.Schema({
 });
 const Trade = mongoose.model('Trade', TradeSchema);
 
-export { User, Portfolio, Trade };
+export { User, Portfolio, Trade , Watchlist};
