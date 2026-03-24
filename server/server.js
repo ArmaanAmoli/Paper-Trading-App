@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData , GetTradeHistory , GetUserWatchlist} from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -140,13 +140,13 @@ server.get('/portfolio', verifyToken, async (req, res, next) => {
     }
 })
 
-server.get('/user-watchlist' , verifyToken , async (req , res , next)=>{
-    try{
+server.get('/user-watchlist', verifyToken, async (req, res, next) => {
+    try {
         const userID = req.user.userId;
         const userWatchlist = await GetUserWatchlist(userID);
         console.log(userWatchlist)
         res.status(200).json(userWatchlist);
-    }catch(err){
+    } catch (err) {
         next(err);
     }
 })
@@ -167,33 +167,52 @@ server.get('/user-data', verifyToken, async (req, res, next) => {
     }
 })
 
-server.get('/trade-history', verifyToken , async(req , res , next)=>{
-    try{
+server.get('/trade-history', verifyToken, async (req, res, next) => {
+    try {
         const userID = req.user.userId;
         console.log(userID);
         const tradeHistory = await GetTradeHistory(userID);
         //console.log(tradeHistory);
         res.status(200).json(tradeHistory);
-    }catch(err){next(err);}
+    } catch (err) { next(err); }
 })
 
-server.get('/search' , verifyToken , async(req , res , next)=>{
+server.get('/search', verifyToken, async (req, res, next) => {
     const query = req.query.query;
     // console.log(query)
-    try{
+    try {
         const fastAPIRes = await axios.get('http://127.0.0.1:8000/search', {
             params: {
                 query: query,
             }
-        
+
         });
         // console.log(fastAPIRes.data)
         res.json(fastAPIRes.data);
-    }catch(err){
+    } catch (err) {
         next(err);
     }
-    
+
 })
+
+server.post('/user-watchlist/add', verifyToken, async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const newWatchlistItem = req.body.symbol;
+        const response = await AddToWatchlist(userId, newWatchlistItem);
+        if(response){
+            res.status(200).json({success:true});
+        }
+        else{
+            res.status(400).json({success:false});
+        }
+    } catch (err) {
+        
+        next(err);
+    }
+})
+
+
 
 server.post('/buy', verifyToken, async (req, res, next) => {
     try {

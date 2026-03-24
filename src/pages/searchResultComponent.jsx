@@ -1,3 +1,6 @@
+
+import { addToWatchlist } from "./watchlist";
+
 // symbol shortName type exchange
 export default function SearchResultComponent(info = null) {
     //if (info === null) return (<></>);
@@ -16,7 +19,7 @@ export default function SearchResultComponent(info = null) {
             transition-opacity duration-300 flex items-center justify-end">
                 <button className="w-[30px] h-[30px] flex justify-center 
                     items-center rounded-full cursor-pointer bg-cover bg-no-repeat
-                    bg-[url('../../src/assets/Icons/add-button.png')]"></button>
+                    bg-[url('../../src/assets/Icons/add-button.png')]" onClick={async ()=>{await addToWatchlist(symbol)}} ></button>
                     
             </div>
         </div>

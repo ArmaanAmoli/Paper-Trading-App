@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import process from 'node:process';
-import { User, Portfolio, Trade , Watchlist} from "./mongoSchema.js"
+import { User, Portfolio, Trade, Watchlist } from "./mongoSchema.js"
 import bcrypt from "bcrypt";
 import { ObjectId } from "mongodb";
 
@@ -265,26 +265,33 @@ export async function GetUserData(userId) {
 }
 
 
-export async function GetTradeHistory(userID){
-    const tradeHistory = await Trade.find({"userId": new ObjectId(userID)});
-    
-    if(!tradeHistory) return null;
+export async function GetTradeHistory(userID) {
+    const tradeHistory = await Trade.find({ "userId": new ObjectId(userID) });
+
+    if (!tradeHistory) return null;
     return tradeHistory;
 }
 
 
 // STILL NEED TO BE TESTED
 export async function GetUserWatchlist(userID) {
-    const userWatchlist = await Watchlist.find({"userId": new ObjectId(userID)});
-    if(!userWatchlist)return null;
+    const userWatchlist = await Watchlist.find({ "userId": new ObjectId(userID) });
+    if (!userWatchlist) return null;
     return userWatchlist;
 }
 
 // STILL NEED TO BE TESTED
-export async function AddToWatchlist(userID , symbol){
-    Watchlist.updateOne(
-        {"userId": new ObjectId(userID)},
-        {$addToSet:symbol},
-        {upsert:true}
-    );
+export async function AddToWatchlist(userID, symbol) {
+    try {
+        await Watchlist.updateOne(
+            { "userId": new ObjectId(userID) },
+            { $addToSet: {symbols:symbol} },
+            { upsert: true }
+        );
+        return true;
+    }catch(err){
+        console.log(`Error while posting new symbol to watchlist: ${err}`)
+        return false;
+    }
+    
 }

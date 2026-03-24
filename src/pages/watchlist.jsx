@@ -1,14 +1,28 @@
 import Ticker from "./ticker.jsx";
 import "./styles/watchlist.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SearchTabPopUp from "./floatingSearchTab.jsx";
 import { createPortal } from "react-dom";
+import { getWatchlist } from "./watchlist.js";
 
 export default function Watchlist() {
-    const [searchTabOpen, setSearchTabOpen] = useState(false)
+    const [searchTabOpen, setSearchTabOpen] = useState(false);
     const toggleSearchTab = () => {
         setSearchTabOpen(prev => !prev)
     }
+    const [watchlistArray , setWatchlistArray] = useState(null);
+
+    useEffect(()=>{
+        async function fetchWatchlistData(){
+            const res = await getWatchlist();
+            setWatchlistArray(res.symbols);
+            console.log(watchlistArray);
+        }
+        fetchWatchlistData();
+        const intervalID = setInterval(fetchWatchlistData , 10000);
+        return ()=>clearInterval(intervalID);
+    },[]);
+
     return (
         <div >
             {
@@ -35,9 +49,11 @@ export default function Watchlist() {
                     <p>%Change</p>
                 </div>
                 <div className="w-full h-full flex flex-col">
-                    <Ticker name="RR.L" />
-                    <Ticker name="^FTSE" />
-                    <Ticker name="LLY" />
+                    {watchlistArray && watchlistArray.map((tick) => (
+                        <Ticker key={tick} name={tick} />
+                    ))
+                        
+                    }
                 </div>
                 
             </div>

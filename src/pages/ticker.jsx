@@ -2,6 +2,8 @@ import "./styles/watchlist.css";
 import { fetchQuote } from "./Charts/dataRequester";
 import { useEffect , useState} from "react";
 import { useNavigate } from 'react-router-dom';
+
+
 export default function Ticker({ name }) {
     const navigate = useNavigate();
 
