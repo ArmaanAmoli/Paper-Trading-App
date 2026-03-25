@@ -10,23 +10,23 @@ export default function Watchlist() {
     const toggleSearchTab = () => {
         setSearchTabOpen(prev => !prev)
     }
-    const [watchlistArray , setWatchlistArray] = useState(null);
+    const [watchlistArray, setWatchlistArray] = useState(null);
 
-    useEffect(()=>{
-        async function fetchWatchlistData(){
+    useEffect(() => {
+        async function fetchWatchlistData() {
             const res = await getWatchlist();
             setWatchlistArray(res.symbols);
             console.log(watchlistArray);
         }
         fetchWatchlistData();
-        const intervalID = setInterval(fetchWatchlistData , 10000);
-        return ()=>clearInterval(intervalID);
-    },[]);
+        const intervalID = setInterval(fetchWatchlistData, 10000);
+        return () => clearInterval(intervalID);
+    }, []);
 
     return (
-        <div >
+        <div className="w-full h-full overflow-y-auto overflow-x-hidden">
             {
-                searchTabOpen && (createPortal(<SearchTabPopUp close={toggleSearchTab}/> , document.body))
+                searchTabOpen && (createPortal(<SearchTabPopUp close={toggleSearchTab} />, document.body))
             }
             <div className="stock-list">
                 <div className="py-2.5 grid grid-cols-10">
@@ -42,20 +42,28 @@ export default function Watchlist() {
 
                 </div>
 
-                <div className="heading-wl">
-                    <p>Symbol</p>
+                <div className="w-full h-[35px] grid grid-cols-9 pl-[4px] items-center border-b border-white/20 italic font-bold">
+                    {/* <p>Symbol</p>
                     <p>Price</p>
                     <p>Change</p>
-                    <p>%Change</p>
+                    <p>%Change</p> */}
+                    <p className="col-span-3 ">Symbol</p>
+                    <p className="col-span-2">Price</p>
+                    <p className="col-span-2">Change</p>
+                    <p className="col-span-2">%Change</p>
+
                 </div>
-                <div className="w-full h-full flex flex-col">
+                <div className="w-full grow flex flex-col overflow-scroll ">
                     {watchlistArray && watchlistArray.map((tick) => (
-                        <Ticker key={tick} name={tick} />
+                        <div className="w-full">
+                            <Ticker key={tick} name={tick} />
+                        </div>
+
                     ))
-                        
+
                     }
                 </div>
-                
+
             </div>
         </div>
 

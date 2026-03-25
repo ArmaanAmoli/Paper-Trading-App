@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist } from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist} from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -144,7 +144,7 @@ server.get('/user-watchlist', verifyToken, async (req, res, next) => {
     try {
         const userID = req.user.userId;
         const userWatchlist = await GetUserWatchlist(userID);
-        console.log(userWatchlist)
+        // console.log(userWatchlist)
         res.status(200).json(userWatchlist);
     } catch (err) {
         next(err);
@@ -242,6 +242,25 @@ server.post('/sell', verifyToken, async (req, res, next) => {
             return res.status(422).json({ message: "Something went wrong" });
         }
     } catch (err) {
+        next(err);
+    }
+})
+
+server.delete('/user-watchlist/delete' , verifyToken , async(req , res , next)=>{
+    try{
+        const userId = req.user.userId;
+        const symbol = req.body.symbol;
+        console.log(req.body)
+        console.log(symbol);
+        const response = await RemoveFromWatchlist(userId , symbol);
+        if(response){
+            res.status(200).json({success:true});
+        }
+        else{
+            res.status(400).json({success:false});
+        }
+        
+    }catch(err){
         next(err);
     }
 })

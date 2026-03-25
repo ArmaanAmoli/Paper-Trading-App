@@ -295,3 +295,17 @@ export async function AddToWatchlist(userID, symbol) {
     }
     
 }
+
+export async function RemoveFromWatchlist(userID , symbol){
+    try{
+        await Watchlist.updateOne(
+            { "userId": new ObjectId(userID) },
+            { $pull: {symbols:symbol} }
+        )
+        return true;
+
+    }catch(err){
+        console.log(`Error while deleteing from watchlist: ${err}`);
+        return false;
+    }
+}
