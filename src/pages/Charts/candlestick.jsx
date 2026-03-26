@@ -2,13 +2,14 @@ import { createChart, ColorType, CandlestickSeries } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 import { fetchData, fetchQuote } from "./dataRequester";
 import { useCallback } from "react";
+import { CrosshairMode } from "lightweight-charts";
 const INTERVAL_SECONDS = {
-        "1m": 60,
-        "5m": 300,
-        "15m": 900,
-        "1h": 3600,
-        "1d": 86400,
-    };
+    "1m": 60,
+    "5m": 300,
+    "15m": 900,
+    "1h": 3600,
+    "1d": 86400,
+};
 export default function CandleStickChartComponent({ ticker, interval, period }) {
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
@@ -77,7 +78,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
     useEffect(() => {
         if (!chartContainerRef.current || chartRef.current) return;
         const chart = createChart(chartContainerRef.current, {
-            autoSize:true,
+            autoSize: true,
             layout: {
                 background: '#161616',
                 textColor: 'rgba(255, 255, 255, 0.9)',
@@ -93,6 +94,14 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             },
             width: chartContainerRef.current.clientWidth,
             height: chartContainerRef.current.clientHeight,
+
+        });
+
+        chart.applyOptions({
+            crosshair: {
+                // Change mode from default 'magnet' to 'normal'.
+                mode: CrosshairMode.Normal,
+            }
         });
 
         const series = chart.addSeries(CandlestickSeries, {
@@ -138,11 +147,11 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
         }, 5000); // every 5 seconds
 
         return () => clearInterval(intervalId);
-    }, [ticker , mergePriceIntoLastCandle]);
+    }, [ticker, mergePriceIntoLastCandle]);
 
 
     return (
-        <div ref={chartContainerRef} style={{ width: "100%", height: "100%"} }></div>
+        <div ref={chartContainerRef} style={{ width: "100%", height: "100%" }}></div>
     );
 
 }

@@ -1,11 +1,13 @@
-
+import { WatchlistContext } from "./context";
 import { fetchQuote } from "./Charts/dataRequester";
-import { useEffect , useState} from "react";
+import { useEffect , useState , useContext} from "react";
 import { useNavigate } from 'react-router-dom';
 import { deleteFromWatchlist } from "./watchlist";
 
 export default function Ticker({ name }) {
     const navigate = useNavigate();
+
+    const [watchlistArray, setWatchlistArray] = useContext(WatchlistContext);
 
     const handleDivClick = ()=>{
         navigate(`/chart/${name}` , {replace:true});
@@ -48,7 +50,9 @@ export default function Ticker({ name }) {
             cursor-pointer bg-contain bg-no-repeat bg-[url('../../src/assets/Icons/delete-icon.png')] bg-center" onClick={async (e)=>{
                 e.stopPropagation();
                 const res = await deleteFromWatchlist(name);
-                console.log(res.data);
+                if(res.success){
+                    setWatchlistArray(prev=>prev.filter(item=>item!==name));
+                }
                 // Here we will run the delete code
             }}></button>
 

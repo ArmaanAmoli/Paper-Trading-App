@@ -170,7 +170,7 @@ server.get('/user-data', verifyToken, async (req, res, next) => {
 server.get('/trade-history', verifyToken, async (req, res, next) => {
     try {
         const userID = req.user.userId;
-        console.log(userID);
+        // console.log(userID);
         const tradeHistory = await GetTradeHistory(userID);
         //console.log(tradeHistory);
         res.status(200).json(tradeHistory);

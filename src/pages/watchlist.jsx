@@ -1,16 +1,17 @@
 import Ticker from "./ticker.jsx";
 import "./styles/watchlist.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState , useContext } from "react";
 import SearchTabPopUp from "./floatingSearchTab.jsx";
 import { createPortal } from "react-dom";
 import { getWatchlist } from "./watchlist.js";
+import { WatchlistContext } from "./context.js";
 
 export default function Watchlist() {
     const [searchTabOpen, setSearchTabOpen] = useState(false);
     const toggleSearchTab = () => {
         setSearchTabOpen(prev => !prev)
     }
-    const [watchlistArray, setWatchlistArray] = useState(null);
+    const [watchlistArray, setWatchlistArray] = useContext(WatchlistContext);
 
     useEffect(() => {
         async function fetchWatchlistData() {
@@ -54,9 +55,9 @@ export default function Watchlist() {
 
                 </div>
                 <div className="w-full grow flex flex-col overflow-scroll ">
-                    {watchlistArray && watchlistArray.map((tick) => (
+                    {watchlistArray!=null && watchlistArray.map((tick) => (
                         <div className="w-full">
-                            <Ticker key={tick} name={tick} />
+                            <Ticker key={tick} name={tick}/>
                         </div>
 
                     ))
