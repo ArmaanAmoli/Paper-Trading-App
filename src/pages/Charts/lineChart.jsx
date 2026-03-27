@@ -1,4 +1,4 @@
-import { createChart, LineSeries, ColorType, AreaSeries } from "lightweight-charts";
+import { createChart, ColorType, AreaSeries } from "lightweight-charts";
 import React, { useEffect, useRef, useState } from "react";
 import { fetchData } from "./dataRequester.js";
 // import { Daily } from "../../../AlphaVantageApi/Daily.js";
@@ -17,7 +17,9 @@ function transformData(apiResponse) {
 }
 
 export default function LineChart({ ticker }) {
-    const chartContainer = useRef();
+    const chartContainer = useRef(null); // stores the container reference of div below
+    const chartRef = useRef(null); // store the chart object
+    const seriesRef = useRef(null); // store the data series
     const [data, setData] = useState([]);
 
     // Fetch data
@@ -28,9 +30,8 @@ export default function LineChart({ ticker }) {
             try {
                 let dataFromYahooJSON =  await fetchData(ticker , '1d' , '2y');
                 
-                // --- FIX 1: Corrected console log & ensured data is an array
+                // ensured data is an array
                 if (Array.isArray(dataFromYahooJSON)) {
-                    // --- FIX 2: Fixed the typo 'dataFromYahoo' to 'dataFromYahooJSON'
                     const transformedData = transformData(dataFromYahooJSON);
                     setData(transformedData);
                 } else {
@@ -45,15 +46,17 @@ export default function LineChart({ ticker }) {
         
     }, [ticker]);
 
-    // Create chart
     useEffect(() => {
-        if (!data.length) return;
+        if (!chartContainer.current || chartRef.current) return;
 
-        const chart = createChart(chartContainer.current, {
-            autosize: true,
-            width: chartContainer.current.clientWidth,
-            height: 300,
+        const container = chartContainer.current;
+        const initialWidth = container.clientWidth || 600;
+        const initialHeight = container.clientHeight || 300;
 
+        const chart = createChart(container, {
+            autoSize: true,
+            width: initialWidth,
+            height: initialHeight,
             grid: {
                 vertLines: {
                     color: 'rgba(255, 255, 255, 0.1)',
@@ -62,7 +65,6 @@ export default function LineChart({ ticker }) {
                     color: 'rgba(255, 255, 255, 0.1)',
                 },
             },
-
             layout: {
                 background: { type: ColorType.Solid, color: "black" },
                 textColor: "white",
@@ -75,23 +77,40 @@ export default function LineChart({ ticker }) {
             bottomColor: "rgba(41, 98, 255, 0.28)",
         });
 
-        series.setData(data);
+        chartRef.current = chart;
+        seriesRef.current = series;
 
-        const handleResize = () =>
-            chart.applyOptions({
-                width: chartContainer.current.clientWidth,
-            });
+        const handleResize = () => {
+            if (!chartRef.current || !chartContainer.current) return;
+            const nextWidth = chartContainer.current.clientWidth;
+            const nextHeight = chartContainer.current.clientHeight;
+            if (!nextWidth || !nextHeight) return;
+            chartRef.current.applyOptions({ width: nextWidth, height: nextHeight });
+        };
 
+        const resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(container);
         window.addEventListener("resize", handleResize);
+
+        // Run once after mount so the chart picks up final flex/grid dimensions.
+        requestAnimationFrame(handleResize);
 
         return () => {
             window.removeEventListener("resize", handleResize);
+            resizeObserver.disconnect();
             chart.remove();
+            chartRef.current = null;
+            seriesRef.current = null;
         };
+    }, []);
+
+    useEffect(() => {
+        if (!seriesRef.current || !data.length) return;
+        seriesRef.current.setData(data);
     }, [data]);
 
     return (
     <>
-    <div ref={chartContainer} />
+    <div ref={chartContainer} style={{ width: "100%", height: "100%", minHeight: "260px" }} />
     </>);
 }

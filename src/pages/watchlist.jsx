@@ -1,5 +1,5 @@
 import Ticker from "./ticker.jsx";
-import "./styles/watchlist.css";
+
 import { useEffect, useState , useContext } from "react";
 import SearchTabPopUp from "./floatingSearchTab.jsx";
 import { createPortal } from "react-dom";
@@ -25,11 +25,11 @@ export default function Watchlist() {
     }, []);
 
     return (
-        <div className="w-full h-full overflow-y-auto overflow-x-hidden">
+        <div className="w-full h-full min-h-0 flex flex-col overflow-hidden">
             {
                 searchTabOpen && (createPortal(<SearchTabPopUp close={toggleSearchTab} />, document.body))
             }
-            <div className="stock-list">
+            <div className="stock-list w-full h-full min-h-0 flex flex-col">
                 <div className="py-2.5 grid grid-cols-10">
                     <h4 className="col-span-8">Watchlist</h4>
 
@@ -44,19 +44,15 @@ export default function Watchlist() {
                 </div>
 
                 <div className="w-full h-[35px] grid grid-cols-9 pl-[4px] items-center border-b border-white/20 italic font-bold">
-                    {/* <p>Symbol</p>
-                    <p>Price</p>
-                    <p>Change</p>
-                    <p>%Change</p> */}
                     <p className="col-span-3 ">Symbol</p>
                     <p className="col-span-2">Price</p>
                     <p className="col-span-2">Change</p>
                     <p className="col-span-2">%Change</p>
 
                 </div>
-                <div className="w-full grow flex flex-col overflow-scroll ">
+                <div className="w-full flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden">
                     {watchlistArray!=null && watchlistArray.map((tick) => (
-                        <div className="w-full">
+                        <div className="w-full" key={tick + "div"}>
                             <Ticker key={tick} name={tick}/>
                         </div>
 
