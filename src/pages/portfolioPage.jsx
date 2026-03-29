@@ -38,8 +38,9 @@ export default function PortfolioPage() {
         }
         getUser();
         getPortfolio();
-        const intervalID = setInterval(getPortfolio, 10000);
-        return () => { clearInterval(intervalID); }
+        const intervalID1 = setInterval(getPortfolio, 10000);
+        const intervalID2 = setInterval(getUser, 10000);
+        return () => { clearInterval(intervalID1); clearInterval(intervalID2); }
     }, []);
 
     useEffect(() => {
@@ -50,7 +51,8 @@ export default function PortfolioPage() {
             if (assetList.length === 0) return;
             try {
                 const quotes = await Promise.all(
-                    assetList.map(item => fetchQuote(item.symbol))); //.map() will return an array of pending promises which will be run at the same time
+                    assetList.map(item => fetchQuote(item.symbol))); 
+                    //.map() will return an array of pending promises which will be run at the same time
 
                 const updatedData = {};
                 let total = 0;

@@ -66,7 +66,7 @@ export default function UserProfile(){
         {/* dividing the whole page into 10 columns assing 3 cols to profile Pic
             and Name and 7 cols to other user info and their trade history*/}
 
-            <div className="grid grid-rows-10 col-span-2 sticky ">
+            <div className="grid grid-rows-10 col-span-2 sticky left-0">
 
                 <div className="row-span-3 flex items-center justify-center">
                     <div style={{ backgroundImage: `url('${profilePic}')` }} className="w-[225px] h-[225px] rounded-full aspect-square border bg-cover bg-center bg-no-repeat"></div>
@@ -106,7 +106,7 @@ export default function UserProfile(){
                         </div>
                     </div>
                 </div>
-                <div className="row-span-7 border ">Trade History Table</div>
+                <div className="row-span-10 border ">Trade History Table</div>
 
             </div>
         </div>
