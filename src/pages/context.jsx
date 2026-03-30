@@ -22,6 +22,7 @@ const UserAccountProvider = (({ children }) => {
             try {
                 const res = await api.get("/user-data");
                 const resData = res.data;
+                console.log(resData);
                 setUserAccountInformation({
                     balance: resData.balance,
                     blockedMargin: resData.blockedMargin,
@@ -35,7 +36,7 @@ const UserAccountProvider = (({ children }) => {
         }
 
         collectUserAccInfo();
-        const intervalId = setInterval(collectUserAccInfo(), 10000);
+        const intervalId = setInterval(collectUserAccInfo, 10000);
         return () => { clearInterval(intervalId) };
     }, []);
 
@@ -54,6 +55,7 @@ const UserEquityProvider = (({ children }) => {
 
     useEffect(() => {
         async function updateUserPnlList(portfolio) {
+
             try {
 
                 //collecting the current prices for all the symbols in portfolio
@@ -62,7 +64,6 @@ const UserEquityProvider = (({ children }) => {
                 // Keep in mind that order of symbols in quotes and userPortfolio is same
                 const updatedData = {}; //will store fresh calculated pnl data
                 let total = 0; //consist the sum of pnl which will later be added to equity
-
                 quotes.forEach((quote, index) => {
                     const item = portfolio[index];
 
@@ -77,8 +78,8 @@ const UserEquityProvider = (({ children }) => {
 
                     total += stockPnl;
                 });
+                setUserPnlList(updatedData);
                 setTotalPnl(total);
-                return;
             }
             catch (err) {
                 console.log("An error occured while collecting userPnL Error: ", err);
@@ -88,7 +89,7 @@ const UserEquityProvider = (({ children }) => {
 
         async function updateUserPortfolio() {
             try {
-                const res = api.get("/portfolio");
+                const res = await api.get("/portfolio");
                 const resData = res.data;
                 setUserPortfolio(resData);
                 await updateUserPnlList(resData);
@@ -99,7 +100,7 @@ const UserEquityProvider = (({ children }) => {
                 return;
             }
         }
-
+        updateUserPortfolio();
         const intervalID = setInterval(updateUserPortfolio, 10000);
         return () => { clearInterval(intervalID) };
     }, []);
@@ -114,4 +115,4 @@ const UserEquityProvider = (({ children }) => {
     );
 })
 
-export { WatchlistProvider };
+export { WatchlistProvider, UserEquityProvider, UserAccountProvider };

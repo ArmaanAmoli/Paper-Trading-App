@@ -1,93 +1,14 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useContext} from "react";
 import Navbar from "./navbar";
-import api from './api.js';
-import { fetchQuote } from "./Charts/dataRequester";
 import './styles/portfolioPage.css'
+import { UserAccountContext, UserEquityContext } from "./context.js";
 
 export default function PortfolioPage() {
-    const [assetList, setAssetList] = useState([]);
-    const [prices, setPrices] = useState({});
-    const [totalPnl, setTotalPnl] = useState(null);
-    const [userEquity, setUserEquity] = useState({});
-    useEffect(() => {
-
-        async function getUser() {
-            try {
-                const userData = await api.get("/user-data");
-                console.log(userData.data);
-                setUserEquity({
-                    balance: userData.data.balance,
-                    equity: userData.data.balance
-                });
-            } catch (err) {
-                console.log(err);
-            }
-        }
-
-        async function getPortfolio() {
-            try {
-                const portfolio = await api.get("/portfolio");
-                console.log(portfolio.data.positions);
-                setAssetList(portfolio.data.positions);
-                return
-            }
-            catch (err) {
-                console.log(err)
-            }
-        }
-        getUser();
-        getPortfolio();
-        const intervalID1 = setInterval(getPortfolio, 10000);
-        const intervalID2 = setInterval(getUser, 10000);
-        return () => { clearInterval(intervalID1); clearInterval(intervalID2); }
-    }, []);
-
-    useEffect(() => {
-
-
-
-        async function updatePrices() {
-            if (assetList.length === 0) return;
-            try {
-                const quotes = await Promise.all(
-                    assetList.map(item => fetchQuote(item.symbol))); 
-                    //.map() will return an array of pending promises which will be run at the same time
-
-                const updatedData = {};
-                let total = 0;
-
-                quotes.forEach((quote, index) => {
-                    const item = assetList[index];
-                    //const pnl = Number((quotes.currentPrice - item.avgPrice) * item.shares)
-                    const stockPnl = Number((quote.currentPrice - item.avgPrice) * item.shares);
-
-                    const priceChangePercent = Number (((quote.currentPrice - item.avgPrice) / item.avgPrice) * 100);
-
-                    updatedData[item.symbol] = {
-                        Pnl: stockPnl.toFixed(2),
-                        pChange: item.shares >=0 ? priceChangePercent.toFixed(2): -1*priceChangePercent.toFixed(2)
-                    };
-
-                    total += stockPnl;
-                });
-
-                setPrices(updatedData);
-                setTotalPnl(Number(total.toFixed(2)));
-                setUserEquity(prev => ({
-                    ...prev,
-                    equity: prev.balance + Number(total.toFixed(2))
-                }));
-
-            } catch (err) {
-                console.log(err);
-            }
-        }
-        updatePrices();
-        const id = setInterval(updatePrices, 10000);
-        return () => clearInterval(id);
-    }, [assetList]);
-
+    const [userAccountInformation, setUserAccountInformation] = useContext(UserAccountContext) || [0,0];
+    const data = useContext(UserEquityContext);
+    const [assetList, setAssetList] = data.portfolio;
+    const [prices, setPrices] = data.pnl;
+    const [totalPnl, setTotalPnl] = data.totalPnl;
     return (
         <>
             <div className="Portfolio-page">
@@ -101,11 +22,11 @@ export default function PortfolioPage() {
                         </div>
                         <div className="Account-status-component">
                             <h4>Account Balance</h4>
-                            <h4>{(userEquity.balance) ? userEquity.balance.toFixed(2): null}</h4>
+                            <h4>{(userAccountInformation.balance) ? userAccountInformation.balance.toFixed(2): null}</h4>
                         </div>
                         <div className="Account-status-component">
                             <h4>Equity</h4>
-                            <h4>{(userEquity.equity) ? userEquity.equity.toFixed(2):null}</h4>
+                            <h4>{userAccountInformation.balance.toFixed(2) + totalPnl}</h4>
                         </div>
 
                     </div>
