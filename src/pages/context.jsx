@@ -6,7 +6,7 @@ import { fetchQuote } from "./Charts/dataRequester.js";
 /*Provide the watchlist array state to all the elements
 so that we can add a new element to watchlist from anywhere*/
 const WatchlistProvider = (({ children }) => {
-    const [watchlistArray, setWatchlistArray] = useState(null);
+    const [watchlistArray, setWatchlistArray] = useState([]);
     return (
         <WatchlistContext.Provider value={[watchlistArray, setWatchlistArray]}>
             {children}
@@ -16,7 +16,10 @@ const WatchlistProvider = (({ children }) => {
 
 /* Provider for user account information balance and blocked margin*/
 const UserAccountProvider = (({ children }) => {
-    const [userAccountInformation, setUserAccountInformation] = useState(null);
+    const [userAccountInformation, setUserAccountInformation] = useState({
+        balance:0,
+        blockedMargin:0
+    });
     useEffect(() => {
         async function collectUserAccInfo() {
             try {
@@ -49,9 +52,9 @@ const UserAccountProvider = (({ children }) => {
 
 /*Provider for use portfolio and pnl list */
 const UserEquityProvider = (({ children }) => {
-    const [userPortfolio, setUserPortfolio] = useState(null);
-    const [userPnlList, setUserPnlList] = useState(null);
-    const [totalPnl, setTotalPnl] = useState(null);
+    const [userPortfolio, setUserPortfolio] = useState([]);
+    const [userPnlList, setUserPnlList] = useState([]);
+    const [totalPnl, setTotalPnl] = useState(0);
 
     useEffect(() => {
         async function updateUserPnlList(portfolio) {
@@ -59,11 +62,11 @@ const UserEquityProvider = (({ children }) => {
             try {
 
                 //collecting the current prices for all the symbols in portfolio
-                const quotes = await Promise.all(portfolio.map((item) => { fetchQuote(item.symbol) }));
+                const quotes = await Promise.all(userPortfolio.map((item) => fetchQuote(item.symbol)));
 
                 // Keep in mind that order of symbols in quotes and userPortfolio is same
                 const updatedData = {}; //will store fresh calculated pnl data
-                let total = 0; //consist the sum of pnl which will later be added to equity
+                let total = Number(0); //consist the sum of pnl which will later be added to equity
                 quotes.forEach((quote, index) => {
                     const item = portfolio[index];
 
@@ -76,7 +79,7 @@ const UserEquityProvider = (({ children }) => {
                         pChange: item.shares >= 0 ? priceChangePercent.toFixed(2) : -1 * priceChangePercent.toFixed(2)
                     };
 
-                    total += stockPnl;
+                    total += Number(stockPnl.toFixed(2));
                 });
                 setUserPnlList(updatedData);
                 setTotalPnl(total);
@@ -91,8 +94,9 @@ const UserEquityProvider = (({ children }) => {
             try {
                 const res = await api.get("/portfolio");
                 const resData = res.data;
-                setUserPortfolio(resData);
-                await updateUserPnlList(resData);
+                console.log(resData.positions);
+                setUserPortfolio(resData.positions);
+                await updateUserPnlList(userPortfolio);
                 return;
             }
             catch (err) {

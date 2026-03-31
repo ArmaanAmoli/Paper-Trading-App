@@ -4,11 +4,11 @@ import './styles/portfolioPage.css'
 import { UserAccountContext, UserEquityContext } from "./context.js";
 
 export default function PortfolioPage() {
-    const [userAccountInformation, setUserAccountInformation] = useContext(UserAccountContext) || [0,0];
-    const data = useContext(UserEquityContext);
-    const [assetList, setAssetList] = data.portfolio;
-    const [prices, setPrices] = data.pnl;
-    const [totalPnl, setTotalPnl] = data.totalPnl;
+    const [userAccountInformation, setUserAccountInformation] = useContext(UserAccountContext);
+    // const data = useContext(UserEquityContext);
+    const [assetList, setAssetList] = useContext(UserEquityContext).portfolio || [];
+    const [prices, setPrices] = useContext(UserEquityContext).pnl;
+    const [totalPnl, setTotalPnl] = useContext(UserEquityContext).totalPnl;
     return (
         <>
             <div className="Portfolio-page">
@@ -18,15 +18,15 @@ export default function PortfolioPage() {
 
                         <div className="Account-status-component">
                             <h4>Unrealized P&L</h4>
-                            <h4 className={Number(totalPnl) >= 0 ? 'positive' : 'negative'} >{totalPnl}</h4>
+                            <h4 className={Number(totalPnl) >= 0 ? 'positive' : 'negative'} >{Number(totalPnl).toFixed(2)}</h4>
                         </div>
                         <div className="Account-status-component">
                             <h4>Account Balance</h4>
-                            <h4>{(userAccountInformation.balance) ? userAccountInformation.balance.toFixed(2): null}</h4>
+                            <h4>{(userAccountInformation.balance) ? Number(userAccountInformation.balance.toFixed(2)): 0}</h4>
                         </div>
                         <div className="Account-status-component">
                             <h4>Equity</h4>
-                            <h4>{userAccountInformation.balance.toFixed(2) + totalPnl}</h4>
+                            <h4>{(userAccountInformation.balance && totalPnl) ? Number(userAccountInformation.balance + totalPnl ).toFixed(2): 0}</h4>
                         </div>
 
                     </div>
@@ -42,7 +42,7 @@ export default function PortfolioPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {assetList.map((item, index) => (
+                            {assetList && assetList.length >0 && assetList.map((item, index) => (
                                 <tr key={item.symbol} className="row">
                                     <td>{index + 1}</td>
                                     <td>{item.symbol}</td>
