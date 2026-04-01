@@ -1,6 +1,6 @@
 import api from './api.js';
-import { useEffect, useState } from "react";
-
+import { useEffect, useState , useContext } from "react";
+import { UserAccountContext , UserEquityContext } from './context.js';
 /*
 userData:
 Object { _id: "6975e0d16ef729c5588d27a3", username: "Armaan", email: "armaanmohanamoli@gmail.com", passwordHash: "$2b$10$0hWxPDf5n3eYdgP8fPp/fO0ZpRkvuFvPaFS.J7Gwbn9XtEnaOL7sG", balance: 946502.71, createdAt: "2026-01-25T09:22:25.942Z", lastLogin: "2026-01-25T09:22:25.942Z", __v: 0, blockedMargin: 0 }
@@ -32,36 +32,16 @@ userId: "6975e0d16ef729c5588d27a3"
 
 export default function UserProfile(){
 
-    const [userData , setUserData] = useState(null); // state of user personal data
+    const [userData , setUserData] = useContext(UserAccountContext); // state of user personal data
+    const [totalPnl , setTotalPnl] = useContext(UserEquityContext).totalPnl || 0;
     const [tradeHistory , setTradeHistory] = useState(null);
-    const [error , setError] = useState(null);
     const profilePic = "https://cdn-icons-png.flaticon.com/512/6325/6325109.png";
-    useEffect(()=>{
-        
-        const fetchData = async()=>{
-            try{
-                const Data = await api.get("/user-data");
-                const tradeHistoryData = await api.get("/trade-history");
-
-                setUserData(Data.data);
-                setTradeHistory(tradeHistoryData.data);
-
-                console.log(tradeHistoryData.data);
-                console.log(Data.data);
-            }catch(error){
-                setError(error);
-                console.error("Error fetching user data: " , error)
-            }
-        }
-        fetchData();
-    },[]);
-
-    if(error) return (<div>Error: {error.message}</div>);
-    if(!userData) return (<div>Loading...</div>);
-    if(!tradeHistory) return (<div>Loading...</div>);
+    
+    // if(!userData) return (<div>Loading...</div>);
+    // if(!tradeHistory) return (<div>Loading...</div>);
     return(
 
-        <div className="w-screen h-dvh grid grid-cols-10 gap-1 grid-row-1"> 
+        <div className="w-screen h-dvh grid grid-cols-10 gap-1 grid-row-1 overflow-hidden"> 
 
         {/* dividing the whole page into 10 columns assing 3 cols to profile Pic
             and Name and 7 cols to other user info and their trade history*/}
@@ -88,25 +68,28 @@ export default function UserProfile(){
                 
             </div>
 
-            <div className="grid grid-rows-10 col-span-8">
-                <div className="grid grid-cols-2 row-span-3 border "> 
+            <div className="grid grid-rows-10 col-span-8 px-2 gap-2 overflow-auto">
 
-                    <div className="col-span-1 border ">
-                        <div className="w-full h-full bg-blue-500 flex flex-col">
-                            <div className='w-full h-1/2 border flex flex-col justify-center items-center'> <p>Balance</p> <p>${userData.balance}</p></div>
-                            <div className='w-full h-1/2 border flex flex-col justify-center items-center'> <p>Blocked Margin</p> <p>${userData.blockedMargin}</p></div>
+                <div className="grid grid-cols-2 row-span-3 gap-1"> 
+
+                    <div className="col-span-1 ">
+                        <div className="w-full h-full flex flex-col gap-1">
+                            <div className='w-full h-1/2 flex flex-col justify-center items-center bg-white/10'> <p>Balance</p> <p>${userData.balance}</p></div>
+                            <div className='w-full h-1/2 flex flex-col justify-center items-center bg-white/10'> <p>Blocked Margin</p> <p>${userData.blockedMargin}</p></div>
                         </div>
                     </div>
 
 
                     <div className="col-span-1">
-                        <div className="w-full h-full bg-blue-500 flex flex-col justify-center items-center">
+                        <div className="w-full h-full bg-white/10 flex flex-col justify-center items-center">
                             <p>Equity</p>
-                            <p>${userData.balance}</p>
+                            <p>${Number(userData.balance + totalPnl).toFixed(2)}</p>
                         </div>
                     </div>
                 </div>
-                <div className="row-span-10 border ">Trade History Table</div>
+
+                <div className="row-span-10 bg-white/10 border flex flex-1">
+                </div>
 
             </div>
         </div>

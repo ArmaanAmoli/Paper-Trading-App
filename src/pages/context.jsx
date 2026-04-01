@@ -17,6 +17,8 @@ const WatchlistProvider = (({ children }) => {
 /* Provider for user account information balance and blocked margin*/
 const UserAccountProvider = (({ children }) => {
     const [userAccountInformation, setUserAccountInformation] = useState({
+        username:"",
+        email:"",
         balance:0,
         blockedMargin:0
     });
@@ -60,10 +62,15 @@ const UserEquityProvider = (({ children }) => {
         async function updateUserPnlList(portfolio) {
 
             try {
+                if (!Array.isArray(portfolio) || portfolio.length === 0) {
+                    setUserPnlList([]);
+                    setTotalPnl(0);
+                    return;
+                }
 
                 //collecting the current prices for all the symbols in portfolio
-                const quotes = await Promise.all(userPortfolio.map((item) => fetchQuote(item.symbol)));
-
+                const quotes = await Promise.all(portfolio.map((item) => fetchQuote(item.symbol)));
+                console.log("Quotes",quotes);
                 // Keep in mind that order of symbols in quotes and userPortfolio is same
                 const updatedData = {}; //will store fresh calculated pnl data
                 let total = Number(0); //consist the sum of pnl which will later be added to equity
@@ -95,8 +102,9 @@ const UserEquityProvider = (({ children }) => {
                 const res = await api.get("/portfolio");
                 const resData = res.data;
                 console.log(resData.positions);
-                setUserPortfolio(resData.positions);
-                await updateUserPnlList(userPortfolio);
+                const positions = resData.positions || [];
+                setUserPortfolio(positions);
+                await updateUserPnlList(positions);
                 return;
             }
             catch (err) {
