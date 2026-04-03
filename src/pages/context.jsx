@@ -2,11 +2,22 @@ import React, { useEffect, useState } from "react";
 import { WatchlistContext, UserAccountContext, UserEquityContext } from "./context.js";
 import api from "./api.js";
 import { fetchQuote } from "./Charts/dataRequester.js";
+import { getWatchlist } from "./watchlist.js";
 
 /*Provide the watchlist array state to all the elements
 so that we can add a new element to watchlist from anywhere*/
 const WatchlistProvider = (({ children }) => {
     const [watchlistArray, setWatchlistArray] = useState([]);
+    useEffect(() => {
+            async function fetchWatchlistData() {
+                const res = await getWatchlist();
+                setWatchlistArray(res.symbols);
+                console.log(watchlistArray);
+            }
+            fetchWatchlistData();
+            const intervalID = setInterval(fetchWatchlistData, 10000);
+            return () => clearInterval(intervalID);
+        }, []);
     return (
         <WatchlistContext.Provider value={[watchlistArray, setWatchlistArray]}>
             {children}
@@ -28,10 +39,7 @@ const UserAccountProvider = (({ children }) => {
                 const res = await api.get("/user-data");
                 const resData = res.data;
                 console.log(resData);
-                setUserAccountInformation({
-                    balance: resData.balance,
-                    blockedMargin: resData.blockedMargin,
-                });
+                setUserAccountInformation(resData);
                 return;
             }
             catch (err) {

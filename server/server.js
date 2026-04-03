@@ -173,7 +173,7 @@ server.get('/trade-history', verifyToken, async (req, res, next) => {
         // console.log(userID);
         const tradeHistory = await GetTradeHistory(userID);
         //console.log(tradeHistory);
-        res.status(200).json(tradeHistory);
+        res.status(200).json(tradeHistory.reverse());
     } catch (err) { next(err); }
 })
 

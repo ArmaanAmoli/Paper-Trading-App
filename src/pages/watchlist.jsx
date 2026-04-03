@@ -1,9 +1,8 @@
 import Ticker from "./ticker.jsx";
-
-import { useEffect, useState , useContext } from "react";
+import {useState , useContext } from "react";
 import SearchTabPopUp from "./floatingSearchTab.jsx";
 import { createPortal } from "react-dom";
-import { getWatchlist } from "./watchlist.js";
+// import { getWatchlist } from "./watchlist.js";
 import { WatchlistContext } from "./context.js";
 
 export default function Watchlist() {
@@ -12,17 +11,6 @@ export default function Watchlist() {
         setSearchTabOpen(prev => !prev)
     }
     const [watchlistArray, setWatchlistArray] = useContext(WatchlistContext);
-
-    useEffect(() => {
-        async function fetchWatchlistData() {
-            const res = await getWatchlist();
-            setWatchlistArray(res.symbols);
-            console.log(watchlistArray);
-        }
-        fetchWatchlistData();
-        const intervalID = setInterval(fetchWatchlistData, 10000);
-        return () => clearInterval(intervalID);
-    }, []);
 
     return (
         <div className="w-full h-full min-h-0 flex flex-col overflow-hidden">

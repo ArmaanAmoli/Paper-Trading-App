@@ -10,7 +10,7 @@ export default function Ticker({ name }) {
     const [watchlistArray, setWatchlistArray] = useContext(WatchlistContext);
 
     const handleDivClick = ()=>{
-        navigate(`/chart/${name}` , {replace:true});
+        navigate(`/chart/${name}`);
     }
 
     const [quote , setQuote] = useState([]);

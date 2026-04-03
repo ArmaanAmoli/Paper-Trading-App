@@ -1,6 +1,8 @@
 import api from './api.js';
-import { useEffect, useState , useContext } from "react";
-import { UserAccountContext , UserEquityContext } from './context.js';
+import { useEffect, useState, useContext } from "react";
+import { UserAccountContext, UserEquityContext } from './context.js';
+import { getTradeHistory } from './tradeHistory.js';
+import { useNavigate } from 'react-router-dom';
 /*
 userData:
 Object { _id: "6975e0d16ef729c5588d27a3", username: "Armaan", email: "armaanmohanamoli@gmail.com", passwordHash: "$2b$10$0hWxPDf5n3eYdgP8fPp/fO0ZpRkvuFvPaFS.J7Gwbn9XtEnaOL7sG", balance: 946502.71, createdAt: "2026-01-25T09:22:25.942Z", lastLogin: "2026-01-25T09:22:25.942Z", __v: 0, blockedMargin: 0 }
@@ -30,47 +32,58 @@ userId: "6975e0d16ef729c5588d27a3"
 1: Object { _id: "699462977738e25153187fb4", userId: "6975e0d16ef729c5588d27a3", symbol: "ETH-USD", … }
 */
 
-export default function UserProfile(){
+export default function UserProfile() {
 
-    const [userData , setUserData] = useContext(UserAccountContext); // state of user personal data
-    const [totalPnl , setTotalPnl] = useContext(UserEquityContext).totalPnl || 0;
-    const [tradeHistory , setTradeHistory] = useState(null);
-    const profilePic = "https://cdn-icons-png.flaticon.com/512/6325/6325109.png";
-    
-    // if(!userData) return (<div>Loading...</div>);
-    // if(!tradeHistory) return (<div>Loading...</div>);
-    return(
+    const [userData, setUserData] = useContext(UserAccountContext); // state of user personal data
+    const [totalPnl, setTotalPnl] = useContext(UserEquityContext).totalPnl || 0;
+    const [tradeHistory, setTradeHistory] = useState(null);
+    const navigate = useNavigate();
 
-        <div className="w-screen h-dvh grid grid-cols-10 gap-1 grid-row-1 overflow-hidden"> 
+    useEffect(() => {
+        async function fetchTradeHistory() {
+            const data = await getTradeHistory();
+            if (data) {
+                setTradeHistory(data);
+            }
+        }
+        fetchTradeHistory();
+        const intervalId = setInterval(fetchTradeHistory, 10000);
+        return () => clearInterval(intervalId);
+    }, [])
 
-        {/* dividing the whole page into 10 columns assing 3 cols to profile Pic
-            and Name and 7 cols to other user info and their trade history*/}
+    function logOut(){
+        localStorage.removeItem('token');
+        
+        navigate("/" , {replace:true});
+    }
+    return (
+
+        <div className="w-screen h-dvh grid grid-cols-10 gap-1 grid-row-1 overflow-auto">
 
             <div className="grid grid-rows-10 col-span-2 sticky left-0">
 
-                <div className="row-span-3 flex items-center justify-center">
-                    <div style={{ backgroundImage: `url('${profilePic}')` }} className="w-[225px] h-[225px] rounded-full aspect-square border bg-cover bg-center bg-no-repeat"></div>
-                </div>
+                <div className="row-span-7 grid grid-rows-5">
 
-                <div className="row-span-7 border-t grid grid-rows-5">
-
-                    <p className="row-span-1 flex flex-col justify-center items-center">
+                    <div className="row-span-2 flex flex-col justify-center items-center">
                         <div className=' text-xl font-bold'>{userData.username}</div>
                         <div>{userData.email}</div>
-                    </p>
+                        <div className='opacity-50'>{userData._id}</div>
+                        <div className='opacity-50'>Member since {userData.createdAt.split('T')[0]}</div>
+                        
+                    </div>
 
                     <div className="row-span-2 flex flex-col gap-4 justify-center items-center">
-                        <button className='border h-[50px] w-[200px] rounded-3xl'>Update Profile</button>
-                        <button className='border h-[50px] w-[200px] rounded-3xl'>Log out</button>
-                        <button className='border h-[50px] w-[200px] rounded-3xl text-red-400 hover:bg-red-300/10'>Delete Account</button>
+                        <button className='shadow-[-2px_-2px_10px_-1px_rgba(255,255,255,.35)] border border-white/15 h-[50px] w-[200px] rounded-3xl hover:bg-white/10'>Update Profile</button>
+                        <button className='shadow-[-2px_-2px_10px_-1px_rgba(255,255,255,.35)] border border-white/15 h-[50px] w-[200px] rounded-3xl hover:bg-white/10' onClick={logOut}>Log out</button>
+                        <button className='shadow-[-2px_-2px_10px_-1px_rgba(255,0,0,.35)] border border-red-400/15 h-[50px] w-[200px] rounded-3xl text-red-400 hover:bg-red-300/10'>Delete Account</button>
                     </div>
                 </div>
-                
+
             </div>
 
             <div className="grid grid-rows-10 col-span-8 px-2 gap-2 overflow-auto">
 
-                <div className="grid grid-cols-2 row-span-3 gap-1"> 
+                <div className="grid grid-cols-2 row-span-3 gap-1">
 
                     <div className="col-span-1 ">
                         <div className="w-full h-full flex flex-col gap-1">
@@ -88,11 +101,38 @@ export default function UserProfile(){
                     </div>
                 </div>
 
-                <div className="row-span-10 bg-white/10 border flex flex-1">
+                <div className="row-span-10 w-full h-full">
+
+                    <table className='border-collapse w-full bg-white/10 grid grid-rows-10 '>
+                        <thead className='row-span-1 w-full border border-white/10 sticky top-5 bg-black/20 backdrop-blur-md'>
+                            <tr className='w-full grid grid-cols-10 h-full items-center'>
+                                <th className='col-span-1 grid justify-center items-center h-full'>S.No</th>
+                                <th className='col-span-2 grid justify-center items-center h-full'>Symbol</th>
+                                <th className='col-span-2 grid justify-center items-center h-full'>Side</th>
+                                <th className='col-span-1 grid justify-center items-center h-full'>#</th>
+                                <th className='col-span-2 grid justify-center items-center h-full'>Released PnL</th>
+                                <th className='col-span-2 grid justify-center items-center h-full'>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody className='row-span-9 w-full border border-white/10'>
+                            {tradeHistory && tradeHistory.length>0 && tradeHistory.map((item , index)=>(
+                                <tr className='w-full grid grid-cols-10 h-8 items-center border-b border-white/5 hover:bg-white/10' key={item.symbol+index}>
+                                    <td className='col-span-1 grid justify-center items-center h-full'>{index+1}</td>
+                                    <td className='col-span-2 grid justify-center items-center h-full'>{item.symbol}</td>
+                                    <td className='col-span-2 grid justify-center items-center h-full'>{item.type}</td>
+                                    <td className='col-span-1 grid justify-center items-center h-full'>{item.shares}</td>
+                                    <td className='col-span-2 grid justify-center items-center h-full'>{item.realizedPL.toFixed(2)}</td>
+                                    <td className='col-span-2 grid justify-center items-center h-full'>{new Date(item.timestamp).toLocaleString()}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+
                 </div>
 
             </div>
         </div>
     );
-    
+
 }
