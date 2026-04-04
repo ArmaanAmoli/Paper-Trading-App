@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { WatchlistContext, UserAccountContext, UserEquityContext } from "./context.js";
+import { WatchlistContext, UserAccountContext, UserEquityContext , IndicatorsList} from "./context.js";
 import api from "./api.js";
 import { fetchQuote } from "./Charts/dataRequester.js";
 import { getWatchlist } from "./watchlist.js";
@@ -135,4 +135,11 @@ const UserEquityProvider = (({ children }) => {
     );
 })
 
-export { WatchlistProvider, UserEquityProvider, UserAccountProvider };
+const IndicatorsListProvider = (({children}) => {
+    const [indicatorList , setIndicatorList]= useState([]);
+    return(
+        <IndicatorsList.Provider value={[indicatorList , setIndicatorList]}>{children}</IndicatorsList.Provider>
+    );
+});
+
+export { WatchlistProvider, UserEquityProvider, UserAccountProvider , IndicatorsListProvider};

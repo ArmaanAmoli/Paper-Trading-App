@@ -9,4 +9,6 @@ const UserAccountContext = createContext();
 //Contains user portfolio information with pnl.
 const UserEquityContext = createContext();
 
-export {WatchlistContext , UserAccountContext , UserEquityContext};
+const IndicatorsList = createContext();
+
+export {WatchlistContext , UserAccountContext , UserEquityContext , IndicatorsList};

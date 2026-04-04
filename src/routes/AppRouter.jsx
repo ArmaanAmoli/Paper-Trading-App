@@ -6,14 +6,16 @@ import ProtectedRoutes from "./protectedRoutes.jsx";
 import StockMainChart from "../pages/stockChart.jsx";
 import PortfolioPage from "../pages/portfolioPage.jsx";
 import UserProfile from "../pages/userProfile.jsx";
-import { WatchlistProvider, UserEquityProvider, UserAccountProvider } from "../pages/context.jsx";
+import { WatchlistProvider, UserEquityProvider, UserAccountProvider ,IndicatorsListProvider} from "../pages/context.jsx";
 
 const AuthenticatedProviders = () => {
     return (
         <UserAccountProvider>
             <UserEquityProvider>
                 <WatchlistProvider>
-                    <Outlet />
+                    <IndicatorsListProvider>
+                        <Outlet />
+                    </IndicatorsListProvider>
                 </WatchlistProvider>
             </UserEquityProvider>
         </UserAccountProvider>

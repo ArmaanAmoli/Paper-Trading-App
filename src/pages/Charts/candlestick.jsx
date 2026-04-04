@@ -10,7 +10,7 @@ const INTERVAL_SECONDS = {
     "1h": 3600,
     "1d": 86400,
 };
-export default function CandleStickChartComponent({ ticker, interval, period }) {
+export default function CandleStickChartComponent({ ticker, interval, period ,indicators = []}) {
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRef = useRef(null);

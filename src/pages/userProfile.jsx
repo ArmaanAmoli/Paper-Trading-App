@@ -73,9 +73,9 @@ export default function UserProfile() {
                     </div>
 
                     <div className="row-span-2 flex flex-col gap-4 justify-center items-center">
-                        <button className='shadow-[-2px_-2px_10px_-1px_rgba(255,255,255,.35)] border border-white/15 h-[50px] w-[200px] rounded-3xl hover:bg-white/10'>Update Profile</button>
-                        <button className='shadow-[-2px_-2px_10px_-1px_rgba(255,255,255,.35)] border border-white/15 h-[50px] w-[200px] rounded-3xl hover:bg-white/10' onClick={logOut}>Log out</button>
-                        <button className='shadow-[-2px_-2px_10px_-1px_rgba(255,0,0,.35)] border border-red-400/15 h-[50px] w-[200px] rounded-3xl text-red-400 hover:bg-red-300/10'>Delete Account</button>
+                        <button className='shadow-[-2px_-2px_4px_0px_rgba(255,255,255,.25)] border border-white/15 h-[50px] w-[200px] rounded-3xl hover:bg-white/10'>Update Profile</button>
+                        <button className='shadow-[-2px_-2px_4px_0px_rgba(255,255,255,.25)] border border-white/15 h-[50px] w-[200px] rounded-3xl hover:bg-white/10' onClick={logOut}>Log out</button>
+                        <button className='shadow-[-2px_-2px_4px_0px_rgba(255,0,0,.25)] border border-red-400/15 h-[50px] w-[200px] rounded-3xl text-red-400 hover:bg-red-300/10'>Delete Account</button>
                     </div>
                 </div>
 
