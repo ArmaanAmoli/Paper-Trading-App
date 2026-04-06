@@ -26,3 +26,4 @@ dist-ssr
 YahooFinanceDataPipeline/yahoo/.yahoo
 YahooFinanceDataPipeline/__pycache__
 YahooFinanceDataPipeline/exchange_rates.json
+YahooFinanceDataPipeline/test.ipynb

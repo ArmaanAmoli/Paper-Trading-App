@@ -31,8 +31,8 @@ export default function StockMainChart() {
                 <button className="indicator-button text-xs">VWAP</button>
                 <button className="indicator-button">OBV</button>
                 <button className="indicator-button">VOL</button>
+                <button className="indicator-button">SO</button>
 
-                
             </div>
             <div className="Chart" key={location.pathname}>
                 <div className="top-bar">

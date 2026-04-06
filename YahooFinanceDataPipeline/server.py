@@ -8,6 +8,9 @@ import currency
 from currency import update_rates_every_24h , get_currency
 import asyncio
 from contextlib import asynccontextmanager
+from data import get_data,EMA_,SMA_
+import talib
+
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -24,11 +27,39 @@ async def lifespan(app:FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+@app.get("/indicators/EMA")
+async def EMA_endpoint(
+    ticker: str,
+    period: Annotated[str, Query(..., description="e.g., '1d', '5d', '1mo', '3mo', '1y', 'max'")],
+    interval: Annotated[str, Query(..., description="e.g., '1m', '5m', '1d', '1wk', '1mo'")],
+    timeperiod: int
+):
+    try:
+        data = await get_data(ticker=ticker , period=period , interval=interval)
+        return EMA_(data,timeperiod=timeperiod)
+    except Exception as e:
+        print("Their was an error in the EMA data endpoint" , e)
+
+@app.get("/indicators/SMA")
+async def SMA_endpoint(
+    ticker: str,
+    period: Annotated[str, Query(..., description="e.g., '1d', '5d', '1mo', '3mo', '1y', 'max'")],
+    interval: Annotated[str, Query(..., description="e.g., '1m', '5m', '1d', '1wk', '1mo'")],
+    timeperiod: int
+):
+    try:
+        data = await get_data(ticker=ticker , period=period , interval=interval)
+        return SMA_(data,timeperiod=timeperiod)
+    except Exception as e:
+        print("Their was an error in the SMA data endpoint" , e)
+
 @app.get("/data")
 async def get_hourly_data(
+    
     ticker: str,
     period: Annotated[str, Query(..., description="e.g., '1d', '5d', '1mo', '3mo', '1y', 'max'")],
     interval: Annotated[str, Query(..., description="e.g., '1m', '5m', '1d', '1wk', '1mo'")]):
+    '''
     try:
         stock = yf.Ticker(ticker)
         
@@ -54,6 +85,12 @@ async def get_hourly_data(
         return df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(status_code=500 , detail = str(e))
+    '''
+    try:
+        data = await get_data(ticker=ticker , period=period , interval=interval)
+        return data
+    except Exception as e:
+        print("Their was an error in the get_hourly_data fucntion" , e)
 
 @app.get("/search")
 async def get_search_results(query: str):
