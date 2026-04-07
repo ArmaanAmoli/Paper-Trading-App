@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist} from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -66,6 +66,8 @@ const verifyToken = (req, res, next) => {
 }
 
 //Request Handlers
+
+//-----------------------------------------------------------------------ACCOUNT-------------------------------------------------------------------------------------------
 server.post('/sign-up', validateEmail, async (req, res, next) => {
     try {
         await SignUp(req.body);
@@ -98,6 +100,24 @@ server.post('/login', validateEmail, async (req, res, next) => {
         next(err);
     }
 });
+
+server.get('/user-data', verifyToken, async (req, res, next) => {
+    try {
+        const userID = req.user.userId;
+        //console.log(userID);
+        const user = await GetUserData(userID);
+
+        // console.log(userID);
+        // console.log(user);
+
+
+        res.status(200).json(user);
+    } catch (err) {
+        next(err);
+    }
+})
+//-------------------------------------------------------------------STOCK-DATA-------------------------------------------------------------------------------------------
+
 server.get('/quote', verifyToken, async (req, res, next) => {
     try {
         const query = req.query;
@@ -151,21 +171,7 @@ server.get('/user-watchlist', verifyToken, async (req, res, next) => {
     }
 })
 
-server.get('/user-data', verifyToken, async (req, res, next) => {
-    try {
-        const userID = req.user.userId;
-        //console.log(userID);
-        const user = await GetUserData(userID);
 
-        // console.log(userID);
-        // console.log(user);
-
-
-        res.status(200).json(user);
-    } catch (err) {
-        next(err);
-    }
-})
 
 server.get('/trade-history', verifyToken, async (req, res, next) => {
     try {
@@ -200,19 +206,89 @@ server.post('/user-watchlist/add', verifyToken, async (req, res, next) => {
         const userId = req.user.userId;
         const newWatchlistItem = req.body.symbol;
         const response = await AddToWatchlist(userId, newWatchlistItem);
-        if(response){
-            res.status(200).json({success:true});
+        if (response) {
+            res.status(200).json({ success: true });
         }
-        else{
-            res.status(400).json({success:false});
+        else {
+            res.status(400).json({ success: false });
         }
     } catch (err) {
-        
+
         next(err);
     }
 })
 
+server.delete('/user-watchlist/delete', verifyToken, async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const symbol = req.body.symbol;
+        console.log(req.body)
+        console.log(symbol);
+        const response = await RemoveFromWatchlist(userId, symbol);
+        if (response) {
+            res.status(200).json({ success: true });
+        }
+        else {
+            res.status(400).json({ success: false });
+        }
 
+    } catch (err) {
+        next(err);
+    }
+})
+
+server.get('/data/indicator', verifyToken, async (req, res, next) => {
+    try {
+        const query = req.query;
+        const ticker = query.ticker;
+        const indicator = query.indicator;
+        const interval = query.interval;
+        const period = query.period;
+        const interval_indicator = query.indicatorInterval || null;
+        switch (indicator) {
+            case "SMA":
+                {
+                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/SMA',
+                        {
+                            params:
+                            {
+                                ticker:ticker,
+                                period:period,
+                                interval:interval,
+                                timeperiod:interval_indicator
+                            }
+                        })
+                        console.log("SMA:" , fastAPIRes.data);
+                        res.json(fastAPIRes.data);
+                    break;
+                }
+            case "EMA":
+                {
+                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/EMA',
+                        {
+                            params:
+                            {
+                                ticker:ticker,
+                                period:period,
+                                interval:interval,
+                                timeperiod:interval_indicator
+                            }
+                        })
+                        console.log("EMA:" , fastAPIRes.data);
+                        res.json(fastAPIRes.data);
+                    break;
+                }
+            default:
+                console.log("Indicator not exist");
+                res.status(400).json({ message: "Indicator not exist" });
+        }
+    }
+    catch (err) {
+        next(err);
+    }
+})
+
+//-----------------------------------------------------------------------TRADE-------------------------------------------------------------------------------------------
 
 server.post('/buy', verifyToken, async (req, res, next) => {
     try {
@@ -246,24 +322,6 @@ server.post('/sell', verifyToken, async (req, res, next) => {
     }
 })
 
-server.delete('/user-watchlist/delete' , verifyToken , async(req , res , next)=>{
-    try{
-        const userId = req.user.userId;
-        const symbol = req.body.symbol;
-        console.log(req.body)
-        console.log(symbol);
-        const response = await RemoveFromWatchlist(userId , symbol);
-        if(response){
-            res.status(200).json({success:true});
-        }
-        else{
-            res.status(400).json({success:false});
-        }
-        
-    }catch(err){
-        next(err);
-    }
-})
 
 // Global Error Handler Middleware
 server.use((err, req, res, next) => {

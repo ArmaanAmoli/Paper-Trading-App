@@ -33,3 +33,18 @@ export async function fetchQuote(ticker) {
     console.log(data);
     return data;
 }
+
+export async function fetchIndicatorData(properties){
+    const url = 'http://localhost:3000/data/indicator';
+    const response = await axios.get(url ,
+        {
+            params:properties,
+            headers:{
+                'authorization':`Bearer ${token}`
+            }
+        }
+    );
+    const data = response.data;
+    console.log("Fetching Indicator data: ",data);
+    return data;
+}

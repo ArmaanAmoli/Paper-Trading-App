@@ -6,6 +6,7 @@ import "./styles/stockChart.css"
 import { useState } from 'react';
 import OrderForm from './orderForm.jsx';
 import { IndicatorsListProvider } from './context.jsx';
+import { fetchIndicatorData } from './Charts/dataRequester.js';
 export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
     const { ticker } = useParams();
@@ -21,11 +22,24 @@ export default function StockMainChart() {
         setActivePanel(prev => prev === 'orderform' ? 'none' : 'orderform');
     }
 
+    const sma = async ()=>{
+        const properties = {
+            ticker:ticker,
+            interval:Interval,
+            period:'max',
+            indicator:"SMA",
+            indicatorInterval:20 // <--------
+        }
+        const data = await fetchIndicatorData(properties);
+        //console.log(data);
+    }
+
     return (
 
         <div className="chart-page">
             <div className="Drawing-Sidebar">
-                <button className="indicator-button">MA</button>
+                <button className="indicator-button" onClick={sma} >SMA</button>
+                <button className="indicator-button">EMA</button>
                 <button className="indicator-button">BB</button>
                 <button className="indicator-button">RSI</button>
                 <button className="indicator-button text-xs">VWAP</button>

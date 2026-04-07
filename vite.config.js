@@ -20,6 +20,7 @@ export default defineConfig({
       "/user-watchlist": "http://localhost:3000",
       "/user-watchlist/add": "http://localhost:3000",
       "/user-watchlist/delete": "http://localhost:3000",
+      "/data/indicator": "http://localhost:3000",
     },
   },
 

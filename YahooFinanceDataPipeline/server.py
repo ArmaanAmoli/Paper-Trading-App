@@ -36,7 +36,9 @@ async def EMA_endpoint(
 ):
     try:
         data = await get_data(ticker=ticker , period=period , interval=interval)
-        return EMA_(data,timeperiod=timeperiod)
+        data_df = pd.DataFrame(data)
+        final_data = EMA_(data_df,timeperiod=timeperiod)
+        return final_data
     except Exception as e:
         print("Their was an error in the EMA data endpoint" , e)
 
@@ -49,7 +51,9 @@ async def SMA_endpoint(
 ):
     try:
         data = await get_data(ticker=ticker , period=period , interval=interval)
-        return SMA_(data,timeperiod=timeperiod)
+        data_df = pd.DataFrame(data)
+        final_data = SMA_(data_df,timeperiod=timeperiod)
+        return final_data
     except Exception as e:
         print("Their was an error in the SMA data endpoint" , e)
 

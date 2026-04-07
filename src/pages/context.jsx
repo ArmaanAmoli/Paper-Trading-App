@@ -12,7 +12,7 @@ const WatchlistProvider = (({ children }) => {
             async function fetchWatchlistData() {
                 const res = await getWatchlist();
                 setWatchlistArray(res.symbols);
-                console.log(watchlistArray);
+                // console.log(watchlistArray);
             }
             fetchWatchlistData();
             const intervalID = setInterval(fetchWatchlistData, 10000);
@@ -38,7 +38,7 @@ const UserAccountProvider = (({ children }) => {
             try {
                 const res = await api.get("/user-data");
                 const resData = res.data;
-                console.log(resData);
+                // console.log(resData);
                 setUserAccountInformation(resData);
                 return;
             }
@@ -109,7 +109,7 @@ const UserEquityProvider = (({ children }) => {
             try {
                 const res = await api.get("/portfolio");
                 const resData = res.data;
-                console.log(resData.positions);
+                // console.log(resData.positions);
                 const positions = resData.positions || [];
                 setUserPortfolio(positions);
                 await updateUserPnlList(positions);
