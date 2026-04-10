@@ -65,6 +65,7 @@ const UserEquityProvider = (({ children }) => {
     const [userPortfolio, setUserPortfolio] = useState([]);
     const [userPnlList, setUserPnlList] = useState([]);
     const [totalPnl, setTotalPnl] = useState(0);
+    const [Equity , setEquity] = useState(0);
 
     useEffect(() => {
         async function updateUserPnlList(portfolio) {
@@ -82,6 +83,8 @@ const UserEquityProvider = (({ children }) => {
                 // Keep in mind that order of symbols in quotes and userPortfolio is same
                 const updatedData = {}; //will store fresh calculated pnl data
                 let total = Number(0); //consist the sum of pnl which will later be added to equity
+
+                let equity = 0;
                 quotes.forEach((quote, index) => {
                     const item = portfolio[index];
 
@@ -95,9 +98,11 @@ const UserEquityProvider = (({ children }) => {
                     };
 
                     total += Number(stockPnl.toFixed(2));
+                    equity = equity + quote.currentPrice * Math.abs(item.shares);
                 });
                 setUserPnlList(updatedData);
                 setTotalPnl(total);
+                setEquity(equity);
             }
             catch (err) {
                 console.log("An error occured while collecting userPnL Error: ", err);
@@ -129,7 +134,8 @@ const UserEquityProvider = (({ children }) => {
             {
                 portfolio: [userPortfolio, setUserPortfolio],
                 pnl: [userPnlList, setUserPnlList],
-                totalPnl: [totalPnl, setTotalPnl]
+                totalPnl: [totalPnl, setTotalPnl],
+                totalEquity:[Equity , setEquity]
             }
         }>{children}</UserEquityContext.Provider>
     );

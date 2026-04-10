@@ -1,8 +1,9 @@
-import { createChart, ColorType, CandlestickSeries } from "lightweight-charts";
-import { useEffect, useRef, useState } from "react";
+import { createChart, ColorType, CandlestickSeries, LineSeries } from "lightweight-charts";
+import { useEffect, useRef, useState, useContext } from "react";
 import { fetchData, fetchQuote } from "./dataRequester";
 import { useCallback } from "react";
 import { CrosshairMode } from "lightweight-charts";
+import { IndicatorsList } from "../context.js";
 const INTERVAL_SECONDS = {
     "1m": 60,
     "5m": 300,
@@ -11,6 +12,7 @@ const INTERVAL_SECONDS = {
     "1d": 86400,
 };
 export default function CandleStickChartComponent({ ticker, interval, period ,indicators = []}) {
+    const [indicatorList , setIndicatorList]= useContext(IndicatorsList);
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRef = useRef(null);
@@ -113,6 +115,26 @@ export default function CandleStickChartComponent({ ticker, interval, period ,in
         });
         chartRef.current = chart;
         seriesRef.current = series;
+
+        /* INDICATOR CODE GOES HERE */
+        if(indicatorList.length !== 0){
+            for(let i in indicatorList){
+                const item = indicatorList[i];
+                // const combinedData = .map((t,index))
+                const indicatorType = item.indicator;
+                console.log(indicatorType);
+                switch (indicatorType){
+                    case "SMA":
+                    case "EMA":{
+                        const line = chart.addSeries(LineSeries , { color: '#2962FF', lineWidth: 2 });
+                        line.setData(item.data);
+                        break;
+                    }
+                    default:
+                        console.log("INDICATOR NOT FOUND");
+                }
+            }
+        }
 
         const handleResize = () => {
             chart.applyOptions({ width: chartContainerRef.current.clientWidth });

@@ -9,6 +9,7 @@ export default function PortfolioPage() {
     const [assetList, setAssetList] = useContext(UserEquityContext).portfolio || [];
     const [prices, setPrices] = useContext(UserEquityContext).pnl;
     const [totalPnl, setTotalPnl] = useContext(UserEquityContext).totalPnl;
+    const [Equity , setEquity] = useContext(UserEquityContext).totalEquity;
     return (
         <>
             <div className="Portfolio-page">
@@ -26,7 +27,7 @@ export default function PortfolioPage() {
                         </div>
                         <div className="Account-status-component">
                             <h4>Equity</h4>
-                            <h4>{(userAccountInformation.balance && totalPnl) ? Number(userAccountInformation.balance + totalPnl ).toFixed(2): 0}</h4>
+                            <h4>{((userAccountInformation.balance) ? Number(Equity + userAccountInformation.balance): 0 ).toFixed(2)}</h4>
                         </div>
 
                     </div>

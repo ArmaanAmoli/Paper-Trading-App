@@ -3,14 +3,15 @@ import CandleStickChartComponent from './Charts/candlestick.jsx';
 import { useLocation } from 'react-router-dom';
 import Watchlist from './watchlist.jsx';
 import "./styles/stockChart.css"
-import { useState } from 'react';
+import { useState , useContext} from 'react';
 import OrderForm from './orderForm.jsx';
-import { IndicatorsListProvider } from './context.jsx';
+import { IndicatorsList } from './context.js';
 import { fetchIndicatorData } from './Charts/dataRequester.js';
 export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
     const { ticker } = useParams();
     const location = useLocation();
+    const [indicatorList , setIndicatorList]= useContext(IndicatorsList);
 
     const [Interval, setInterval] = useState('60m');
     console.log(Interval);
@@ -23,15 +24,19 @@ export default function StockMainChart() {
     }
 
     const sma = async ()=>{
-        const properties = {
+        let properties = {
             ticker:ticker,
             interval:Interval,
             period:'max',
             indicator:"SMA",
             indicatorInterval:20 // <--------
         }
+        
         const data = await fetchIndicatorData(properties);
-        //console.log(data);
+
+        properties = {...properties , data:data};
+
+        setIndicatorList([...indicatorList , properties]);
     }
 
     return (
