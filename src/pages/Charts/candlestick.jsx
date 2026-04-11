@@ -11,12 +11,13 @@ const INTERVAL_SECONDS = {
     "1h": 3600,
     "1d": 86400,
 };
-export default function CandleStickChartComponent({ ticker, interval, period ,indicators = []}) {
-    const [indicatorList , setIndicatorList]= useContext(IndicatorsList);
+export default function CandleStickChartComponent({ ticker, interval, period, indicators = [] }) {
+    const [indicatorList, setIndicatorList] = useContext(IndicatorsList);
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRef = useRef(null);
     const initializedRef = useRef(false);
+    const indicatorRef = useRef([]);
     const [data, SetData] = useState([]);
     const mergePriceIntoLastCandle = useCallback((price) => {
         SetData(prevData => {
@@ -116,26 +117,6 @@ export default function CandleStickChartComponent({ ticker, interval, period ,in
         chartRef.current = chart;
         seriesRef.current = series;
 
-        /* INDICATOR CODE GOES HERE */
-        if(indicatorList.length !== 0){
-            for(let i in indicatorList){
-                const item = indicatorList[i];
-                // const combinedData = .map((t,index))
-                const indicatorType = item.indicator;
-                console.log(indicatorType);
-                switch (indicatorType){
-                    case "SMA":
-                    case "EMA":{
-                        const line = chart.addSeries(LineSeries , { color: '#2962FF', lineWidth: 2 });
-                        line.setData(item.data);
-                        break;
-                    }
-                    default:
-                        console.log("INDICATOR NOT FOUND");
-                }
-            }
-        }
-
         const handleResize = () => {
             chart.applyOptions({ width: chartContainerRef.current.clientWidth });
         }
@@ -170,6 +151,40 @@ export default function CandleStickChartComponent({ ticker, interval, period ,in
 
         return () => clearInterval(intervalId);
     }, [ticker, mergePriceIntoLastCandle]);
+
+    useEffect(() => {
+        /* INDICATOR CODE GOES HERE */
+        if (indicatorList.length !== 0) {
+            for (let i in indicatorList) {
+                const item = indicatorList[i];
+                // const combinedData = .map((t,index))
+                const indicatorType = item.indicator;
+                console.log(indicatorType);
+                switch (indicatorType) {
+                    case "SMA":
+                    case "EMA": {
+                        const line = chartRef.current.addSeries(LineSeries, { color: indicatorType==='SMA'?'#2962FF':'#ff29bb', lineWidth: 2 });
+                        const indicatorName = `${indicatorType}-${item.indicatorInterval}`;
+                        indicatorRef.current.push({ [indicatorName]: line });
+
+                        const finalData = item.data.map( (quote) => {
+                            return {
+                                time: (new Date(quote.Date)).getTime() / 1000,
+                                value: Number(quote[indicatorType])
+                            };})
+                            console.log("final data: ", finalData);
+                            line.setData(finalData);
+                            break;
+                        }
+                    default:
+                        console.log("INDICATOR NOT FOUND");
+                }
+            }
+            indicatorRef.current = [];
+            setIndicatorList([]);
+        }
+        return;
+    }, [indicatorList,ticker, interval,setIndicatorList]);
 
 
     return (

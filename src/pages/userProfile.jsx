@@ -37,6 +37,7 @@ export default function UserProfile() {
     const [userData, setUserData] = useContext(UserAccountContext); // state of user personal data
     const [totalPnl, setTotalPnl] = useContext(UserEquityContext).totalPnl || 0;
     const [tradeHistory, setTradeHistory] = useState(null);
+    const [Equity , setEquity] = useContext(UserEquityContext).totalEquity;
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -68,7 +69,7 @@ export default function UserProfile() {
                         <div className=' text-xl font-bold'>{userData.username}</div>
                         <div>{userData.email}</div>
                         <div className='opacity-50'>{userData._id}</div>
-                        <div className='opacity-50'>Member since {userData.createdAt.split('T')[0]}</div>
+                        <div className='opacity-50'>Member since {userData.createdAt!=null ? userData.createdAt.split('T')[0]:"Loading"}</div>
                         
                     </div>
 
@@ -96,7 +97,7 @@ export default function UserProfile() {
                     <div className="col-span-1">
                         <div className="w-full h-full bg-white/10 flex flex-col justify-center items-center">
                             <p>Equity</p>
-                            <p>${Number(userData.balance + totalPnl).toFixed(2)}</p>
+                            <p>${((userData.balance) ? Number(Equity + userData.balance): 0 ).toFixed(2)}</p>
                         </div>
                     </div>
                 </div>

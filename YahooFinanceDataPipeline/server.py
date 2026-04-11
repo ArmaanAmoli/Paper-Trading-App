@@ -8,7 +8,7 @@ import currency
 from currency import update_rates_every_24h , get_currency
 import asyncio
 from contextlib import asynccontextmanager
-from data import get_data,EMA_,SMA_
+from data import get_data,EMA_,SMA_,collect_data,format_data
 import talib
 
 
@@ -35,8 +35,8 @@ async def EMA_endpoint(
     timeperiod: int
 ):
     try:
-        data = await get_data(ticker=ticker , period=period , interval=interval)
-        data_df = pd.DataFrame(data)
+        data = await collect_data(ticker=ticker , interval=interval , period=period)
+        data_df = format_data(data)
         final_data = EMA_(data_df,timeperiod=timeperiod)
         return final_data
     except Exception as e:
@@ -50,8 +50,8 @@ async def SMA_endpoint(
     timeperiod: int
 ):
     try:
-        data = await get_data(ticker=ticker , period=period , interval=interval)
-        data_df = pd.DataFrame(data)
+        data = await collect_data(ticker=ticker , interval=interval , period=period)
+        data_df = format_data(data)
         final_data = SMA_(data_df,timeperiod=timeperiod)
         return final_data
     except Exception as e:

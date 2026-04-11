@@ -13,7 +13,7 @@ export default function StockMainChart() {
     const location = useLocation();
     const [indicatorList , setIndicatorList]= useContext(IndicatorsList);
 
-    const [Interval, setInterval] = useState('60m');
+    const [Interval, setInterval] = useState('1h');
     console.log(Interval);
     const toggleWatchlist = () => {
         setActivePanel(prev => prev === 'watchlist' ? 'none' : 'watchlist');
@@ -23,12 +23,12 @@ export default function StockMainChart() {
         setActivePanel(prev => prev === 'orderform' ? 'none' : 'orderform');
     }
 
-    const sma = async ()=>{
+    const ma = async (name)=>{
         let properties = {
             ticker:ticker,
             interval:Interval,
             period:'max',
-            indicator:"SMA",
+            indicator:name,
             indicatorInterval:20 // <--------
         }
         
@@ -43,8 +43,8 @@ export default function StockMainChart() {
 
         <div className="chart-page">
             <div className="Drawing-Sidebar">
-                <button className="indicator-button" onClick={sma} >SMA</button>
-                <button className="indicator-button">EMA</button>
+                <button className="indicator-button" onClick={()=>ma("SMA")} >SMA</button>
+                <button className="indicator-button" onClick={()=>ma("EMA")} >EMA</button>
                 <button className="indicator-button">BB</button>
                 <button className="indicator-button">RSI</button>
                 <button className="indicator-button text-xs">VWAP</button>
@@ -60,7 +60,7 @@ export default function StockMainChart() {
                     <button className='interval-button' style={{ backgroundColor: Interval === '5m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={() => setInterval('5m')}>5m</button>
                     <button className='interval-button' style={{ backgroundColor: Interval === '15m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={() => setInterval('15m')}>15m</button>
                     <button className='interval-button' style={{ backgroundColor: Interval === '30m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={() => setInterval('30m')}>30m</button>
-                    <button className='interval-button' style={{ backgroundColor: Interval === '60m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={() => setInterval('60m')}>60m</button>
+                    <button className='interval-button' style={{ backgroundColor: Interval === '1h' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={() => setInterval('1h')}>1h</button>
                     <button className='interval-button' style={{ backgroundColor: Interval === '90m' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={() => setInterval('90m')}>90m</button>
                     <button className='interval-button' style={{ backgroundColor: Interval === '1d' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={() => setInterval('1d')}>1d</button>
                     <button className='interval-button' style={{ backgroundColor: Interval === '5d' ? 'rgba(255, 255, 255, 0.36)' : 'rgba(255, 255, 255, 0.07)' }} onClick={() => setInterval('5d')}>5d</button>
