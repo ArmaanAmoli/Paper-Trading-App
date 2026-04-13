@@ -12,7 +12,7 @@ def format_data(df):
     df.reset_index(inplace=True)
     df.rename(columns={df.columns[0]: "Date"}, inplace=True)
     df['Date'] = df['Date'].apply(lambda x: x.isoformat())
-    
+    df.columns = df.columns.droplevel(1)
     return df
 
 async def collect_data(ticker , interval , period):
@@ -83,4 +83,73 @@ def SMA_(df , timeperiod=10):
         return final_dict
     except Exception as e:
         print("Problem occured in SMA_",e)
+        raise HTTPException(status_code=500 , detail=str(e))
+
+#Relative Strength Index
+def RSI_(df , timeperiod=14):
+    try:
+        data = df['Close'].to_numpy()
+        
+        time = df['Date'][timeperiod:].to_numpy()
+        data_reshaped = data.reshape(1,len(data))[0]
+        data_reshaped = talib.RSI(data_reshaped, timeperiod=timeperiod)[timeperiod:]
+        final_df = pd.DataFrame({'Date':time , 'RSI':data_reshaped})
+        final_dict = final_df.to_dict(orient="records")
+        print(len(final_dict))
+        return final_dict
+    except Exception as e:
+        print("Problem occured in RSI_",e)
+        raise HTTPException(status_code=500 , detail=str(e))
+    
+def BBAND_(df , timeperiod=20 , stdUp=2 , stdDown=2 , matype=0):
+    try:
+        data = df['Close'].to_numpy()
+        time = df['Date'][timeperiod:].to_numpy()
+        data_reshaped = data.reshape(1,len(data))[0]
+        
+        band_up , band_middle , band_down = talib.BBANDS(data_reshaped, timeperiod=timeperiod , nbdevdn=stdDown , nbdevup=stdUp , matype=matype)
+        
+        band_up_dict = pd.DataFrame({'Date':time , 'BBAND_UP':band_up[timeperiod:]}).to_dict(orient='records')
+        band_middle_dict = pd.DataFrame({'Date':time , 'BBAND_MIDDLE':band_middle[timeperiod:]}).to_dict(orient='records')
+        band_down_dict = pd.DataFrame({'Date':time , 'BBAND_DOWN':band_down[timeperiod:]}).to_dict(orient='records')
+        
+        final_dict = {
+            "UP": band_up_dict,
+            "MIDDLE": band_middle_dict,
+            "DOWN": band_down_dict
+        }
+        
+        print(len(final_dict))
+        return final_dict
+    
+    
+    except Exception as e:
+        print("Problem occured in BBAND_",e)
+        raise HTTPException(status_code=500 , detail=str(e))
+    
+def VOL_(df):
+    try:
+        data = df[['Date','Volume']]
+        final_dict = data.to_dict(orient="records")
+        print(len(final_dict))
+        return final_dict
+    except Exception as e:
+        print("Problem occured in VOL_",e)
+        raise HTTPException(status_code=500 , detail=str(e))
+    
+def OBV_(df):
+    try:
+        date = df['Date']
+        
+        close = df['Close'].to_numpy().reshape(-1,len(df))[0].astype(np.float64)
+        volume = df['Volume'].to_numpy().reshape(-1,len(df))[0].astype(np.float64)
+        
+        obv = talib.OBV(close , volume)
+        final_df = pd.DataFrame({'Date':date , 'OBV':obv})
+        
+        final_dict = final_df.to_dict(orient="records")
+        print(len(final_dict))
+        return final_dict
+    except Exception as e:
+        print("Problem occured in OBV_",e)
         raise HTTPException(status_code=500 , detail=str(e))

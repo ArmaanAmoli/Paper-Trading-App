@@ -43,6 +43,16 @@ export default function StockMainChart() {
 
         <div className="chart-page">
             <div className="Drawing-Sidebar">
+                {/* 
+                    Simple Moving Average 
+                    Exponential Moving Average
+                    Boillinger Bands
+                    Relative Strengrh Index
+                    Volume Weighted Average Price
+                    On-Balance Volume
+                    Volume
+                    Stocastic Occilator
+                */}
                 <button className="indicator-button" onClick={()=>ma("SMA")} >SMA</button>
                 <button className="indicator-button" onClick={()=>ma("EMA")} >EMA</button>
                 <button className="indicator-button">BB</button>
