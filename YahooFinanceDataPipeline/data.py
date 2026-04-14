@@ -12,7 +12,7 @@ def format_data(df):
     df.reset_index(inplace=True)
     df.rename(columns={df.columns[0]: "Date"}, inplace=True)
     df['Date'] = df['Date'].apply(lambda x: x.isoformat())
-    df.columns = df.columns.droplevel(1)
+    # df.columns = df.columns.droplevel(1)
     return df
 
 async def collect_data(ticker , interval , period):

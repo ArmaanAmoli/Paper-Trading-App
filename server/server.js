@@ -245,6 +245,9 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
         const interval = query.interval;
         const period = query.period;
         const interval_indicator = query.indicatorInterval || null;
+        const matype = query.matype || null;
+        const stdUp = query.stdUp || null;
+        const stdDown = query.stdDown || null;
         switch (indicator) {
             case "SMA":
                 {
@@ -273,9 +276,72 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 interval:interval,
                                 timeperiod:interval_indicator
                             }
-                        })
+                        });
                         console.log("EMA:" , fastAPIRes.data);
                         res.json(fastAPIRes.data);
+                    break;
+                }
+            case "RSI":
+                {
+                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/RSI',
+                        {
+                            params:
+                            {
+                                ticker:ticker,
+                                period:period,
+                                interval:interval,
+                                timeperiod:interval_indicator
+                            }
+                        });
+                        console.log("RSI:" , fastAPIRes.data);
+                        res.json(fastAPIRes.data);
+                    break;
+                }
+            case "VOL":
+                {
+                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/VOL',
+                        {
+                            params:
+                            {
+                                ticker:ticker,
+                                period:period,
+                                interval:interval,
+                            }
+                        });
+                        console.log("VOL:" , fastAPIRes.data);
+                        res.json(fastAPIRes.data);
+                    break;
+                }
+            case "OBV":
+                {
+                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/OBV',
+                        {
+                            params:
+                            {
+                                ticker:ticker,
+                                period:period,
+                                interval:interval,
+                            }
+                        });
+                        console.log("OBV:" , fastAPIRes.data);
+                        res.json(fastAPIRes.data);
+                    break;
+                }
+            case "BBAND":
+                {
+                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/BBAND',{
+                        params:{
+                            ticker: ticker,
+                            period:period,
+                            interval:interval,
+                            timeperiod:interval_indicator,
+                            matype:matype,
+                            stdUp:stdUp,
+                            stdDown:stdDown
+                        }
+                    });
+                    console.log("BBAND: " , fastAPIRes.data);
+                    res.json(fastAPIRes.data);
                     break;
                 }
             default:

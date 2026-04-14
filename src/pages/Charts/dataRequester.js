@@ -15,7 +15,7 @@ export async function fetchData(ticker, interval, period) {
 
     });
     const data = response.data;
-
+    console.log("Data: ",data);
     return data;
 }
 

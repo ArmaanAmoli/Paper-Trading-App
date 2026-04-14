@@ -1,4 +1,4 @@
-import { createChart, ColorType, CandlestickSeries, LineSeries } from "lightweight-charts";
+import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries } from "lightweight-charts";
 import { useEffect, useRef, useState, useContext } from "react";
 import { fetchData, fetchQuote } from "./dataRequester";
 import { useCallback } from "react";
@@ -176,6 +176,27 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                             line.setData(finalData);
                             break;
                         }
+                    // case "BBAND":{
+                    //     const BBand = chartRef.addSeries()
+                    // }
+                    case "VOL":{
+                        const hist = chartRef.current.addSeries(HistogramSeries , {
+                            priceFormat:{type:'volume'}
+                        } , 1) // 1 creates the chart below the main chart (0) it is called pane index
+                        const indicatorName = "VOL";
+                        indicatorRef.current.push({[indicatorName]:"VOL"})
+                        
+                        const finalData = item.data.map( (quote , index) => {
+                        
+                            return {
+                                time: (new Date(quote.Date)).getTime() / 1000,
+                                value: Number(quote['Volume']),
+                                color: data[index].close - data[index].open >=0 ?'#26a69a':'#ef5350'
+                            };})
+                        // console.log("final data: ", finalData);
+                        hist.setData(finalData);
+                        break;
+                    }
                     default:
                         console.log("INDICATOR NOT FOUND");
                 }

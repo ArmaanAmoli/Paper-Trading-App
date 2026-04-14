@@ -31,11 +31,38 @@ export default function StockMainChart() {
             indicator:name,
             indicatorInterval:20 // <--------
         }
-        
         const data = await fetchIndicatorData(properties);
-
         properties = {...properties , data:data};
+        setIndicatorList([...indicatorList , properties]);
+    }
 
+    const bband = async()=>{
+        let properties = {
+            ticker:ticker,
+            interval:Interval,
+            period:'max',
+            indicator:"BBAND",
+            stdUp:2,
+            stdDown:2,
+            matype:0,
+            indicatorInterval:20 // <--------
+        }
+        const data = await fetchIndicatorData(properties);
+        console.log('data-bband',data)
+        properties = {...properties , data:data};
+        setIndicatorList([...indicatorList , properties]);
+    }
+
+    const volI = async (name)=>{
+        let properties = {
+            ticker:ticker,
+            interval:Interval,
+            period:'max',
+            indicator:name,
+        }
+        const data = await fetchIndicatorData(properties);
+        console.log('data-vol',data)
+        properties = {...properties , data:data};
         setIndicatorList([...indicatorList , properties]);
     }
 
@@ -55,11 +82,11 @@ export default function StockMainChart() {
                 */}
                 <button className="indicator-button" onClick={()=>ma("SMA")} >SMA</button>
                 <button className="indicator-button" onClick={()=>ma("EMA")} >EMA</button>
-                <button className="indicator-button">BB</button>
-                <button className="indicator-button">RSI</button>
+                <button className="indicator-button" onClick={()=>bband()}>BB</button>
+                <button className="indicator-button" onClick={()=>ma("RSI")}>RSI</button>
                 <button className="indicator-button text-xs">VWAP</button>
-                <button className="indicator-button">OBV</button>
-                <button className="indicator-button">VOL</button>
+                <button className="indicator-button" onClick={()=>volI("OBV")}>OBV</button>
+                <button className="indicator-button" onClick={()=>volI("VOL")}>VOL</button>
                 <button className="indicator-button">SO</button>
 
             </div>
