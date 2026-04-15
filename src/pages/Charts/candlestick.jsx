@@ -155,6 +155,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
     useEffect(() => {
         /* INDICATOR CODE GOES HERE */
         if (indicatorList.length !== 0) {
+            let pIdx = 1;
             for (let i in indicatorList) {
                 const item = indicatorList[i];
                 // const combinedData = .map((t,index))
@@ -163,40 +164,97 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                 switch (indicatorType) {
                     case "SMA":
                     case "EMA": {
-                        const line = chartRef.current.addSeries(LineSeries, { color: indicatorType==='SMA'?'#2962FF':'#ff29bb', lineWidth: 2 });
+                        const line = chartRef.current.addSeries(LineSeries, { color: indicatorType === 'SMA' ? '#2962FF' : '#ff29bb', lineWidth: 2 });
                         const indicatorName = `${indicatorType}-${item.indicatorInterval}`;
                         indicatorRef.current.push({ [indicatorName]: line });
 
-                        const finalData = item.data.map( (quote) => {
+                        const finalData = item.data.map((quote) => {
                             return {
                                 time: (new Date(quote.Date)).getTime() / 1000,
                                 value: Number(quote[indicatorType])
-                            };})
-                            console.log("final data: ", finalData);
-                            line.setData(finalData);
-                            break;
-                        }
+                            };
+                        })
+                        console.log("final data: ", finalData);
+                        line.setData(finalData);
+                        break;
+                    }
                     // case "BBAND":{
                     //     const BBand = chartRef.addSeries()
                     // }
-                    case "VOL":{
-                        const hist = chartRef.current.addSeries(HistogramSeries , {
-                            priceFormat:{type:'volume'}
-                        } , 1) // 1 creates the chart below the main chart (0) it is called pane index
+                    case "VOL": {
+                        const hist = chartRef.current.addSeries(HistogramSeries, {
+                            priceFormat: { type: 'volume' }
+                        }, pIdx) // 1 creates the chart below the main chart (0) it is called pane index
+                        pIdx = pIdx + 1
                         const indicatorName = "VOL";
-                        indicatorRef.current.push({[indicatorName]:"VOL"})
-                        
-                        const finalData = item.data.map( (quote , index) => {
-                        
+                        indicatorRef.current.push({ [indicatorName]: hist })
+
+                        const finalData = item.data.map((quote, index) => {
+
                             return {
                                 time: (new Date(quote.Date)).getTime() / 1000,
                                 value: Number(quote['Volume']),
-                                color: data[index].close - data[index].open >=0 ?'#26a69a':'#ef5350'
-                            };})
+                                color: data[index].close - data[index].open >= 0 ? '#26a69a' : '#ef5350'
+                            };
+                        })
                         // console.log("final data: ", finalData);
                         hist.setData(finalData);
                         break;
                     }
+
+                    case "RSI": {
+                        const overBrought = {
+                            price: 70,          // The specific horizontal level
+                            color: '#ed8d07',      // Line color
+                            lineWidth: 1,          // Line thickness
+                            lineStyle: 2,          // 0: Solid, 1: Dotted, 2: Dashed
+                            axisLabelVisible: true, // Show the price on the Y-axis
+                            title: 'Overbought',    // Label for the line
+                        };
+
+                        const overSold = {
+                            price: 30,
+                            color: '#ed8d07',
+                            lineWidth: 1,
+                            lineStyle: 2,
+                            axisLabelVisible: true,
+                            title: 'Oversold',
+                        };
+
+                        const rsiLine = chartRef.current.addSeries(LineSeries, {
+                            color: '#FCF4A3', lineWidth: 1,
+                            priceFormat: {
+                                type: 'price',
+                                precision: 2,
+                                minMove: 0.01,
+                            },
+                            autoscaleInfoProvider: () => ({
+                                priceRange: {
+                                    minValue: 0,
+                                    maxValue: 100,
+                                },
+                            }),
+                            
+
+                        }, pIdx);
+                        pIdx = pIdx + 1
+
+                        rsiLine.createPriceLine(overBrought);
+                        rsiLine.createPriceLine(overSold);
+
+                        const indicatorName = `${indicatorType}-${item.indicatorInterval}`;
+                        indicatorRef.current.push({ [indicatorName]: rsiLine })
+                        const finalData = item.data.map((quote) => {
+                            return {
+                                time: (new Date(quote.Date)).getTime() / 1000,
+                                value: Number(quote[indicatorType])
+                            };
+                        })
+                        console.log("final data: ", finalData);
+                        rsiLine.setData(finalData);
+                        break;
+                    }
+
                     default:
                         console.log("INDICATOR NOT FOUND");
                 }
@@ -205,7 +263,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
             setIndicatorList([]);
         }
         return;
-    }, [indicatorList,ticker, interval,setIndicatorList]);
+    }, [indicatorList, ticker, interval, setIndicatorList]);
 
 
     return (
