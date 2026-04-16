@@ -104,6 +104,11 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
             crosshair: {
                 // Change mode from default 'magnet' to 'normal'.
                 mode: CrosshairMode.Normal,
+            },
+            layout: {
+                panes:{
+                    separatorColor:'rgba(255, 255, 255, 0.25)'
+                }
             }
         });
 
@@ -155,7 +160,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
     useEffect(() => {
         /* INDICATOR CODE GOES HERE */
         if (indicatorList.length !== 0) {
-            let pIdx = 1;
+            indicatorRef.current = [];
             for (let i in indicatorList) {
                 const item = indicatorList[i];
                 // const combinedData = .map((t,index))
@@ -184,8 +189,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                     case "VOL": {
                         const hist = chartRef.current.addSeries(HistogramSeries, {
                             priceFormat: { type: 'volume' }
-                        }, pIdx) // 1 creates the chart below the main chart (0) it is called pane index
-                        pIdx = pIdx + 1
+                        }, 1) // 1 creates the chart below the main chart (0) it is called pane index
                         const indicatorName = "VOL";
                         indicatorRef.current.push({ [indicatorName]: hist })
 
@@ -236,8 +240,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                             }),
                             
 
-                        }, pIdx);
-                        pIdx = pIdx + 1
+                        },2);
 
                         rsiLine.createPriceLine(overBrought);
                         rsiLine.createPriceLine(overSold);
@@ -252,6 +255,65 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                         })
                         console.log("final data: ", finalData);
                         rsiLine.setData(finalData);
+                        break;
+                    }
+
+                    case "OBV": {
+
+                        const OBVLine = chartRef.current.addSeries(LineSeries, {
+                            color: 'red', lineWidth: 1,
+                            priceFormat: {
+                                type: 'volume',
+                                precision: 2,
+                                minMove: 0.01,
+                            },
+                        },3);
+
+                        const indicatorName = `${indicatorType}`;
+                        indicatorRef.current.push({ [indicatorName]: OBVLine })
+                        const finalData = item.data.map((quote) => {
+                            return {
+                                time: (new Date(quote.Date)).getTime() / 1000,
+                                value: Number(quote[indicatorType])
+                            };
+                        })
+                        console.log("final data: ", finalData);
+                        OBVLine.setData(finalData);
+                        break;
+                    }
+
+                    case "BBAND":{
+                        const {DOWN , MIDDLE , UP} = item.data;
+
+                        const finalDataDown = DOWN.map((quote) => {
+                            return {
+                                time: (new Date(quote.Date)).getTime() / 1000,
+                                value: Number(quote.DOWN)
+                            };
+                        });
+
+                        const finalDataMiddle = MIDDLE.map((quote) => {
+                            return {
+                                time: (new Date(quote.Date)).getTime() / 1000,
+                                value: Number(quote.MIDDLE)
+                            };
+                        });
+
+                        const finalDataUp = UP.map((quote) => {
+                            return {
+                                time: (new Date(quote.Date)).getTime() / 1000,
+                                value: Number(quote.UP)
+                            };
+                        });
+
+                        const lineUp = chartRef.current.addSeries(LineSeries, { color:'#2962FF' , lineWidth: 1 });
+                        const lineMiddle = chartRef.current.addSeries(LineSeries, { color:'#FF0000' , lineWidth: 2 });
+                        const lineDown = chartRef.current.addSeries(LineSeries, { color:'#2962FF' , lineWidth: 1 });
+                        lineUp.setData(finalDataUp);
+                        lineMiddle.setData(finalDataMiddle);
+                        lineDown.setData(finalDataDown);
+                        indicatorRef.current.push({ "BBAND": [lineUp , lineMiddle , lineDown] });
+
                         break;
                     }
 
