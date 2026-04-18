@@ -107,6 +107,6 @@ body {
 }
 .indicator-button{
     @apply w-full h-[50px] border rounded-xl font-bold
-    border-white/20 shadow-[-2px_-2px_4px_0px_rgba(255,255,255,.25)]
-    hover:bg-white/10 hover:shadow-[-2px_-2px_8px_0px_rgba(255,255,255,.25)];
+    border-white/20 shadow-[-0.5px_-0.5px_0px_0px_rgba(255,255,255,.25)]
+    hover:bg-white/10 hover:shadow-[+.5px_0px_0px_0px_rgba(255,255,255,.25)];
 }

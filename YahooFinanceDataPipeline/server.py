@@ -8,7 +8,7 @@ import currency
 from currency import update_rates_every_24h , get_currency
 import asyncio
 from contextlib import asynccontextmanager
-from data import get_data,EMA_,SMA_,collect_data,format_data,VOL_,OBV_,RSI_,BBAND_
+from data import get_data,EMA_,SMA_,collect_data,format_data,VOL_,OBV_,RSI_,BBAND_,STOCH_
 import talib
 
 
@@ -117,6 +117,27 @@ async def BBAND_endpoint(
         return final_data
     except Exception as e:
         print("Their was an error in the BBAND data endpoint" , e)
+    
+@app.get("/indicators/STOCH")
+async def STOCH_endpoint(
+    ticker: str,
+    period: Annotated[str, Query(..., description="e.g., '1d', '5d', '1mo', '3mo', '1y', 'max'")],
+    interval: Annotated[str, Query(..., description="e.g., '1m', '5m', '1d', '1wk', '1mo'")],
+    fastk_period: int= 5, 
+    slowk_period: int= 3, 
+    slowk_matype: int= 0, 
+    slowd_period: int= 3, 
+    slowd_matype: int= 0
+):
+    try:
+        data = await collect_data(ticker=ticker , interval=interval , period=period)
+        data_df = format_data(data)
+        final_data = STOCH_(df=data_df , fastk_period = fastk_period , slowk_period = slowk_period ,
+           slowk_matype = slowk_matype , slowd_period = slowd_period, slowd_matype=slowd_matype)
+        return final_data
+    
+    except Exception as e:
+        print("Their was an error in STOCH data endpoint " , e)
 
 @app.get("/data")
 async def get_hourly_data(

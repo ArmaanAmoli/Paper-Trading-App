@@ -61,7 +61,25 @@ export default function StockMainChart() {
             indicator:name,
         }
         const data = await fetchIndicatorData(properties);
-        console.log('data-vol',data)
+        // console.log('data-vol',data)
+        properties = {...properties , data:data};
+        setIndicatorList([...indicatorList , properties]);
+    }
+
+    const stoch = async () => {
+        let properties={
+            ticker:ticker,
+            interval:Interval,
+            period:'max',
+            indicator:"STOCH",
+            fastPeriod  : 5,
+            slowkPeriod : 3,
+            slowkMatype : 0,
+            slowdPeriod : 3,
+            slowdMatype : 0,
+        }
+        const data = await fetchIndicatorData(properties);
+        console.log("STOCH:" , data)
         properties = {...properties , data:data};
         setIndicatorList([...indicatorList , properties]);
     }
@@ -84,10 +102,10 @@ export default function StockMainChart() {
                 <button className="indicator-button" onClick={()=>ma("EMA")} >EMA</button>
                 <button className="indicator-button" onClick={()=>bband()}>BB</button>
                 <button className="indicator-button" onClick={()=>ma("RSI")}>RSI</button>
-                <button className="indicator-button text-xs">VWAP</button>
+                {/* <button className="indicator-button text-xs">VWAP</button> */}
                 <button className="indicator-button" onClick={()=>volI("OBV")}>OBV</button>
                 <button className="indicator-button" onClick={()=>volI("VOL")}>VOL</button>
-                <button className="indicator-button">SO</button>
+                <button className="indicator-button" onClick={()=>stoch()}>SO</button>
 
             </div>
             <div className="Chart" key={location.pathname}>

@@ -98,6 +98,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
             width: chartContainerRef.current.clientWidth,
             height: chartContainerRef.current.clientHeight,
 
+
         });
 
         chart.applyOptions({
@@ -106,8 +107,8 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                 mode: CrosshairMode.Normal,
             },
             layout: {
-                panes:{
-                    separatorColor:'rgba(255, 255, 255, 0.25)'
+                panes: {
+                    separatorColor: 'rgba(255, 255, 255, 0.25)'
                 }
             }
         });
@@ -161,6 +162,8 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
         /* INDICATOR CODE GOES HERE */
         if (indicatorList.length !== 0) {
             indicatorRef.current = [];
+            let paneidx = 1;
+            const priceByTime = new Map(data.map((candle) => [candle.time, candle]));
             for (let i in indicatorList) {
                 const item = indicatorList[i];
                 // const combinedData = .map((t,index))
@@ -187,18 +190,54 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                     //     const BBand = chartRef.addSeries()
                     // }
                     case "VOL": {
+                        // Old fixed pane-index code kept for reference:
+                        // const hist = chartRef.current.addSeries(HistogramSeries, {
+                        //     priceFormat: { type: 'volume' }
+                        // }, 1) // 1 creates the chart below the main chart (0) it is called pane index
+
+                        // Old dynamic pane code kept for reference:
+                        // const paneIndex = nextPaneIndex++;
+                        // const hist = chartRef.current.addSeries(HistogramSeries, {
+                        //     priceFormat: { type: 'volume' }
+                        // }, paneIndex)
+
+                        // Keep volume inside the main candlestick pane (pane 0)
+                        // and compress it to the lower section using scale margins.
                         const hist = chartRef.current.addSeries(HistogramSeries, {
-                            priceFormat: { type: 'volume' }
-                        }, 1) // 1 creates the chart below the main chart (0) it is called pane index
+                            priceFormat: { type: 'volume' },
+                            priceScaleId: 'volume-overlay', // Set as overlay
+                        })
+
+                        chartRef.current.priceScale('volume-overlay').applyOptions({
+                            scaleMargins: {
+                                top: 0.85,    // Volume starts at 80% from the top
+                                bottom: 0.01, // Tiny gap at the very bottom
+                            },
+                        });
+
                         const indicatorName = "VOL";
                         indicatorRef.current.push({ [indicatorName]: hist })
 
-                        const finalData = item.data.map((quote, index) => {
+                        // Old index-based color logic kept for reference:
+                        // const finalData = item.data.map((quote, index) => {
+                        //     return {
+                        //         time: (new Date(quote.Date)).getTime() / 1000,
+                        //         value: Number(quote['Volume']),
+                        //         color: data[index].close - data[index].open >= 0 ? '#26a69a' : '#ef5350'
+                        //     };
+                        // })
+
+                        // Align color lookup by candle time (not array index), which prevents
+                        // misalignment when indicator data has a different length/order.
+                        const finalData = item.data.map((quote) => {
+                            const time = (new Date(quote.Date)).getTime() / 1000;
+                            const candle = priceByTime.get(time);
+                            const isGreen = candle ? (candle.close - candle.open >= 0) : true;
 
                             return {
-                                time: (new Date(quote.Date)).getTime() / 1000,
+                                time,
                                 value: Number(quote['Volume']),
-                                color: data[index].close - data[index].open >= 0 ? '#26a69a' : '#ef5350'
+                                color: isGreen ? 'rgba(76, 175, 80, 0.5)' : 'rgba(255, 82, 82, 0.5)'
                             };
                         })
                         // console.log("final data: ", finalData);
@@ -238,10 +277,11 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                                     maxValue: 100,
                                 },
                             }),
-                            
+                            priceScaleId: `rsi-${paneidx}`,
 
-                        },2);
 
+                        }, paneidx);
+                        paneidx = paneidx + 1;
                         rsiLine.createPriceLine(overBrought);
                         rsiLine.createPriceLine(overSold);
 
@@ -260,6 +300,16 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
 
                     case "OBV": {
 
+                        // Old fixed pane-index code kept for reference:
+                        // const OBVLine = chartRef.current.addSeries(LineSeries, {
+                        //     color: 'red', lineWidth: 1,
+                        //     priceFormat: {
+                        //         type: 'volume',
+                        //         precision: 2,
+                        //         minMove: 0.01,
+                        //     },
+                        // },3);
+
                         const OBVLine = chartRef.current.addSeries(LineSeries, {
                             color: 'red', lineWidth: 1,
                             priceFormat: {
@@ -267,8 +317,9 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                                 precision: 2,
                                 minMove: 0.01,
                             },
-                        },3);
-
+                            priceScaleId: `obv-${paneidx}`,
+                        }, paneidx);
+                        paneidx = paneidx + 1;
                         const indicatorName = `${indicatorType}`;
                         indicatorRef.current.push({ [indicatorName]: OBVLine })
                         const finalData = item.data.map((quote) => {
@@ -282,40 +333,88 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                         break;
                     }
 
-                    case "BBAND":{
-                        const {DOWN , MIDDLE , UP} = item.data;
+                    case "BBAND": {
+                        // const {DOWN , MIDDLE , UP} = item.data;
+                        const DOWN = item.data["DOWN"];
+                        const MIDDLE = item.data["MIDDLE"];
+                        const UP = item.data["UP"];
+
 
                         const finalDataDown = DOWN.map((quote) => {
                             return {
                                 time: (new Date(quote.Date)).getTime() / 1000,
-                                value: Number(quote.DOWN)
+                                value: Number(quote.BBAND_DOWN)
                             };
                         });
 
                         const finalDataMiddle = MIDDLE.map((quote) => {
                             return {
                                 time: (new Date(quote.Date)).getTime() / 1000,
-                                value: Number(quote.MIDDLE)
+                                value: Number(quote.BBAND_MIDDLE)
                             };
                         });
 
                         const finalDataUp = UP.map((quote) => {
                             return {
                                 time: (new Date(quote.Date)).getTime() / 1000,
-                                value: Number(quote.UP)
+                                value: Number(quote.BBAND_UP)
                             };
                         });
 
-                        const lineUp = chartRef.current.addSeries(LineSeries, { color:'#2962FF' , lineWidth: 1 });
-                        const lineMiddle = chartRef.current.addSeries(LineSeries, { color:'#FF0000' , lineWidth: 2 });
-                        const lineDown = chartRef.current.addSeries(LineSeries, { color:'#2962FF' , lineWidth: 1 });
+                        const lineUp = chartRef.current.addSeries(LineSeries, { color: '#2962FF', lineWidth: 1 });
+                        const lineMiddle = chartRef.current.addSeries(LineSeries, { color: '#FF0000', lineWidth: 2 });
+                        const lineDown = chartRef.current.addSeries(LineSeries, { color: '#2962FF', lineWidth: 1 });
                         lineUp.setData(finalDataUp);
                         lineMiddle.setData(finalDataMiddle);
                         lineDown.setData(finalDataDown);
-                        indicatorRef.current.push({ "BBAND": [lineUp , lineMiddle , lineDown] });
+                        indicatorRef.current.push({ "BBAND": [lineUp, lineMiddle, lineDown] });
 
                         break;
                     }
+
+                    case "STOCH":
+                        {
+                            const SLOWD = item.data["SLOWD"];
+                            const SLOWK = item.data["SLOWK"];
+                            const stochScaleId = `stoch-${paneidx}`;
+                            const finalSlowd = SLOWD.map((quote) => {
+                                return {
+                                    time: (new Date(quote.Date)).getTime() / 1000,
+                                    value: Number(quote.SLOWD)
+                                };
+                            })
+
+                            const finalSlowk = SLOWK.map((quote) => {
+                                return {
+                                    time: (new Date(quote.Date)).getTime() / 1000,
+                                    value: Number(quote.SLOWK)
+                                };
+                            })
+
+                            const lineFinalSlowd = chartRef.current.addSeries(LineSeries, {
+                                color: 'red', lineWidth: 1,priceScaleId: stochScaleId,
+                                
+                            }, paneidx);
+
+                            lineFinalSlowd.priceScale().applyOptions({
+                                autoscale: false,
+                                scaleMargins: { top: 0.1, bottom: 0.1 },
+                                
+                            });
+                            lineFinalSlowd.setData(finalSlowd);
+
+                            const lineFinalSlowk = chartRef.current.addSeries(LineSeries, {
+                                color: 'blue', lineWidth: 1,priceScaleId: stochScaleId,
+                                
+                            },paneidx);
+                            paneidx = paneidx + 1;
+                            lineFinalSlowk.setData(finalSlowk);
+
+                            
+
+                            indicatorRef.current.push({ "STOCH": [lineFinalSlowd, lineFinalSlowk] });
+                            break;
+                        }
 
                     default:
                         console.log("INDICATOR NOT FOUND");
@@ -325,7 +424,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
             setIndicatorList([]);
         }
         return;
-    }, [indicatorList, ticker, interval, setIndicatorList]);
+    }, [indicatorList, ticker, interval, setIndicatorList, data]);
 
 
     return (

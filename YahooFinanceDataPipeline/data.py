@@ -7,6 +7,7 @@ import talib
 import numpy as np
 import pandas as pd
 import datetime
+from talib import MA_Type
 
 def format_data(df):
     df.reset_index(inplace=True)
@@ -148,6 +149,43 @@ def OBV_(df):
         final_df = pd.DataFrame({'Date':date , 'OBV':obv})
         
         final_dict = final_df.to_dict(orient="records")
+        print(len(final_dict))
+        return final_dict
+    except Exception as e:
+        print("Problem occured in OBV_",e)
+        raise HTTPException(status_code=500 , detail=str(e))
+
+# fastk_period: int= 5, 
+# slowk_period: int= 3, 
+# slowk_matype: MA_Type = MA_Type.SMA, 
+# slowd_period: int= 3, 
+# slowd_matype: MA_Type = MA_Type.SMA
+def STOCH_(df , fastk_period: int= 5 , slowk_period: int= 3 ,
+           slowk_matype = 0 , slowd_period: int= 3, slowd_matype=0):
+    try:
+        close = df['Close'].to_numpy().reshape(-1,len(df))[0].astype(np.float64)
+        high = df['High'].to_numpy().reshape(-1,len(df))[0].astype(np.float64)
+        low = df['Low'].to_numpy().reshape(-1,len(df))[0].astype(np.float64)
+        date = df['Date']
+        
+        stoch = talib.STOCH(high=high , low=low , close=close , fastk_period=fastk_period 
+                            ,slowk_period=slowk_period , slowk_matype = slowk_matype, slowd_period=slowd_period ,
+                            slowd_matype=slowd_matype)
+        
+        stoch = np.nan_to_num(stoch  , nan=0.0)
+        slowk, slowd = stoch
+        
+        final_df_slowk = pd.DataFrame({'Date':date , 'SLOWK':slowk})
+        final_df_slowd = pd.DataFrame({'Date':date , 'SLOWD':slowd})
+        
+        final_dict_slowk = final_df_slowk.to_dict(orient="records")
+        final_dict_slowd = final_df_slowd.to_dict(orient="records")
+        
+        final_dict = {
+            "SLOWK": final_dict_slowk,
+            "SLOWD": final_dict_slowd
+        }
+        
         print(len(final_dict))
         return final_dict
     except Exception as e:
