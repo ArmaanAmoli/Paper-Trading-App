@@ -37,7 +37,7 @@ export default function UserProfile() {
     const [userData, setUserData] = useContext(UserAccountContext); // state of user personal data
     const [totalPnl, setTotalPnl] = useContext(UserEquityContext).totalPnl || 0;
     const [tradeHistory, setTradeHistory] = useState(null);
-    const [Equity , setEquity] = useContext(UserEquityContext).totalEquity;
+    const [Equity, setEquity] = useContext(UserEquityContext).totalEquity;
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -52,10 +52,10 @@ export default function UserProfile() {
         return () => clearInterval(intervalId);
     }, [])
 
-    function logOut(){
+    function logOut() {
         localStorage.removeItem('token');
-        
-        navigate("/" , {replace:true});
+
+        navigate("/", { replace: true });
     }
     return (
 
@@ -69,8 +69,8 @@ export default function UserProfile() {
                         <div className=' text-xl font-bold'>{userData.username}</div>
                         <div>{userData.email}</div>
                         <div className='opacity-50'>{userData._id}</div>
-                        <div className='opacity-50'>Member since {userData.createdAt!=null ? userData.createdAt.split('T')[0]:"Loading"}</div>
-                        
+                        <div className='opacity-50'>Member since {userData.createdAt != null ? userData.createdAt.split('T')[0] : "Loading"}</div>
+
                     </div>
 
                     <div className="row-span-2 flex flex-col gap-4 justify-center items-center">
@@ -82,29 +82,34 @@ export default function UserProfile() {
 
             </div>
 
-            <div className="grid grid-rows-10 col-span-8 px-2 gap-2 overflow-auto">
+            <div className="grid grid-rows-15 col-span-8 px-2 gap-2 overflow-auto">
 
-                <div className="grid grid-cols-2 row-span-3 gap-1">
+                <div className="grid grid-cols-2 row-span-6 gap-1">
 
                     <div className="col-span-1 ">
-                        <div className="w-full h-full flex flex-col gap-1">
-                            <div className='w-full h-1/2 flex flex-col justify-center items-center bg-white/10'> <p>Balance</p> <p>${userData.balance}</p></div>
-                            <div className='w-full h-1/2 flex flex-col justify-center items-center bg-white/10'> <p>Blocked Margin</p> <p>${userData.blockedMargin}</p></div>
+                        <div className="w-full h-full grid grid-rows-2 gap-1">
+                            <div className='row-span-1 w-full  grid grid-rows-4 border border-white/10 p-2'> <div className='row-span-1 w-full flex justify-start text-xl opacity-50'>Balance</div> <div className='row-span-3 w-full flex justify-start items-center text-5xl'>${userData.balance.toLocaleString('en-US')}</div></div>
+                            <div className='row-span-1 w-full  grid grid-rows-4 border border-white/10 p-2'> <div className='row-span-1 w-full flex justify-start text-xl opacity-50'>Blocked Margin</div> <div className='row-span-3 w-full flex justify-start items-center text-5xl'>${userData.blockedMargin.toLocaleString('en-US')}</div></div>
                         </div>
                     </div>
 
 
-                    <div className="col-span-1">
-                        <div className="w-full h-full bg-white/10 flex flex-col justify-center items-center">
-                            <p>Equity</p>
-                            <p>${((userData.balance) ? Number(Equity + userData.balance): 0 ).toFixed(2)}</p>
+                    <div className="col-span-1 h-full">
+
+
+                        <div className="w-full h-full grid grid-rows-2 gap-1">
+                            <div className='row-span-1 w-full  grid grid-rows-4 border border-white/10 p-2'> <div className='row-span-1 w-full flex justify-start text-xl opacity-50'>Equity</div> <div className='row-span-3 w-full flex justify-start items-center text-5xl'>${(Number(((userData.balance) ? Number(Equity + userData.balance) : 0).toFixed(2))).toLocaleString('en-US')}</div></div>
+                            <div className='row-span-1 w-full  grid grid-rows-4 border border-white/10 p-2'> <div className='row-span-1 w-full flex justify-start text-xl opacity-50'>Holdings Value</div> <div className='row-span-3 w-full flex justify-start items-center text-5xl'>${Number(Equity.toFixed(2)).toLocaleString('en-US')}</div></div>
                         </div>
+
+                        {/* <p>Equity</p>
+                            <p>${(Number(((userData.balance) ? Number(Equity + userData.balance) : 0).toFixed(2))).toLocaleString('en-US')}</p> */}
                     </div>
                 </div>
 
                 <div className="row-span-10 w-full h-full">
 
-                    <table className='border-collapse w-full bg-white/10 grid grid-rows-10 '>
+                    <table className='border-collapse w-full border border-white/20 grid grid-rows-10 '>
                         <thead className='row-span-1 w-full border border-white/10 sticky top-5 bg-black/20 backdrop-blur-md'>
                             <tr className='w-full grid grid-cols-10 h-full items-center'>
                                 <th className='col-span-1 grid justify-center items-center h-full'>S.No</th>
@@ -116,16 +121,22 @@ export default function UserProfile() {
                             </tr>
                         </thead>
                         <tbody className='row-span-9 w-full border border-white/10'>
-                            {tradeHistory && tradeHistory.length>0 && tradeHistory.map((item , index)=>(
-                                <tr className='w-full grid grid-cols-10 h-8 items-center border-b border-white/5 hover:bg-white/10' key={item.symbol+index}>
-                                    <td className='col-span-1 grid justify-center items-center h-full'>{index+1}</td>
-                                    <td className='col-span-2 grid justify-center items-center h-full'>{item.symbol}</td>
-                                    <td className='col-span-2 grid justify-center items-center h-full'>{item.type}</td>
-                                    <td className='col-span-1 grid justify-center items-center h-full'>{item.shares}</td>
-                                    <td className='col-span-2 grid justify-center items-center h-full'>{item.realizedPL.toFixed(2)}</td>
-                                    <td className='col-span-2 grid justify-center items-center h-full'>{new Date(item.timestamp).toLocaleString()}</td>
-                                </tr>
-                            ))}
+                            {tradeHistory && tradeHistory.length > 0 && tradeHistory.map((item, index) => {
+                                const value = item.realizedPL.toFixed(2);
+                                const textStyle = {
+                                    color: value > 0 ? "#8bf31c" : value < 0 ? "#FF0000" : "white"
+                                };
+                                return (
+                                    <tr className='w-full grid grid-cols-10 h-8 items-center border-b border-white/5 hover:bg-white/5' key={item.symbol + index}>
+                                        <td className='col-span-1 grid justify-center items-center h-full'>{index + 1}</td>
+                                        <td className='col-span-2 grid justify-center items-center h-full'>{item.symbol}</td>
+                                        <td className='col-span-2 grid justify-center items-center h-full'>{item.type}</td>
+                                        <td className='col-span-1 grid justify-center items-center h-full'>{item.shares}</td>
+                                        <td className='col-span-2 grid justify-center items-center h-full' style={textStyle}>{item.realizedPL.toFixed(2)}</td>
+                                        <td className='col-span-2 grid justify-center items-center h-full'>{new Date(item.timestamp).toLocaleString()}</td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
 
