@@ -258,9 +258,10 @@ export async function executeTrade(positionDetails, userId) {
 }
 
 export async function GetUserData(userId) {
-    const userData = await User.findById(userId);
+    let userData = await User.findById(userId).select('-passwordHash');
     if (!userData) return null;
     // console.log(userData);
+    // delete userData.passwordHash;
     return userData;
 }
 
@@ -272,15 +273,12 @@ export async function GetTradeHistory(userID) {
     return tradeHistory;
 }
 
-
-// STILL NEED TO BE TESTED
 export async function GetUserWatchlist(userID) {
     const userWatchlist = await Watchlist.find({ "userId": new ObjectId(userID) });
     if (!userWatchlist) return null;
     return userWatchlist;
 }
 
-// STILL NEED TO BE TESTED
 export async function AddToWatchlist(userID, symbol) {
     try {
         await Watchlist.updateOne(

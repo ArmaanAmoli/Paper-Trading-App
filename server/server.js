@@ -106,11 +106,8 @@ server.get('/user-data', verifyToken, async (req, res, next) => {
         const userID = req.user.userId;
         //console.log(userID);
         const user = await GetUserData(userID);
-
         // console.log(userID);
         // console.log(user);
-
-
         res.status(200).json(user);
     } catch (err) {
         next(err);
