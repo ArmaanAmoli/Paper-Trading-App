@@ -4,11 +4,16 @@ from currency import update_rates_every_24h , get_currency
 from contextlib import asynccontextmanager
 import yfinance as yf
 import currency
+from data import get_quote
+from collections import defaultdict
 
 '''
 This is an under development websocket server whose purpose
 is to reduce constant http polling.
 '''
+
+ticker_subscribers:dict[str , list[WebSocket]] = defaultdict(list)
+fetcher_tasks: dict[str, asyncio.Task] = {} # stores all the fetch_broadcast() running for different tickers
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -24,44 +29,61 @@ async def lifespan(app:FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app = FastAPI()
 
-@app.websocket("/ws/{ticker}")
-async def fetchTickerQuote(websocket: WebSocket , ticker:str):
+async def fetch_and_broadcast(ticker:str):
+    while True:
+        payload = await get_quote(ticker)
+        dead = [] # Stores disconnected nodes
+        for ws in ticker_subscribers[ticker]:
+            try:
+                await ws.send_json(payload)
+            except:
+                dead.append(ws)
+        for ws in dead:
+            ticker_subscribers[ticker].remove(ws)
+        await asyncio.sleep(2)
+
+def start_fetcher(ticker:str):
+    if ticker not in fetcher_tasks:
+        task = asyncio.create_task(fetch_and_broadcast(ticker))
+        fetcher_tasks[ticker] = task
+        
+def stop_fetcher(ticker:str):
+    if not ticker_subscribers[ticker]: #Only pop if no subscribers left
+        task = fetcher_tasks.pop(ticker , None)
+        if task:
+            task.cancel()
+            print(f"[{ticker}] fetcher stopped")
+        
+
+@app.websocket("/ws/quote")
+async def quote_ws(websocket: WebSocket): # This endpoint just maintains the ticker_subscriber dictionary
+    subscribed:set[str] = set() # each user have their own subscribed set
+    await websocket.accept() # Initial Handshake request by client
     try:
         while True:
-            # LOGIC
-            stock = yf.Ticker(ticker)
-            # info =stock.info
-            info = await asyncio.to_thread(lambda: stock.info)
+            # msg-example: {action:"subscribe" or "unsubscribe" , ticker: "AAPL"}
+            msg = await websocket.receive_json()
+            action = msg.get("action")
+            ticker = msg.get("ticker" , "").upper()
             
-            if info is None or 'currentPrice' not in info:
-                hist = stock.history(period="1d" , interval = "1m")
-                if(hist.empty):
-                    raise ValueError("No price data found for the ticker.")
-                
-                current_price = stock.fast_info['last_price']
-                prev_close = stock.fast_info['previous_close']
-                
-            else:  
-                current_price = info.get('currentPrice')
-                prev_close = info.get('previousClose')
-                
-            change = current_price - prev_close
-            per_change = (change/prev_close)*100
+            if not ticker:
+                continue
             
-            curr = (await get_currency(ticker)).strip().upper()
-            rate = currency.rates["rates"].get(curr, 1)
-        
-            current_price = current_price/rate
-            change = change / rate
-            response = {
-                "currentPrice":round(current_price,2),
-                "change":round(change,3),
-                "percentChange":round(per_change,3)
-            }
-            
-            await websocket.send_json(response)
+            if action == "subscribe":
+                subscribed.add(ticker)
+                ticker_subscribers[ticker].append(websocket)
+                start_fetcher(ticker)
+                # Here websocket is the user
+            elif action == "unsubscribe":
+                subscribed.discard(ticker)
+                ticker_subscribers[ticker].remove(websocket)
+                stop_fetcher(ticker)
+                
+    except WebSocketDisconnect:
+        for subs in ticker_subscribers.values():
+            if websocket in subs:
+                subs.remove(websocket)
             
     except WebSocketDisconnect:
         print(f"{ticker} client disconnected")

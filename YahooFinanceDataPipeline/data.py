@@ -9,6 +9,40 @@ import pandas as pd
 import datetime
 from talib import MA_Type
 
+async def get_quote(ticker):
+     # LOGIC
+    stock = yf.Ticker(ticker)
+    # info =stock.info
+    info = await asyncio.to_thread(lambda: stock.info)
+    
+    if info is None or 'currentPrice' not in info:
+        hist = stock.history(period="1d" , interval = "1m")
+        if(hist.empty):
+            raise ValueError("No price data found for the ticker.")
+        
+        current_price = stock.fast_info['last_price']
+        prev_close = stock.fast_info['previous_close']
+        
+    else:  
+        current_price = info.get('currentPrice')
+        prev_close = info.get('previousClose')
+        
+    change = current_price - prev_close
+    per_change = (change/prev_close)*100
+    
+    curr = (await get_currency(ticker)).strip().upper()
+    rate = currency.rates["rates"].get(curr, 1)
+
+    current_price = current_price/rate
+    change = change / rate
+    response = {
+        "currentPrice":round(current_price,2),
+        "change":round(change,3),
+        "percentChange":round(per_change,3)
+    }
+    return response
+
+
 def format_data(df):
     df.reset_index(inplace=True)
     df.rename(columns={df.columns[0]: "Date"}, inplace=True)
