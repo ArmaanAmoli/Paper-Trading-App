@@ -1,4 +1,4 @@
-from fastapi import FastAPI , Query , HTTPException
+from fastapi import FastAPI , Query , HTTPException ,WebSocket , WebSocketDisconnect
 from fastapi.responses import FileResponse
 from typing import Annotated, List
 import pandas as pd
@@ -8,8 +8,9 @@ import currency
 from currency import update_rates_every_24h , get_currency
 import asyncio
 from contextlib import asynccontextmanager
-from data import get_data,EMA_,SMA_,collect_data,format_data,VOL_,OBV_,RSI_,BBAND_,STOCH_
+from data import get_data,EMA_,SMA_,collect_data,format_data,VOL_,OBV_,RSI_,BBAND_,STOCH_ , get_quote
 import talib
+from collections import defaultdict
 
 
 @asynccontextmanager
@@ -210,6 +211,72 @@ async def get_quote(ticker: str):
     except Exception as e:
         print(str(e))
         raise HTTPException(status_code=500 , detail = str(e))
+
+
+
+# #WEB SOCKETS
+# ticker_subscribers:dict[str , list[WebSocket]] = defaultdict(list)
+# fetcher_tasks: dict[str, asyncio.Task] = {} # stores all the fetch_broadcast() running for different tickers
+
+# async def fetch_and_broadcast(ticker:str):
+#     while True:
+#         payload = await get_quote(ticker)
+#         dead = [] # Stores disconnected nodes
+#         for ws in ticker_subscribers[ticker]:
+#             try:
+#                 await ws.send_json(payload)
+#             except:
+#                 dead.append(ws)
+#         for ws in dead:
+#             ticker_subscribers[ticker].remove(ws)
+#         await asyncio.sleep(2)
+
+# def start_fetcher(ticker:str):
+#     if ticker not in fetcher_tasks:
+#         task = asyncio.create_task(fetch_and_broadcast(ticker))
+#         fetcher_tasks[ticker] = task
+        
+# def stop_fetcher(ticker:str):
+#     if not ticker_subscribers[ticker]: #Only pop if no subscribers left
+#         task = fetcher_tasks.pop(ticker , None)
+#         if task:
+#             task.cancel()
+#             print(f"[{ticker}] fetcher stopped")
+        
+
+# @app.websocket("/ws/quote")
+# async def quote_ws(websocket: WebSocket): # This endpoint just maintains the ticker_subscriber dictionary
+#     subscribed:set[str] = set() # each user have their own subscribed set
+#     await websocket.accept() # Initial Handshake request by client
+#     try:
+#         while True:
+#             # msg-example: {action:"subscribe" or "unsubscribe" , ticker: "AAPL"}
+#             msg = await websocket.receive_json()
+#             action = msg.get("action")
+#             ticker = msg.get("ticker" , "").upper()
+            
+#             if not ticker:
+#                 continue
+            
+#             if action == "subscribe":
+#                 subscribed.add(ticker)
+#                 ticker_subscribers[ticker].append(websocket)
+#                 start_fetcher(ticker)
+#                 # Here websocket is the user
+#             elif action == "unsubscribe":
+#                 subscribed.discard(ticker)
+#                 ticker_subscribers[ticker].remove(websocket)
+#                 stop_fetcher(ticker)
+                
+#     except WebSocketDisconnect:
+#         for subs in ticker_subscribers.values():
+#             if websocket in subs:
+#                 subs.remove(websocket)
+            
+#     except WebSocketDisconnect:
+#         print(f"{ticker} client disconnected")
+#     finally:
+#         await websocket.close()
 
 
 if __name__ =="__main__":

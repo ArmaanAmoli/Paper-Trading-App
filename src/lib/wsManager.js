@@ -89,12 +89,15 @@ class WebSocketManager{
 
     unsubscriber(name , ticker , handler){
         const entry = this.connections[name];
-        if (!entry) return;
-        entry.subscribers[ticker].delete[handler] // delete the handler fn in case of component unmount
-        if(entry.subscribers.has(ticker)){
-            entry.subscribers.delete(ticker);
-            this._send(name , {action:"unsubscribe" , ticker});
-            console.log(`WS:${ticker} unsubscribed`);
+        if (!entry || !entry.subscribers[ticker] || entry.subscribers[ticker].size === 0) return;
+        //entry.subscribers[ticker].delete(handler)// delete the handler fn in case of component unmount
+        if(entry.subscribers[ticker]){
+            entry.subscribers[ticker].delete(handler);
+            if(entry.subscribers[ticker].size === 0){
+                this._send(name , {action:"unsubscribe" , ticker});
+                delete entry.subscribers[ticker];
+                console.log(`WS:${ticker} unsubscribed`);
+            }
         };
     }
 

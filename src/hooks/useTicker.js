@@ -6,9 +6,11 @@ export function useTicker(connectionName , ticker){
 
     const handlerRef = useRef(null);
 
-    if(!handlerRef.current){
-        handlerRef.current = (msg) => setData(msg);
-    }
+    useEffect(()=>{
+        if(!handlerRef.current){
+            handlerRef.current = (msg) => setData(msg);
+        }
+    },[])
 
     useEffect(()=>{
         if(!ticker)return;
@@ -16,6 +18,6 @@ export function useTicker(connectionName , ticker){
         wsManager.subscriber(connectionName , ticker , handler);
         return()=>wsManager.unsubscriber(connectionName , ticker , handler)
     },[connectionName , ticker])
-
+    if(data === null) return {'currentPrice': 0, 'change': 0, 'percentChange': 0}
     return data;
 }

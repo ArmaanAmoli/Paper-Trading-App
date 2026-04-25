@@ -7,9 +7,9 @@ import { wsManager } from './lib/wsManager.js';
 
 function App() {
   useEffect(() => {
-    wsManager.connect("prices", "ws://localhost:8000/ws/prices");
+    wsManager.connect("quote", "ws://127.0.0.1:8001/ws/quote");
     return ()=>{
-      wsManager.disconnect("prices");
+      wsManager.disconnect("quote");
     }
   }, [])
   return <AppRouter />

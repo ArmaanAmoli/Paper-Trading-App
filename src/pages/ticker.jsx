@@ -1,35 +1,37 @@
 import { WatchlistContext } from "./context";
-import { fetchQuote } from "./Charts/dataRequester";
-import { useEffect , useState , useContext} from "react";
+// import { fetchQuote } from "./Charts/dataRequester";
+import { useContext} from "react";
 import { useNavigate } from 'react-router-dom';
 import { deleteFromWatchlist } from "./watchlist";
+import { useTicker } from "../hooks/useTicker";
 
 export default function Ticker({ name }) {
     const navigate = useNavigate();
-
+    const quote = useTicker("quote" , name);
     const [watchlistArray, setWatchlistArray] = useContext(WatchlistContext);
-
     const handleDivClick = ()=>{
         navigate(`/chart/${name}`);
     }
 
-    const [quote , setQuote] = useState([]);
-    useEffect(()=>{
-        if(!name) return;
-        async function QuoteFromYahoo() {
-            try{
-                const data = await fetchQuote(name);
-                console.log(data)
-                setQuote(data);
-            }catch(err){
-                console.log(err);
-            }
-        }
-        QuoteFromYahoo();
-        const intervalID = setInterval(QuoteFromYahoo , 30000);
-        return ()=> clearInterval(intervalID);
-    },[name]);
+    // const [quote , setQuote] = useState([]);
+    // useEffect(()=>{
+    //     if(!name) return;
+    //     async function QuoteFromYahoo() {
+    //         try{
+    //             const data = await fetchQuote(name);
+    //             console.log(data)
+    //             setQuote(data);
+    //         }catch(err){
+    //             console.log(err);
+    //         }
+    //     }
+    //     QuoteFromYahoo();
+    //     const intervalID = setInterval(QuoteFromYahoo , 30000);
+    //     return ()=> clearInterval(intervalID);
+    // },[name]);
+    if(!quote) return <div>Loading...</div>
     return (
+        
         <div className="group relative w-full h-[40px] grid grid-cols-9 pl-[4px] items-center border border-white/10
         hover:bg-white/20 transition-color duration-150 ease-in-out" onClick={handleDivClick}>
 

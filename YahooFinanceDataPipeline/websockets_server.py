@@ -1,9 +1,11 @@
 from fastapi import  WebSocket , FastAPI , WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from currency import update_rates_every_24h , get_currency
 from contextlib import asynccontextmanager
 import yfinance as yf
 import currency
+import uvicorn
 from data import get_quote
 from collections import defaultdict
 
@@ -29,16 +31,20 @@ async def lifespan(app:FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(CORSMiddleware)
 
 async def fetch_and_broadcast(ticker:str):
     while True:
         payload = await get_quote(ticker)
+        payload["ticker"] = ticker
         dead = [] # Stores disconnected nodes
         for ws in ticker_subscribers[ticker]:
             try:
+                print(payload)
                 await ws.send_json(payload)
-            except:
+            except Exception as e:
                 dead.append(ws)
+                print("Error in Fetch_broadcast: " , e)
         for ws in dead:
             ticker_subscribers[ticker].remove(ws)
         await asyncio.sleep(2)
@@ -66,9 +72,7 @@ async def quote_ws(websocket: WebSocket): # This endpoint just maintains the tic
             msg = await websocket.receive_json()
             action = msg.get("action")
             ticker = msg.get("ticker" , "").upper()
-            
-            if not ticker:
-                continue
+            if(ticker == "" or ticker is None):continue
             
             if action == "subscribe":
                 subscribed.add(ticker)
@@ -76,16 +80,24 @@ async def quote_ws(websocket: WebSocket): # This endpoint just maintains the tic
                 start_fetcher(ticker)
                 # Here websocket is the user
             elif action == "unsubscribe":
-                subscribed.discard(ticker)
-                ticker_subscribers[ticker].remove(websocket)
-                stop_fetcher(ticker)
+                if ticker in subscribed: 
+                    subscribed.discard(ticker)
+                if(ticker in ticker_subscribers.keys() and websocket in ticker_subscribers[ticker]):
+                    ticker_subscribers[ticker].remove(websocket)
+                    stop_fetcher(ticker)
                 
     except WebSocketDisconnect:
-        for subs in ticker_subscribers.values():
+        for ticks in ticker_subscribers.keys():
+            subs = ticker_subscribers[ticks]
             if websocket in subs:
                 subs.remove(websocket)
-            
-    except WebSocketDisconnect:
-        print(f"{ticker} client disconnected")
+                stop_fetcher(ticks)
+        print(f"Client disconnected {websocket}")
+        
     finally:
-        await websocket.close()
+        # await websocket.close()
+        print("ws/quote")
+        
+if __name__ =="__main__":
+    print("Server Running in ws://127.0.0.1:8001")
+    uvicorn.run("websockets_server:app", host = "127.0.0.1" , port=8001, reload=True)

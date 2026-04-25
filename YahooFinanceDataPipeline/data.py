@@ -40,6 +40,7 @@ async def get_quote(ticker):
         "change":round(change,3),
         "percentChange":round(per_change,3)
     }
+    print(response)
     return response
 
 
