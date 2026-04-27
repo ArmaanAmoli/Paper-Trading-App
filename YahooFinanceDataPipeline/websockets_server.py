@@ -95,9 +95,11 @@ async def quote_ws(websocket: WebSocket): # This endpoint just maintains the tic
         print(f"Client disconnected {websocket}")
         
     finally:
-        # await websocket.close()
-        print("ws/quote")
-        
+        await websocket.close()
+        # print("ws/quote")
+
+
+
 if __name__ =="__main__":
     print("Server Running in ws://127.0.0.1:8001")
     uvicorn.run("websockets_server:app", host = "127.0.0.1" , port=8001, reload=True)

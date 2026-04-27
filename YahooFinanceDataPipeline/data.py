@@ -9,6 +9,13 @@ import pandas as pd
 import datetime
 from talib import MA_Type
 
+async def last_candle(ticker , interval):
+    period = "1d"
+    tick = yf.Ticker(ticker)
+    raw = await asyncio.to_thread(lambda: tick.history(period , interval))
+    output = raw.iloc[-1 , :-3].to_dict()
+    return output
+
 async def get_quote(ticker):
      # LOGIC
     stock = yf.Ticker(ticker)

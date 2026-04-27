@@ -98,7 +98,7 @@ const UserEquityProvider = (({ children }) => {
                     };
 
                     total += Number(stockPnl.toFixed(2));
-                    equity = equity + quote.currentPrice * Math.abs(item.shares);
+                    equity = equity + quote.currentPrice * item.shares;
                 });
                 setUserPnlList(updatedData);
                 setTotalPnl(total);
