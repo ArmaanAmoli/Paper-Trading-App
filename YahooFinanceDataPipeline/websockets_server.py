@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import yfinance as yf
 import currency
 import uvicorn
-from data import get_quote
+from data import get_quote , last_candle
 from collections import defaultdict
 
 '''
@@ -97,8 +97,22 @@ async def quote_ws(websocket: WebSocket): # This endpoint just maintains the tic
     finally:
         await websocket.close()
         # print("ws/quote")
+        
 
+candles_subscribers:dict[str , list[WebSocket]] = defaultdict(list)
+candles_fetcher_tasks:dict[str , asyncio.Task] = []
+async def listen_for_candles(websocket:WebSocket , ticker:str , interval):
+    while True:
+        bar = await last_candle(ticker=ticker , interval=interval )
+        bar["ticker"] = ticker
+        await websocket.send_json(bar);
+        await asyncio.sleep(2)
 
+@app.websocket("ws/candles")
+async def candles_ws(websocket: WebSocket):
+    await websocket.accept()
+    subscribed = set[str] = set()
+        
 
 if __name__ =="__main__":
     print("Server Running in ws://127.0.0.1:8001")

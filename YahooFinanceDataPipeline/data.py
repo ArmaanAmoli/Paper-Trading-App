@@ -8,12 +8,14 @@ import numpy as np
 import pandas as pd
 import datetime
 from talib import MA_Type
+import time
 
 async def last_candle(ticker , interval):
     period = "1d"
     tick = yf.Ticker(ticker)
     raw = await asyncio.to_thread(lambda: tick.history(period , interval))
     output = raw.iloc[-1 , :-3].to_dict()
+    output["timestamp"] = time.time()
     return output
 
 async def get_quote(ticker):
