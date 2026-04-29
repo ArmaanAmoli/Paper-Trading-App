@@ -99,19 +99,55 @@ async def quote_ws(websocket: WebSocket): # This endpoint just maintains the tic
         # print("ws/quote")
         
 
-candles_subscribers:dict[str , list[WebSocket]] = defaultdict(list)
-candles_fetcher_tasks:dict[str , asyncio.Task] = []
-async def listen_for_candles(websocket:WebSocket , ticker:str , interval):
+candles_subscribers:dict[str , dict[str , list[WebSocket]]] = defaultdict(list)
+candles_fetcher_tasks:dict[str , dict[str , asyncio.Task]] = defaultdict(list)
+
+async def listen_for_candles(ticker:str , interval):
     while True:
         bar = await last_candle(ticker=ticker , interval=interval )
         bar["ticker"] = ticker
-        await websocket.send_json(bar);
+        for ws in candles_subscribers[ticker]:
+            try:
+                await ws.send_json(bar)
+            except Exception as e:
+                print(f"Error occured while fetching candle {ticker}")
         await asyncio.sleep(2)
+
+def start_listen_for_candles(ticker:str , interval):
+    if(ticker in candles_subscribers.keys() and interval in candles_subscribers[ticker].keys()):return
+    task = asyncio.create_task(listen_for_candles(ticker , interval))
+    fetcher_tasks[ticker][interval] = task
+
+def stop_listen_for_candles(ticker:str , interval):
+    if(ticker not in candles_fetcher_tasks.keys()):return
+    if(interval not in candles_fetcher_tasks[ticker].keys()):return
+    task = candles_fetcher_tasks[ticker][interval]
+    if task:
+        task.cancel()
+        print(f"candle fetcher task for {ticker}-{interval}")
+
+def isSubscribed(ticker , interval):
+    return ticker in candles_subscribers[ticker].keys()
 
 @app.websocket("ws/candles")
 async def candles_ws(websocket: WebSocket):
     await websocket.accept()
     subscribed = set[str] = set()
+    while True:
+        '''
+        {ticker: , interval: , action:Subscribe/Unsubscribe}
+        '''
+        msg = await websocket.receive_json()
+        action = msg.get("action")
+        ticker = msg.get("ticker")
+        interval = msg.get("interval")
+        
+        if(not (ticker and action and interval) ):
+            websocket.send_text("incomplete payload")
+        
+        if(action == "subscribe"):
+            return
+            
         
 
 if __name__ =="__main__":
