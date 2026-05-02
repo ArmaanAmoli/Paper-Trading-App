@@ -47,7 +47,7 @@ async def fetch_and_broadcast(ticker:str):
                 print("Error in Fetch_broadcast: " , e)
         for ws in dead:
             ticker_subscribers[ticker].remove(ws)
-        await asyncio.sleep(2)
+        await asyncio.sleep(6)
 
 def start_fetcher(ticker:str):
     if ticker not in fetcher_tasks:
@@ -111,7 +111,7 @@ async def listen_for_candles(ticker:str , interval):
                 await ws.send_json(bar)
             except Exception as e:
                 print(f"Error occured while fetching candle {ticker}")
-        await asyncio.sleep(2)
+        await asyncio.sleep(6)
 
 def start_listen_for_candles(ticker:str , interval):
     if(len(candles_subscribers[ticker][interval]) is not False):return
@@ -157,7 +157,7 @@ async def candles_ws(websocket: WebSocket):
                 websocket.send_text(f"Already not in subscription {ticker} for the interval {interval}")
             else:
                 candles_subscribers[ticker][interval].remove(websocket)
-                if(len(candles_subscribers[ticker][interval]) is 0):
+                if(len(candles_subscribers[ticker][interval]) is False):
                     stop_listen_for_candles(ticker , interval)
                 websocket.send_text(f"unsubscribed ticker: {ticker} , interval: {interval}")
         else:

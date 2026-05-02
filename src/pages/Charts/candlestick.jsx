@@ -1,9 +1,10 @@
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries } from "lightweight-charts";
 import { useEffect, useRef, useState, useContext } from "react";
-import { fetchData, fetchQuote } from "./dataRequester";
+import { fetchData } from "./dataRequester";
 import { useCallback } from "react";
 import { CrosshairMode } from "lightweight-charts";
 import { IndicatorsList } from "../context.js";
+import { useTicker } from "../../hooks/useTicker.js";
 const INTERVAL_SECONDS = {
     "1m": 60,
     "5m": 300,
@@ -12,6 +13,7 @@ const INTERVAL_SECONDS = {
     "1d": 86400,
 };
 export default function CandleStickChartComponent({ ticker, interval, period, indicators = [] }) {
+    const currentData = useTicker("quote" , ticker);
     const [indicatorList, setIndicatorList] = useContext(IndicatorsList);
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
@@ -19,6 +21,9 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
     const initializedRef = useRef(false);
     const indicatorRef = useRef([]);
     const [data, SetData] = useState([]);
+    
+
+    // function to update chart
     const mergePriceIntoLastCandle = useCallback((price) => {
         SetData(prevData => {
             if (!seriesRef.current || !prevData.length) return prevData;
@@ -61,6 +66,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
         });
     }, [interval]);
 
+    //fetching Historical data
     useEffect(() => {
         const getData = async () => {
             const rawData = await fetchData(ticker, interval, period);
@@ -78,6 +84,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
         getData();
     }, [ticker, interval, period]);
 
+    //Creating the chart
     useEffect(() => {
         if (!chartContainerRef.current || chartRef.current) return;
         const chart = createChart(chartContainerRef.current, {
@@ -142,21 +149,30 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
         initializedRef.current = true;
     }, [data]);
 
+    // useEffect(() => {
+    //     if (!seriesRef.current) return;
+
+    //     const intervalId = setInterval(async () => {
+    //         try {
+    //             const quote = await fetchQuote(ticker);
+    //             const price = quote.currentPrice; // adjust key if needed
+    //             mergePriceIntoLastCandle(price);
+    //         } catch (err) {
+    //             console.error(err);
+    //         }
+    //     }, 5000); // every 5 seconds
+
+    //     return () => clearInterval(intervalId);
+    // }, [ticker, mergePriceIntoLastCandle]);
+
+    // Websockts updating candlestick
     useEffect(() => {
-        if (!seriesRef.current) return;
+        if (!seriesRef.current || currentData.currentPrice === 0) return;
 
-        const intervalId = setInterval(async () => {
-            try {
-                const quote = await fetchQuote(ticker);
-                const price = quote.currentPrice; // adjust key if needed
-                mergePriceIntoLastCandle(price);
-            } catch (err) {
-                console.error(err);
-            }
-        }, 5000); // every 5 seconds
-
-        return () => clearInterval(intervalId);
-    }, [ticker, mergePriceIntoLastCandle]);
+        const quote = currentData;
+        const price = quote.currentPrice; // adjust key if needed
+        mergePriceIntoLastCandle(price);
+    }, [ticker,mergePriceIntoLastCandle , currentData]);
 
     useEffect(() => {
         /* INDICATOR CODE GOES HERE */
