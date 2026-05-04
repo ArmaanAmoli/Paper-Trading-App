@@ -3,15 +3,17 @@ import CandleStickChartComponent from './Charts/candlestick.jsx';
 import { useLocation } from 'react-router-dom';
 import Watchlist from './watchlist.jsx';
 import "./styles/stockChart.css"
-import { useState , useContext} from 'react';
+import { useState, useContext } from 'react';
 import OrderForm from './orderForm.jsx';
 import { IndicatorsList } from './context.js';
 import { fetchIndicatorData } from './Charts/dataRequester.js';
+import MovingAvgPopUp from './IndicatorPopUps/movingAvgPopUp.jsx';
+
 export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
     const { ticker } = useParams();
     const location = useLocation();
-    const [indicatorList , setIndicatorList]= useContext(IndicatorsList);
+    const [indicatorList, setIndicatorList] = useContext(IndicatorsList);
 
     const [Interval, setInterval] = useState('1h');
     console.log(Interval);
@@ -23,65 +25,68 @@ export default function StockMainChart() {
         setActivePanel(prev => prev === 'orderform' ? 'none' : 'orderform');
     }
 
-    const ma = async (name)=>{
+    //Indicators pop up states
+    const [maPopUp, setMaPopUp] = useState(false);
+
+    const ma = async (name) => {
         let properties = {
-            ticker:ticker,
-            interval:Interval,
-            period:'max',
-            indicator:name,
-            indicatorInterval:20 // <--------
+            ticker: ticker,
+            interval: Interval,
+            period: 'max',
+            indicator: name,
+            indicatorInterval: 20 // <--------
         }
         const data = await fetchIndicatorData(properties);
-        properties = {...properties , data:data};
-        setIndicatorList([...indicatorList , properties]);
+        properties = { ...properties, data: data };
+        setIndicatorList([...indicatorList, properties]);
     }
 
-    const bband = async()=>{
+    const bband = async () => {
         let properties = {
-            ticker:ticker,
-            interval:Interval,
-            period:'max',
-            indicator:"BBAND",
-            stdUp:2,
-            stdDown:2,
-            matype:0,
-            indicatorInterval:20 // <--------
+            ticker: ticker,
+            interval: Interval,
+            period: 'max',
+            indicator: "BBAND",
+            stdUp: 2,
+            stdDown: 2,
+            matype: 0,
+            indicatorInterval: 20 // <--------
         }
         const data = await fetchIndicatorData(properties);
-        console.log('data-bband',data)
-        properties = {...properties , data:data};
-        setIndicatorList([...indicatorList , properties]);
+        console.log('data-bband', data)
+        properties = { ...properties, data: data };
+        setIndicatorList([...indicatorList, properties]);
     }
 
-    const volI = async (name)=>{
+    const volI = async (name) => {
         let properties = {
-            ticker:ticker,
-            interval:Interval,
-            period:'max',
-            indicator:name,
+            ticker: ticker,
+            interval: Interval,
+            period: 'max',
+            indicator: name,
         }
         const data = await fetchIndicatorData(properties);
         // console.log('data-vol',data)
-        properties = {...properties , data:data};
-        setIndicatorList([...indicatorList , properties]);
+        properties = { ...properties, data: data };
+        setIndicatorList([...indicatorList, properties]);
     }
 
     const stoch = async () => {
-        let properties={
-            ticker:ticker,
-            interval:Interval,
-            period:'max',
-            indicator:"STOCH",
-            fastPeriod  : 5,
-            slowkPeriod : 3,
-            slowkMatype : 0,
-            slowdPeriod : 3,
-            slowdMatype : 0,
+        let properties = {
+            ticker: ticker,
+            interval: Interval,
+            period: 'max',
+            indicator: "STOCH",
+            fastPeriod: 5,
+            slowkPeriod: 3,
+            slowkMatype: 0,
+            slowdPeriod: 3,
+            slowdMatype: 0,
         }
         const data = await fetchIndicatorData(properties);
-        console.log("STOCH:" , data)
-        properties = {...properties , data:data};
-        setIndicatorList([...indicatorList , properties]);
+        console.log("STOCH:", data)
+        properties = { ...properties, data: data };
+        setIndicatorList([...indicatorList, properties]);
     }
 
     return (
@@ -98,14 +103,13 @@ export default function StockMainChart() {
                     Volume
                     Stocastic Occilator
                 */}
-                <button className="indicator-button" onClick={()=>ma("SMA")} >SMA</button>
-                <button className="indicator-button" onClick={()=>ma("EMA")} >EMA</button>
-                <button className="indicator-button" onClick={()=>bband()}>BB</button>
-                <button className="indicator-button" onClick={()=>ma("RSI")}>RSI</button>
+                <button className="indicator-button" onClick={() => setMaPopUp(!maPopUp)} >MA</button>
+                <button className="indicator-button" onClick={() => bband()}>BB</button>
+                <button className="indicator-button" onClick={() => ma("RSI")}>RSI</button>
                 {/* <button className="indicator-button text-xs">VWAP</button> */}
-                <button className="indicator-button" onClick={()=>volI("OBV")}>OBV</button>
-                <button className="indicator-button" onClick={()=>volI("VOL")}>VOL</button>
-                <button className="indicator-button" onClick={()=>stoch()}>SO</button>
+                <button className="indicator-button" onClick={() => volI("OBV")}>OBV</button>
+                <button className="indicator-button" onClick={() => volI("VOL")}>VOL</button>
+                <button className="indicator-button" onClick={() => stoch()}>SO</button>
 
             </div>
             <div className="Chart" key={location.pathname}>
@@ -135,6 +139,8 @@ export default function StockMainChart() {
                 <button className="Sidebar-Button" id="watchlist" onClick={toggleWatchlist}></button>
                 <button className="Sidebar-Button" id="place-order" onClick={toggleOrderForm}></button>
             </div>
+
+            {maPopUp && <MovingAvgPopUp Interval={Interval} />}
 
         </div>
 

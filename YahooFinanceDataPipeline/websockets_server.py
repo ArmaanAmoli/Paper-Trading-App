@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import yfinance as yf
 import currency
 import uvicorn
-from data import get_quote , last_candle
+from data import get_quote , last_candle , last_value
 from collections import defaultdict
 
 '''
@@ -98,17 +98,20 @@ async def quote_ws(websocket: WebSocket): # This endpoint just maintains the tic
         await websocket.close()
         # print("ws/quote")
         
+# dict -> ticker -> indicators -> property -> [ws ...]
 
-candles_subscribers:dict[str , dict[str , list[WebSocket]]] = defaultdict(list)
-candles_fetcher_tasks:dict[str , dict[str , asyncio.Task]] = defaultdict(list)
+'''
+candles_subscribers:dict[str , dict[str , dict[str , list[WebSocket]]]] = defaultdict(list)
+candles_fetcher_tasks:dict[str , dict[str , dict[str , asyncio.Task]]] = defaultdict(list)
 
-async def listen_for_candles(ticker:str , interval):
+async def listen_for_candles(ticker:str , interval:str , indicator:str, properties:dict):
     while True:
-        bar = await last_candle(ticker=ticker , interval=interval )
-        bar["ticker"] = ticker
-        for ws in candles_subscribers[ticker]:
+        data = await last_value(ticker=ticker , interval=interval , indicator=indicator ,properties=properties)
+        data["ticker"] = ticker
+        indicator_name = ticker + "::" + interval + "::" + indicator + "::" + str(properties)
+        for ws in candles_subscribers[ticker][indicator][indicator_name]:
             try:
-                await ws.send_json(bar)
+                await ws.send_json(data)
             except Exception as e:
                 print(f"Error occured while fetching candle {ticker}")
         await asyncio.sleep(6)
@@ -129,14 +132,12 @@ def stop_listen_for_candles(ticker:str , interval):
 def isSubscribed(websocket , ticker , interval):
     return websocket in candles_subscribers[ticker][interval]
 
-@app.websocket("ws/candles")
+@app.websocket("ws/indicator")
 async def candles_ws(websocket: WebSocket):
     await websocket.accept()
     subscribed = set[str] = set()
     while True:
-        '''
-        {ticker: , interval: , action:subscribe/unsubscribe}
-        '''
+        #{ticker: , interval: , action:subscribe/unsubscribe}
         msg = await websocket.receive_json()
         action = msg.get("action")
         ticker = msg.get("ticker")
@@ -162,6 +163,8 @@ async def candles_ws(websocket: WebSocket):
                 websocket.send_text(f"unsubscribed ticker: {ticker} , interval: {interval}")
         else:
             websocket.send_text("invalid request")
+'''
+
 
 if __name__ =="__main__":
     print("Server Running in ws://127.0.0.1:8001")

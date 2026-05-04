@@ -188,7 +188,7 @@ export default function CandleStickChartComponent({ ticker, interval, period, in
                 switch (indicatorType) {
                     case "SMA":
                     case "EMA": {
-                        const line = chartRef.current.addSeries(LineSeries, { color: indicatorType === 'SMA' ? '#2962FF' : '#ff29bb', lineWidth: 2 });
+                        const line = chartRef.current.addSeries(LineSeries, { color: item.lineColor, lineWidth: 2 });
                         const indicatorName = `${indicatorType}-${item.indicatorInterval}`;
                         indicatorRef.current.push({ [indicatorName]: line });
 

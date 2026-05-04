@@ -10,6 +10,28 @@ import datetime
 from talib import MA_Type
 import time
 
+async def last_value(ticker:str , interval:str , indicator:str , properties:dict):
+    int_interval = int(interval.rstrip('abcdefghijklmnopqrstuvwxyz'))
+    unit_interval = interval.lstrip('1234567890')
+    period = str(properties[timeperiod+1]*int_interval) + unit_interval
+    data = await collect_data(ticker=ticker , interval=interval , period=period)
+    df = format_data(data)
+    match indicator:
+        case "SMA":
+            timeperiod = properties["timeperiod"]
+            final_data = SMA_(df=df , timeperiod=timeperiod)[-1]
+            return final_data
+        case "EMA":
+            timeperiod = properties["timeperiod"]
+            final_data = EMA_(df=df , timeperiod=timeperiod)[-1]
+            return final_data
+        case "RSI":
+            timeperiod = properties["timeperiod"]
+            final_data = RSI_(df=df , timeperiod=timeperiod)[-1]
+            return final_data
+        case _:
+            return "unknown error"
+
 async def last_candle(ticker , interval):
     period = "1d"
     tick = yf.Ticker(ticker)
