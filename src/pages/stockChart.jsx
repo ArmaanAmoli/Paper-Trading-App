@@ -1,21 +1,19 @@
 import { useParams } from 'react-router-dom';
 import CandleStickChartComponent from './Charts/candlestick.jsx';
-import { useLocation } from 'react-router-dom';
 import Watchlist from './watchlist.jsx';
 import "./styles/stockChart.css"
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import OrderForm from './orderForm.jsx';
 import { IndicatorsList } from './context.js';
-import { fetchIndicatorData } from './Charts/dataRequester.js';
 import MovingAvgPopUp from './IndicatorPopUps/movingAvgPopUp.jsx';
-import {RSIPopUp} from './IndicatorPopUps/rsiPopUp.jsx';
+import RSIPopUp from './IndicatorPopUps/rsiPopUp.jsx';
 import BBandPopUp from './IndicatorPopUps/boilingerBandPopUp.jsx';
+import VolumePopUp from './IndicatorPopUps/volumeIndicatorPopUp.jsx';
+import StochasticOscillatorPopUp from './IndicatorPopUps/stochasticOscillatorPopUp.jsx';
 
 export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
     const { ticker } = useParams();
-    const location = useLocation();
-    const [indicatorList, setIndicatorList] = useContext(IndicatorsList);
 
     const [Interval, setInterval] = useState('1h');
     console.log(Interval);
@@ -31,37 +29,8 @@ export default function StockMainChart() {
     const [maPopUp, setMaPopUp] = useState(false);
     const [rsiPopUp , setRsiPopUp] = useState(false);
     const [bBandPopUp , setBBandPopUp] = useState(false);
-
-    const volI = async (name) => {
-        let properties = {
-            ticker: ticker,
-            interval: Interval,
-            period: 'max',
-            indicator: name,
-        }
-        const data = await fetchIndicatorData(properties);
-        // console.log('data-vol',data)
-        properties = { ...properties, data: data };
-        setIndicatorList([...indicatorList, properties]);
-    }
-
-    const stoch = async () => {
-        let properties = {
-            ticker: ticker,
-            interval: Interval,
-            period: 'max',
-            indicator: "STOCH",
-            fastPeriod: 5,
-            slowkPeriod: 3,
-            slowkMatype: 0,
-            slowdPeriod: 3,
-            slowdMatype: 0,
-        }
-        const data = await fetchIndicatorData(properties);
-        console.log("STOCH:", data)
-        properties = { ...properties, data: data };
-        setIndicatorList([...indicatorList, properties]);
-    }
+    const [volPopup , setVolPopUp] = useState(false);
+    const [stocasticPopUp , setStocasticPopUp] = useState(false);
 
     return (
 
@@ -80,10 +49,8 @@ export default function StockMainChart() {
                 <button className="indicator-button" onClick={() => setMaPopUp(!maPopUp)} >MA</button>
                 <button className="indicator-button" onClick={() => setBBandPopUp(!bBandPopUp)}>BB</button>
                 <button className="indicator-button" onClick={() => setRsiPopUp(!rsiPopUp)}>RSI</button>
-                {/* <button className="indicator-button text-xs">VWAP</button> */}
-                <button className="indicator-button" onClick={() => volI("OBV")}>OBV</button>
-                <button className="indicator-button" onClick={() => volI("VOL")}>VOL</button>
-                <button className="indicator-button" onClick={() => stoch()}>SO</button>
+                <button className="indicator-button" onClick={() => setVolPopUp(!volPopup)}>VOL</button>
+                <button className="indicator-button" onClick={() => setStocasticPopUp(!stocasticPopUp)}>SO</button>
 
             </div>
             <div className="Chart" key={location.pathname}>
@@ -108,15 +75,16 @@ export default function StockMainChart() {
             {activePanel === 'watchlist' && <div className="watchlist"><Watchlist /></div>}
             {activePanel === 'orderform' && <div className="orderform"><OrderForm /></div>}
 
-
             <div className="Sidebar">
                 <button className="Sidebar-Button" id="watchlist" onClick={toggleWatchlist}></button>
                 <button className="Sidebar-Button" id="place-order" onClick={toggleOrderForm}></button>
             </div>
 
-            {maPopUp && <MovingAvgPopUp Interval={Interval} />}
+            {maPopUp && <MovingAvgPopUp Interval={Interval}/>}
             {rsiPopUp && <RSIPopUp Interval={Interval}/>}
             {bBandPopUp && <BBandPopUp Interval={Interval}/>}
+            {volPopup && <VolumePopUp Interval={Interval}/>}
+            {stocasticPopUp && <StochasticOscillatorPopUp Interval={Interval}/>}
 
         </div>
 

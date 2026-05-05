@@ -57,8 +57,8 @@ export default function BBandPopUp({Interval}){
     }
 
     return(
-        <div className="absolute h-100 w-70 bg-black border border-white/15 rounded-xl z-1000 p-2 flex flex-col gap-2">
-            <h1 className="text-xl font-bold mb-2 w-full text-center">Moving Average</h1>
+        <div className="absolute h-80 w-150 bg-black border border-white/15 rounded-xl z-1000 p-2 flex flex-col gap-2">
+            <h1 className="text-xl font-bold mb-2 w-full text-center">Bollinger Bands</h1>
 
             <label className="flex gap-2 w-full">
                 <p>Timeperiod:</p>

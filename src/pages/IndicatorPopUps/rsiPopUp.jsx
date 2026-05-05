@@ -26,8 +26,8 @@ export default function RSIPopUp({ Interval }) {
     }
 
     return (
-        <div className="absolute h-50 w-70 bg-black border border-white/15 rounded-xl z-1000 p-2 flex flex-col gap-2">
-            <h1 className="text-xl font-bold mb-2 w-full text-center">Moving Average</h1>
+        <div className="absolute h-55 w-70 bg-black border border-white/15 rounded-xl z-1000 p-2 flex flex-col gap-2">
+            <h1 className="text-xl font-bold mb-2 w-full text-center">Relative Strength Index</h1>
             <label className="flex gap-2 w-full">
                 <p>Timeperiod:</p>
                 <input className="w-1/4 border border-white/10" value={timePeriod} type="number" min="0" max="100" onChange={e => setTimePeriod(e.target.value)}></input>
