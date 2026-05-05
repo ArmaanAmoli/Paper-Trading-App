@@ -8,6 +8,8 @@ import OrderForm from './orderForm.jsx';
 import { IndicatorsList } from './context.js';
 import { fetchIndicatorData } from './Charts/dataRequester.js';
 import MovingAvgPopUp from './IndicatorPopUps/movingAvgPopUp.jsx';
+import {RSIPopUp} from './IndicatorPopUps/rsiPopUp.jsx';
+import BBandPopUp from './IndicatorPopUps/boilingerBandPopUp.jsx';
 
 export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
@@ -27,36 +29,8 @@ export default function StockMainChart() {
 
     //Indicators pop up states
     const [maPopUp, setMaPopUp] = useState(false);
-
-    const ma = async (name) => {
-        let properties = {
-            ticker: ticker,
-            interval: Interval,
-            period: 'max',
-            indicator: name,
-            indicatorInterval: 20 // <--------
-        }
-        const data = await fetchIndicatorData(properties);
-        properties = { ...properties, data: data };
-        setIndicatorList([...indicatorList, properties]);
-    }
-
-    const bband = async () => {
-        let properties = {
-            ticker: ticker,
-            interval: Interval,
-            period: 'max',
-            indicator: "BBAND",
-            stdUp: 2,
-            stdDown: 2,
-            matype: 0,
-            indicatorInterval: 20 // <--------
-        }
-        const data = await fetchIndicatorData(properties);
-        console.log('data-bband', data)
-        properties = { ...properties, data: data };
-        setIndicatorList([...indicatorList, properties]);
-    }
+    const [rsiPopUp , setRsiPopUp] = useState(false);
+    const [bBandPopUp , setBBandPopUp] = useState(false);
 
     const volI = async (name) => {
         let properties = {
@@ -104,8 +78,8 @@ export default function StockMainChart() {
                     Stocastic Occilator
                 */}
                 <button className="indicator-button" onClick={() => setMaPopUp(!maPopUp)} >MA</button>
-                <button className="indicator-button" onClick={() => bband()}>BB</button>
-                <button className="indicator-button" onClick={() => ma("RSI")}>RSI</button>
+                <button className="indicator-button" onClick={() => setBBandPopUp(!bBandPopUp)}>BB</button>
+                <button className="indicator-button" onClick={() => setRsiPopUp(!rsiPopUp)}>RSI</button>
                 {/* <button className="indicator-button text-xs">VWAP</button> */}
                 <button className="indicator-button" onClick={() => volI("OBV")}>OBV</button>
                 <button className="indicator-button" onClick={() => volI("VOL")}>VOL</button>
@@ -141,6 +115,8 @@ export default function StockMainChart() {
             </div>
 
             {maPopUp && <MovingAvgPopUp Interval={Interval} />}
+            {rsiPopUp && <RSIPopUp Interval={Interval}/>}
+            {bBandPopUp && <BBandPopUp Interval={Interval}/>}
 
         </div>
 

@@ -26,7 +26,7 @@ export default function MovingAvgPopUp({Interval}){
         }
 
     return(
-        <div className="absolute h-60 w-70 bg-black border border-white/15 rounded-xl z-1000 p-2 flex flex-col gap-2">
+        <div className="absolute h-50 w-70 bg-black border border-white/15 rounded-xl z-1000 p-2 flex flex-col gap-2">
             <h1 className="text-xl font-bold mb-2 w-full text-center">Moving Average</h1>
             <label className="flex gap-2 w-full">
                 <p>Timeperiod:</p>
