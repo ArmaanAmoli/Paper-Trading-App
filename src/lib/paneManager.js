@@ -1,10 +1,17 @@
 import { HistogramSeries, LineSeries } from "lightweight-charts";
 
-class PaneManager{
+export class PaneManager{
     constructor(chart){
         this.chart = chart;
         this.panes = [] // list of -> {id , paneIndex , seriesList} tracks every active indicator
         this.nextPaneIndex = 1; // 0 is always the candles , sub-planes start at 1
+        chart.applyOptions({
+            panes: {
+                separatorColor: 'rgba(255, 255, 255, 0.2)', // Set the static border color
+                separatorHoverColor: 'rgba(255, 255, 255, 0.3)', // Set the color when hovering (if resizing is enabled) 
+            },
+        })
+        
     }
 
     _allocatePane(){

@@ -15,6 +15,7 @@ export default function VolumePopUp({ Interval }) {
             interval: Interval,
             period: 'max',
             indicator: typeOfVol,
+            lineColor:lineColor,
         }
         const data = await fetchIndicatorData(properties);
         // console.log('data-vol',data)

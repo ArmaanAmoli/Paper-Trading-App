@@ -18,7 +18,9 @@ export default function RSIPopUp({ Interval }) {
             period: 'max',
             indicator: 'RSI',
             indicatorInterval: timePeriod,
-            lineColor: lineColor
+            lineColor: lineColor,
+            overBroughtLevel:overBroughtLevel,
+            overSoldLevel:overSoldLevel
         }
         const data = await fetchIndicatorData(properties);
         properties = { ...properties, data: data };
