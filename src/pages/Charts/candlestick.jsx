@@ -105,6 +105,9 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             layout: {
                 background: '#161616',
                 textColor: 'rgba(255, 255, 255, 0.9)',
+                panes: {
+                    separatorColor: 'rgba(255, 255, 255, 0.2)'
+                }
             },
             grid: {
                 vertLines: { color: '#ffffff1a' },
@@ -119,21 +122,9 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             height: chartContainerRef.current.clientHeight,
 
             crosshair: { mode: CrosshairMode.Normal },
-            
+
 
         });
-
-        // chart.applyOptions({
-        //     crosshair: {
-        //         // Change mode from default 'magnet' to 'normal'.
-        //         mode: CrosshairMode.Normal,
-        //     },
-        //     layout: {
-        //         panes: {
-        //             separatorColor: 'rgba(255, 255, 255, 0.25)'
-        //         }
-        //     }
-        // });
 
         const series = chart.addSeries(CandlestickSeries, {
             upColor: '#26a69a',   // Green for increasing price
