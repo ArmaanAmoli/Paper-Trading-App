@@ -29,6 +29,36 @@ async def last_value(ticker:str , interval:str , indicator:str , properties:dict
             timeperiod = properties["timeperiod"]
             final_data = RSI_(df=df , timeperiod=timeperiod)[-1]
             return final_data
+        case "BBAND":
+            timeperiod = properties["timeperiod"]
+            stdUp = properties["stdUp"]
+            stdDown = properties["stdDown"]
+            matype = properties["matype"]
+            finalData = BBAND_(df , timeperiod , stdUp , stdDown , matype)
+            finalDict = {"UP":finalData["UP"][-1] ,
+                         "MIDDLE": finalData["MIDDLE"][-1],
+                         "DOWN":finalData["DOWN"][-1]}
+            return finalDict
+        case "VOL":
+            final_data = VOL_(df)[-1]
+            return final_data
+        case "OBV":
+            final_data = OBV_(df)[-1]
+            return final_data
+        case "STOCH":
+            fastk_period = properties["fastkPeriod"]
+            slowk_period = properties["slowkPeriod"]
+            slowk_matype = properties["slowkMaType"]
+            slowd_period = properties["slowdPeriod"]
+            slowd_matype = properties["slowdMaType"]
+            final_data = STOCH_(df , fastk_period , slowk_period , slowk_matype,
+                   slowd_period , slowd_matype)
+            finalDict = {
+                "SLOWK":final_data["SLOWK"][-1],
+                "SLOWD":final_data["SLOWD"][-1]
+            }
+            return final_data
+            
         case _:
             return "unknown error"
 

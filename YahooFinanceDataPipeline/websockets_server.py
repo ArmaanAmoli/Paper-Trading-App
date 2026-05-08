@@ -48,7 +48,7 @@ async def fetch_and_broadcast(ticker:str):
                 print("Error in Fetch_broadcast: " , e)
         for ws in dead:
             ticker_subscribers[ticker].remove(ws)
-        await asyncio.sleep(6)
+        await asyncio.sleep(10)
 
 def start_fetcher(ticker:str):
     if ticker not in fetcher_tasks:
@@ -99,7 +99,6 @@ async def quote_ws(websocket: WebSocket): # This endpoint just maintains the tic
         await websocket.close()
         # print("ws/quote")
         
-# dict -> ticker -> indicators -> property -> [ws ...]
 
 
 candles_subscribers:dict[str , list[WebSocket]] = defaultdict(list)
@@ -114,14 +113,13 @@ async def listen_for_candles(ticker:str , interval:str , indicator:str, properti
     
     while True:
         data = await last_value(ticker=ticker , interval=interval , indicator=indicator ,properties=properties)
-        data["ticker"] = ticker
-        indicator_name = ticker + "::" + interval + "::" + indicator + "::" + str(properties)
+        data["id"] = id
         for ws in candles_subscribers[id]:
             try:
                 await ws.send_json(data)
             except Exception as e:
-                print(f"Error occured while fetching candle {ticker}")
-        await asyncio.sleep(6)
+                print(f"Error occured while fetching candle {id}")
+        await asyncio.sleep(10)
 
 def start_listen_for_candles(ticker:str , interval:str , indicator:str, properties:dict):
     id:str = ticker + '::' + interval + '::' + indicator + '::' + json.dump(properties)
@@ -135,6 +133,7 @@ def stop_listen_for_candles(ticker:str , interval:str , indicator:str, propertie
     task = candles_fetcher_tasks[id]
     if task:
         task.cancel()
+        del candles_fetcher_tasks[id]
         print(f"candle fetcher task for {id}")
 
 def isSubscribed(id):
@@ -166,17 +165,17 @@ async def candles_ws(websocket: WebSocket):
                 websocket.send_text(f"Already subscribed to {id}")
             else:
                 subscribe(id , websocket)
-                start_listen_for_candles(ticker , interval)
-                websocket.send_text(f"subscribed ticker: {ticker} , interval: {interval}")
+                start_listen_for_candles(ticker , interval , indicator , properties)
+                websocket.send_text(f"subscribed - {id}")
                 
         elif(action == "unsubscribe"):
             if( not isSubscribed(websocket , ticker , interval)):
-                websocket.send_text(f"Already not in subscription {ticker} for the interval {interval}")
+                websocket.send_text(f"Already not in subscription - {id}")
             else:
-                candles_subscribers[ticker][interval].remove(websocket)
-                if(len(candles_subscribers[ticker][interval]) is False):
-                    stop_listen_for_candles(ticker , interval)
-                websocket.send_text(f"unsubscribed ticker: {ticker} , interval: {interval}")
+                candles_subscribers[id].remove(websocket)
+                if(len(candles_subscribers[id]) is 0):
+                    stop_listen_for_candles(ticker , interval , indicator , properties)
+                websocket.send_text(f"unsubscribed ticker - {id}")
         else:
             websocket.send_text("invalid request")
 

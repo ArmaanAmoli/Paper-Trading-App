@@ -75,7 +75,7 @@ class WebSocketManager {
         ws.onerror = (err) => console.error(`[WS:${name}] error`, err);// logs error and automatically fires .onclose() [INBUILT]
     }
 
-    subscriber(name, ticker, handler, interval) {
+    subscriber(name, ticker, handler, interval) { // add properties argument
         const entry = this.connections[name];
         if (!entry) return;
         if (arguments.length === 3) {
