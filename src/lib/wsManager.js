@@ -75,7 +75,7 @@ class WebSocketManager {
         ws.onerror = (err) => console.error(`[WS:${name}] error`, err);// logs error and automatically fires .onclose() [INBUILT]
     }
 
-    subscriber(name, ticker, handler, interval) { // add properties argument
+    subscriber(name, ticker, handler, properties) { // add properties argument
         const entry = this.connections[name];
         if (!entry) return;
         if (arguments.length === 3) {
@@ -88,19 +88,26 @@ class WebSocketManager {
             }
         }
         else if (arguments.length === 4) {
-            if (!entry.subscribers[ticker]) entry.subscribers[ticker] = {};
-            const isFirst = entry.subscribers[ticker][interval] == null;
-            
-            if (isFirst) {
-                entry.subscribers[ticker][interval] = new Set()
-                this._send(name, { action: "subscribe", ticker, interval })
-                console.log(`WS-${name}:${ticker}-${interval}subscribed`);
+            // ticker = msg.get("ticker")
+            // interval = msg.get("interval")
+            // indicator = msg.get("interval")
+            // properties = msg.get("properties")
+            const interval = properties.interval;
+            const indicator = properties.indicator;
+            //id:str = ticker + '::' + interval + '::' + indicator + '::' + json.dump(properties)
+            const id = JSON.stringify(properties);
+            if(!entry.subscribers[id]){
+                entry.subscribers[id] = new Set();
+                entry.subscribers[id].add(handler)
+                const message = {action: "subscribe" , ticker , interval , indicator , properties}
+                this._send(name , message);
+                console.log(`WS-${name}:${id} subscribed`)
             }
-            entry.subscribers[ticker][interval].add(handler)
+            
         }
     }
 
-    unsubscriber(name, ticker, handler, interval) {
+    unsubscriber(name, ticker, handler, properties) {
         const entry = this.connections[name];
         if (!entry || !entry.subscribers[ticker]) return;
         //entry.subscribers[ticker].delete(handler)// delete the handler fn in case of component unmount
@@ -117,14 +124,24 @@ class WebSocketManager {
         }
 
         else if(arguments.length === 4){
-            if (Object.keys(entry.subscribers[ticker]).length === 0) return;
-            if(entry.subscribers[ticker][interval] !== undefined){
-                entry.subscribers[ticker][interval].delete(handler);
-                if(entry.subscribers[ticker][interval].size === 0){
-                    this._send(name , {action:"unsubscribe" , ticker , interval});
-                    delete entry.subscribers[ticker][interval];
-                    console.log(`WS-${name}: ${ticker}-${interval} unsubscribed`);
+            const interval = properties.interval;
+            const indicator = properties.indicator;
+            if(Object.keys(entry.subscribers).length === 0){
+                console.warn("No indicator subscribed yet so unsubscribe won't work.")
+                return;
+            }
+            const id = JSON.stringify(properties);
+            if(id in entry.subscribers){
+                entry.subscribers[id].delete(handler);
+
+                if(entry.subscribers[id].size === 0){
+                    delete entry.subscribers[id];
+                    this._send({action: "unsubscribe" , ticker , interval , indicator , properties});
+                    console.log(`WS-${name}:${id} unsubscribed`);
                 }
+            }
+            else{
+                console.warn(`WS-${id} does not exist`);
             }
         }
     }

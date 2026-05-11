@@ -8,8 +8,10 @@ import { wsManager } from './lib/wsManager.js';
 function App() {
   useEffect(() => {
     wsManager.connect("quote", "ws://127.0.0.1:8001/ws/quote");
+    wsManager.connect("indicator", "ws://127.0.0.1:8001/ws/indicator");
     return ()=>{
       wsManager.disconnect("quote");
+      wsManager.disconnect("indicator");
     }
   }, [])
   return <AppRouter />
