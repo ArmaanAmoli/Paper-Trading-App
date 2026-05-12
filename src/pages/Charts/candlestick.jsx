@@ -6,6 +6,7 @@ import { CrosshairMode } from "lightweight-charts";
 import { IndicatorsList } from "../context.js";
 import { useTicker } from "../../hooks/useTicker.js";
 import { PaneManager } from "../../lib/paneManager.js";
+import { wsManager } from "../../lib/wsManager";
 
 const INTERVAL_SECONDS = {
     "1m": 60,
@@ -26,11 +27,11 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRef = useRef(null);
-    const indicatorRef = useRef([]);
     const [data, SetData] = useState([]);
 
     const paneManagerRef = useRef(null);
     const ohlcvDataRef = useRef([]);
+    const indicatorHandlersRef = useRef(new Map()); // id -> { handler, properties }
 
 
     // function to update chart
@@ -76,6 +77,10 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             return prevData;
         });
     }, [interval]);
+
+    // const mergeCurrentIndicatorValuesWithChart = useCallback(()=>{
+
+    // });
 
     //fetching Historical data
     useEffect(() => {
@@ -176,7 +181,6 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
 
         if (indicatorList.length !== 0) {
 
-            indicatorRef.current = [];
             const priceByTime = new Map(data.map((candle) => [candle.time, candle]));
 
             for (let i in indicatorList) {
@@ -202,6 +206,23 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                             };
                         })
                         line.setData(finalData);
+
+                        // subscribe to real-time updates for this indicator
+                        {
+                            const props = item; // the properties object stored in indicator list
+                            const handler = (msg) => {
+                                if (!msg) return;
+                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
+                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
+                                // msg could be a number or an object containing value
+                                const value = typeof msg === 'number' ? msg : (msg.value ?? msg["SMA"] ?? msg["EMA"] ?? msg);
+                                if (value === undefined || value === null) return;
+                                line.update({ time, value: Number(value) });
+                            };
+                            const idKey = id;
+                            indicatorHandlersRef.current.set(idKey, { handler, properties: props });
+                            wsManager.subscriber("indicator", ticker, handler, props);
+                        }
                         break;
                     }
 
@@ -237,6 +258,20 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                         })
                         // console.log("final data: ", finalData);
                         hist.setData(finalData);
+                        {
+                            const props = item;
+                            const handler = (msg) => {
+                                if (!msg) return;
+                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
+                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
+                                const value = typeof msg === 'number' ? msg : (msg.value ?? msg["VOL"] ?? msg);
+                                if (value === undefined || value === null) return;
+                                hist.update({ time, value: Number(value) });
+                            };
+                            const idKey = id;
+                            indicatorHandlersRef.current.set(idKey, { handler, properties: props });
+                            wsManager.subscriber("indicator", ticker, handler, props);
+                        }
                         break;
                     }
 
@@ -289,6 +324,20 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                             };
                         })
                         rsiLine.setData(finalData);
+                        {
+                            const props = item;
+                            const handler = (msg) => {
+                                if (!msg) return;
+                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
+                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
+                                const value = typeof msg === 'number' ? msg : (msg.value ?? msg["RSI"] ?? msg);
+                                if (value === undefined || value === null) return;
+                                rsiLine.update({ time, value: Number(value) });
+                            };
+                            const idKey = id;
+                            indicatorHandlersRef.current.set(idKey, { handler, properties: props });
+                            wsManager.subscriber("indicator", ticker, handler, props);
+                        }
                         break;
                     }
 
@@ -314,6 +363,20 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                             };
                         })
                         OBVLine.setData(finalData);
+                        {
+                            const props = item;
+                            const handler = (msg) => {
+                                if (!msg) return;
+                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
+                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
+                                const value = typeof msg === 'number' ? msg : (msg.value ?? msg["OBV"] ?? msg);
+                                if (value === undefined || value === null) return;
+                                OBVLine.update({ time, value: Number(value) });
+                            };
+                            const idKey = id;
+                            indicatorHandlersRef.current.set(idKey, { handler, properties: props });
+                            wsManager.subscriber("indicator", ticker, handler, props);
+                        }
                         break;
                     }
 
@@ -354,7 +417,22 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                         lineUp.setData(finalDataUp);
                         lineMiddle.setData(finalDataMiddle);
                         lineDown.setData(finalDataDown);
-                        indicatorRef.current.push({ "BBAND": [lineUp, lineMiddle, lineDown] });
+
+                        {
+                            const props = item;
+                            const handler = (msg) => {
+                                if (!msg) return;
+                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
+                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
+                                // msg expected: { UP: x, MIDDLE: y, DOWN: z } or similar
+                                if (msg.UP !== undefined) lineUp.update({ time, value: Number(msg.UP) });
+                                if (msg.MIDDLE !== undefined) lineMiddle.update({ time, value: Number(msg.MIDDLE) });
+                                if (msg.DOWN !== undefined) lineDown.update({ time, value: Number(msg.DOWN) });
+                            };
+                            const idKey = id;
+                            indicatorHandlersRef.current.set(idKey, { handler, properties: props });
+                            wsManager.subscriber("indicator", ticker, handler, props);
+                        }
 
                         break;
                     }
@@ -390,6 +468,20 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                             // });
                             slowD.setData(finalSlowd);
                             slowK.setData(finalSlowk);
+                            {
+                                const props = item;
+                                const handler = (msg) => {
+                                    if (!msg) return;
+                                    const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
+                                    const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
+                                    // msg expected: { SLOWD: value, SLOWK: value } or latest values
+                                    if (msg.SLOWD !== undefined) slowD.update({ time, value: Number(msg.SLOWD) });
+                                    if (msg.SLOWK !== undefined) slowK.update({ time, value: Number(msg.SLOWK) });
+                                };
+                                const idKey = id;
+                                indicatorHandlersRef.current.set(idKey, { handler, properties: props });
+                                wsManager.subscriber("indicator", ticker, handler, props);
+                            }
                             break;
                         }
 
@@ -397,11 +489,22 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                         console.log("INDICATOR NOT FOUND");
                 }
             }
-            indicatorRef.current = [];
-            setIndicatorList([]);
+            // Keep indicator handlers active for real-time updates.
+            // Cleanup will be handled when indicators are explicitly removed or
+            // when the component unmounts.
         }
-        return;
-    }, [indicatorList, setIndicatorList, data]);
+        return () => {
+            // Unsubscribe all indicator handlers on cleanup (component unmount or deps change)
+            for (const [key, entry] of indicatorHandlersRef.current.entries()) {
+                try {
+                    wsManager.unsubscriber("indicator", ticker, entry.handler, entry.properties);
+                } catch (e) {
+                    console.warn("Failed to unsubscribe indicator during cleanup", key, e);
+                }
+            }
+            indicatorHandlersRef.current.clear();
+        };
+    }, [indicatorList, setIndicatorList, data , ticker , interval]);
 
 
     return (

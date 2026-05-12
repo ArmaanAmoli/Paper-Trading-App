@@ -48,17 +48,45 @@ class WebSocketManager {
             clearTimeout(entry.reconnectTimer); // preventing .reconnectTimer() from reconnecting again
 
             //Resubscribe all Tickers after reconnecting
-            Object.keys(entry.subscribers).forEach((ticker) => {
-                this._send(name, { action: "subscribe", ticker })
+            Object.keys(entry.subscribers).forEach((key) => {
+                // key can be a plain ticker or a JSON-stringified properties object
+                try {
+                    const parsed = JSON.parse(key);
+                    const props = parsed;
+                    const message = { action: "subscribe", ticker: props.ticker || undefined, interval: props.interval, indicator: props.indicator, properties: props };
+                    this._send(name, message);
+                } catch (e) {
+                    // not JSON => treat as plain ticker
+                    this._send(name, { action: "subscribe", ticker: key });
+                }
             })
         }
 
         ws.onmessage = (event) => { //fires every time server sends data
             try {
                 const data = JSON.parse(event.data);
-                const handlers = entry.subscribers[data.ticker];
-                if (handlers) {
-                    handlers.forEach((fn) => fn(data)); // each handler fn is a setData for a react element.
+                
+                // Check if this is an indicator update or a quote update
+                if (data.indicator && data.interval) {
+                    // INDICATOR UPDATE: Use indicator_id as key instead of ticker
+                    const indicator_id = JSON.stringify({
+                        ticker: data.ticker,
+                        interval: data.interval,
+                        indicator: data.indicator,
+                        // Include original properties that were sent
+                        ...data.properties
+                    });
+                    
+                    const handlers = entry.subscribers[indicator_id];
+                    if (handlers) {
+                        handlers.forEach((fn) => fn(data)); // Call each handler with indicator data
+                    }
+                } else if (data.ticker) {
+                    // QUOTE UPDATE: Use ticker as key
+                    const handlers = entry.subscribers[data.ticker];
+                    if (handlers) {
+                        handlers.forEach((fn) => fn(data)); // Call each handler with quote data
+                    }
                 }
             } catch (e) {
                 console.warn(`[WS:${name}] bad JSON`, e);
@@ -98,7 +126,10 @@ class WebSocketManager {
             const id = JSON.stringify(properties);
             if(!entry.subscribers[id]){
                 entry.subscribers[id] = new Set();
-                entry.subscribers[id].add(handler)
+            }
+            const isFirst = entry.subscribers[id].size === 0;
+            entry.subscribers[id].add(handler);
+            if (isFirst) {
                 const message = {action: "subscribe" , ticker , interval , indicator , properties}
                 this._send(name , message);
                 console.log(`WS-${name}:${id} subscribed`)
@@ -108,40 +139,55 @@ class WebSocketManager {
     }
 
     unsubscriber(name, ticker, handler, properties) {
+        /**
+         * Unsubscribe a handler from a ticker or indicator.
+         * 
+         * For quotes (3 args): Removes handler and sends unsubscribe if last handler
+         * For indicators (4 args): Removes handler and sends unsubscribe if last handler
+         */
         const entry = this.connections[name];
-        if (!entry || !entry.subscribers[ticker]) return;
-        //entry.subscribers[ticker].delete(handler)// delete the handler fn in case of component unmount
+        if (!entry) return;
 
         if (arguments.length === 3) {
+            // QUOTE UNSUBSCRIPTION - 3 arguments: name, ticker, handler
             if (entry.subscribers[ticker]) {
                 entry.subscribers[ticker].delete(handler);
+                // Only send unsubscribe to server if this was the last handler
                 if (entry.subscribers[ticker].size === 0) {
                     this._send(name, { action: "unsubscribe", ticker });
                     delete entry.subscribers[ticker];
                     console.log(`WS-${name}:${ticker} unsubscribed`);
                 }
-            };
+            }
         }
 
-        else if(arguments.length === 4){
+        else if (arguments.length === 4) {
+            // INDICATOR UNSUBSCRIPTION - 4 arguments: name, ticker, handler, properties
+            // properties contains: {indicator, interval, ticker, ...otherProps}
             const interval = properties.interval;
             const indicator = properties.indicator;
-            if(Object.keys(entry.subscribers).length === 0){
-                console.warn("No indicator subscribed yet so unsubscribe won't work.")
-                return;
-            }
+            
+            // Generate same key as subscriber method for consistency
             const id = JSON.stringify(properties);
-            if(id in entry.subscribers){
+            
+            if (entry.subscribers[id]) {
                 entry.subscribers[id].delete(handler);
-
-                if(entry.subscribers[id].size === 0){
+                
+                // Only send unsubscribe if this was the last handler for this indicator
+                if (entry.subscribers[id].size === 0) {
                     delete entry.subscribers[id];
-                    this._send({action: "unsubscribe" , ticker , interval , indicator , properties});
+                    // FIXED: Pass 'name' as first arg to _send()
+                    this._send(name, {
+                        action: "unsubscribe",
+                        ticker,
+                        interval,
+                        indicator,
+                        properties
+                    });
                     console.log(`WS-${name}:${id} unsubscribed`);
                 }
-            }
-            else{
-                console.warn(`WS-${id} does not exist`);
+            } else {
+                console.warn(`WS-${name}:${id} was not subscribed`);
             }
         }
     }

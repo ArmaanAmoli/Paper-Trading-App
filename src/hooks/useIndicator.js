@@ -18,7 +18,7 @@ export function useIndicator(connetionName , properties){
         if(!ticker || !indicator)return;
         const handler = handlerRef.current;
         wsManager.subscriber(connetionName , ticker , handler , properties);
-        return ()=>wsManager.useIndicator(connetionName , ticker , handler , properties);
+        return ()=>wsManager.unsubscriber(connetionName , ticker , handler , properties);
     },[connetionName , ticker , indicator , properties]);
     if(data===null)return {};
     return data;
