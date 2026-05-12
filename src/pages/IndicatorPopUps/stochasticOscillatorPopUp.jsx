@@ -31,7 +31,7 @@ export default function StochasticOscillatorPopUp({Interval}){
             slowdPeriod: slowdPeriod,
             slowdMatype: slowdMaType==="SMA"?0:1,
 
-            indicatorInterval: timePeriod,
+            timeperiod: timePeriod,
 
             slowLineColor: slowLineColor,
             fastLineColor: fastLineColor,

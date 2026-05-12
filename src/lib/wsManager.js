@@ -123,7 +123,7 @@ class WebSocketManager {
             const interval = properties.interval;
             const indicator = properties.indicator;
             //id:str = ticker + '::' + interval + '::' + indicator + '::' + json.dump(properties)
-            const id = JSON.stringify(properties);
+            const id = String(ticker + '::' + interval + '::' + indicator + JSON.stringify(properties));
             if(!entry.subscribers[id]){
                 entry.subscribers[id] = new Set();
             }
@@ -168,7 +168,8 @@ class WebSocketManager {
             const indicator = properties.indicator;
             
             // Generate same key as subscriber method for consistency
-            const id = JSON.stringify(properties);
+            const id = String(ticker + '::' + interval + '::' + indicator + JSON.stringify(properties));
+
             
             if (entry.subscribers[id]) {
                 entry.subscribers[id].delete(handler);

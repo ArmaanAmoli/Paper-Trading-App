@@ -241,7 +241,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
         const indicator = query.indicator;
         const interval = query.interval;
         const period = query.period;
-        const interval_indicator = query.indicatorInterval || null;
+        const timeperiod = query.timeperiod || null;
         const matype = query.matype || null;
         const stdUp = query.stdUp || null;
         const stdDown = query.stdDown || null;
@@ -262,7 +262,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 ticker: ticker,
                                 period: period,
                                 interval: interval,
-                                timeperiod: interval_indicator
+                                timeperiod: timeperiod
                             }
                         })
                     console.log("SMA:", fastAPIRes.data);
@@ -278,7 +278,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 ticker: ticker,
                                 period: period,
                                 interval: interval,
-                                timeperiod: interval_indicator
+                                timeperiod: timeperiod
                             }
                         });
                     console.log("EMA:", fastAPIRes.data);
@@ -294,7 +294,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 ticker: ticker,
                                 period: period,
                                 interval: interval,
-                                timeperiod: interval_indicator
+                                timeperiod: timeperiod
                             }
                         });
                     console.log("RSI:", fastAPIRes.data);
@@ -338,7 +338,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                             ticker: ticker,
                             period: period,
                             interval: interval,
-                            timeperiod: interval_indicator,
+                            timeperiod: timeperiod,
                             matype: matype,
                             stdUp: stdUp,
                             stdDown: stdDown

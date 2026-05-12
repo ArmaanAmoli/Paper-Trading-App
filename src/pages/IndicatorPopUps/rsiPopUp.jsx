@@ -17,7 +17,7 @@ export default function RSIPopUp({ Interval }) {
             interval: Interval,
             period: 'max',
             indicator: 'RSI',
-            indicatorInterval: timePeriod,
+            timeperiod: timePeriod,
             lineColor: lineColor,
             overBroughtLevel:overBroughtLevel,
             overSoldLevel:overSoldLevel

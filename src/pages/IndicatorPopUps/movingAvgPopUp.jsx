@@ -17,7 +17,7 @@ export default function MovingAvgPopUp({Interval}){
                 interval:Interval,
                 period:'max',
                 indicator:typeOfMA,
-                indicatorInterval:timePeriod,
+                timeperiod:timePeriod,
                 lineColor:lineColor
             }
             const data = await fetchIndicatorData(properties);

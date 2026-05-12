@@ -504,7 +504,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             }
             indicatorHandlersRef.current.clear();
         };
-    }, [indicatorList, setIndicatorList, data , ticker , interval]);
+    }, [indicatorList, setIndicatorList, ticker , interval]);
 
 
     return (

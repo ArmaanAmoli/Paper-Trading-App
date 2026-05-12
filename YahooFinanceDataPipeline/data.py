@@ -13,7 +13,7 @@ import time
 async def last_value(ticker:str , interval:str , indicator:str , properties:dict):
     int_interval = int(interval.rstrip('abcdefghijklmnopqrstuvwxyz'))
     unit_interval = interval.lstrip('1234567890')
-    period = str(properties[timeperiod+1]*int_interval) + unit_interval
+    period = str((properties["timeperiod"]+1)*int_interval) + unit_interval
     data = await collect_data(ticker=ticker , interval=interval , period=period)
     df = format_data(data)
     match indicator:
@@ -57,7 +57,7 @@ async def last_value(ticker:str , interval:str , indicator:str , properties:dict
                 "SLOWK":final_data["SLOWK"][-1],
                 "SLOWD":final_data["SLOWD"][-1]
             }
-            return final_data
+            return finalDict
             
         case _:
             return "unknown error"
@@ -160,7 +160,7 @@ def EMA_(df , timeperiod=10):
         data_reshaped = talib.EMA(data_reshaped, timeperiod=timeperiod)[timeperiod-1:]
         final_df = pd.DataFrame({'Date':time , 'EMA':data_reshaped})
         final_dict = final_df.to_dict(orient="records")
-        print(len(final_dict))
+        # print(len(final_dict))
         return final_dict
     except Exception as e:
         print("Problem occured in SMA_",e)
@@ -176,7 +176,7 @@ def SMA_(df , timeperiod=10):
         data_reshaped = talib.SMA(data_reshaped, timeperiod=timeperiod)[timeperiod-1:]
         final_df = pd.DataFrame({'Date':time , 'SMA':data_reshaped})
         final_dict = final_df.to_dict(orient="records")
-        print(len(final_dict))
+        # print(len(final_dict))
         return final_dict
     except Exception as e:
         print("Problem occured in SMA_",e)
@@ -192,7 +192,7 @@ def RSI_(df , timeperiod=14):
         data_reshaped = talib.RSI(data_reshaped, timeperiod=timeperiod)[timeperiod:]
         final_df = pd.DataFrame({'Date':time , 'RSI':data_reshaped})
         final_dict = final_df.to_dict(orient="records")
-        print(len(final_dict))
+        # print(len(final_dict))
         return final_dict
     except Exception as e:
         print("Problem occured in RSI_",e)
@@ -216,7 +216,7 @@ def BBAND_(df , timeperiod=20 , stdUp=2 , stdDown=2 , matype=0):
             "DOWN": band_down_dict
         }
         
-        print(len(final_dict))
+        # print(len(final_dict))
         return final_dict
     
     
@@ -228,7 +228,7 @@ def VOL_(df):
     try:
         data = df[['Date','Volume']]
         final_dict = data.to_dict(orient="records")
-        print(len(final_dict))
+        # print(len(final_dict))
         return final_dict
     except Exception as e:
         print("Problem occured in VOL_",e)
@@ -245,7 +245,7 @@ def OBV_(df):
         final_df = pd.DataFrame({'Date':date , 'OBV':obv})
         
         final_dict = final_df.to_dict(orient="records")
-        print(len(final_dict))
+        # print(len(final_dict))
         return final_dict
     except Exception as e:
         print("Problem occured in OBV_",e)
@@ -282,7 +282,7 @@ def STOCH_(df , fastk_period: int= 5 , slowk_period: int= 3 ,
             "SLOWD": final_dict_slowd
         }
         
-        print(len(final_dict))
+        # print(len(final_dict))
         return final_dict
     except Exception as e:
         print("Problem occured in OBV_",e)

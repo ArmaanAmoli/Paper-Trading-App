@@ -42,7 +42,7 @@ async def fetch_and_broadcast(ticker:str):
         dead = [] # Stores disconnected nodes
         for ws in ticker_subscribers[ticker]:
             try:
-                print(payload)
+                # print(payload)
                 await ws.send_json(payload)
             except Exception as e:
                 dead.append(ws)
@@ -154,7 +154,7 @@ async def fetch_and_broadcast_indicator(
                 indicator=indicator, 
                 properties=properties
             )
-            
+           
             # Add metadata to response
             data["ticker"] = ticker
             data["interval"] = interval
@@ -162,7 +162,7 @@ async def fetch_and_broadcast_indicator(
             # Include the original properties so clients can correlate messages
             data["properties"] = properties
             data["timestamp"] = datetime.datetime.now().isoformat()
-            
+            print(data)
             # Check if value changed to avoid redundant broadcasts
             if indicator_id in indicator_cache:
                 if indicator_cache[indicator_id] == data:

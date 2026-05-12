@@ -45,7 +45,7 @@ export default function BBandPopUp({Interval}){
             stdUp: stdUp,
             stdDown: stdDown,
             matype: typeOfMA === "SMA" ? 0:1,
-            indicatorInterval: timePeriod,
+            timeperiod: timePeriod,
             lineColor: lineColor,
             upLineColor: upLineColor,
             downLineColor: downLineColor,
