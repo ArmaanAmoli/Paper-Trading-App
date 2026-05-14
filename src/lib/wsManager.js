@@ -9,6 +9,19 @@ class WebSocketManager {
         // 1 object of this class can store multiple connection
     }
 
+    _buildIndicatorKey(properties) {
+        // Keep the key stable by sorting property names before stringifying.
+        const sortedProperties = Object.keys(properties)
+            .sort()
+            .reduce((accumulator, key) => {
+                accumulator[key] = properties[key];
+                return accumulator;
+            }, {});
+
+        // Match the backend's indicator_id format exactly.
+        return `${properties.ticker}::${properties.interval}::${properties.indicator}::${JSON.stringify(sortedProperties)}`;
+    }
+
     connect(name, url, options = {}) {
         /*
             name - a label we choose for connection
@@ -28,6 +41,7 @@ class WebSocketManager {
             ws: null, // this is the actual websocket (filled by _open)
             reconnectTimer: null, // holds the retry timeout so we can cancel it
             subscribers: {},
+            indicatorSubscriptions: {},
         };
         this.connections[name] = entry;
         this._open(name);
@@ -55,11 +69,22 @@ class WebSocketManager {
                     const props = parsed;
                     const message = { action: "subscribe", ticker: props.ticker || undefined, interval: props.interval, indicator: props.indicator, properties: props };
                     this._send(name, message);
-                } catch (e) {
+                } catch {
                     // not JSON => treat as plain ticker
                     this._send(name, { action: "subscribe", ticker: key });
                 }
             })
+
+            // Resubscribe indicator streams using the stored metadata.
+            Object.values(entry.indicatorSubscriptions).forEach((subscription) => {
+                this._send(name, {
+                    action: "subscribe",
+                    ticker: subscription.ticker,
+                    interval: subscription.interval,
+                    indicator: subscription.indicator,
+                    properties: subscription.properties,
+                });
+            });
         }
 
         ws.onmessage = (event) => { //fires every time server sends data
@@ -68,16 +93,34 @@ class WebSocketManager {
                 
                 // Check if this is an indicator update or a quote update
                 if (data.indicator && data.interval) {
-                    // INDICATOR UPDATE: Use indicator_id as key instead of ticker
-                    const indicator_id = JSON.stringify({
+                    // INDICATOR UPDATE: the backend sends indicator_id so the
+                    // frontend can match the subscription without rebuilding it.
+                    const indicator_id = data.indicator_id || this._buildIndicatorKey({
                         ticker: data.ticker,
                         interval: data.interval,
                         indicator: data.indicator,
-                        // Include original properties that were sent
-                        ...data.properties
+                        ...data.properties,
                     });
-                    
-                    const handlers = entry.subscribers[indicator_id];
+                    let handlers = entry.subscribers[indicator_id];
+                    // Debug: log whether we have handlers for this indicator_id
+                    try {
+                        console.debug(`[WS:${name}] indicator message for ${indicator_id} — handlers: ${handlers ? handlers.size : 0}`);
+                    } catch (e) { /* ignore logging errors */ }
+
+                    // Fallback: if exact id lookup fails, try matching by prefix
+                    if (!handlers) {
+                        const prefix = `${data.ticker}::${data.interval}::${data.indicator}::`;
+                        const matched = Object.keys(entry.subscribers).filter(k => k.startsWith(prefix));
+                        if (matched.length) {
+                            handlers = new Set();
+                            matched.forEach(k => {
+                                const s = entry.subscribers[k];
+                                if (s) s.forEach(fn => handlers.add(fn));
+                            });
+                            console.debug(`[WS:${name}] indicator message matched ${matched.length} subscriber keys by prefix`);
+                        }
+                    }
+
                     if (handlers) {
                         handlers.forEach((fn) => fn(data)); // Call each handler with indicator data
                     }
@@ -123,7 +166,7 @@ class WebSocketManager {
             const interval = properties.interval;
             const indicator = properties.indicator;
             //id:str = ticker + '::' + interval + '::' + indicator + '::' + json.dump(properties)
-            const id = String(ticker + '::' + interval + '::' + indicator + JSON.stringify(properties));
+            const id = this._buildIndicatorKey({ ticker, interval, indicator, ...properties });
             if(!entry.subscribers[id]){
                 entry.subscribers[id] = new Set();
             }
@@ -133,6 +176,8 @@ class WebSocketManager {
                 const message = {action: "subscribe" , ticker , interval , indicator , properties}
                 this._send(name , message);
                 console.log(`WS-${name}:${id} subscribed`)
+                // Keep the subscription metadata for reconnects.
+                entry.indicatorSubscriptions[id] = { ticker, interval, indicator, properties };
             }
             
         }
@@ -168,7 +213,7 @@ class WebSocketManager {
             const indicator = properties.indicator;
             
             // Generate same key as subscriber method for consistency
-            const id = String(ticker + '::' + interval + '::' + indicator + JSON.stringify(properties));
+            const id = this._buildIndicatorKey({ ticker, interval, indicator, ...properties });
 
             
             if (entry.subscribers[id]) {
@@ -177,6 +222,7 @@ class WebSocketManager {
                 // Only send unsubscribe if this was the last handler for this indicator
                 if (entry.subscribers[id].size === 0) {
                     delete entry.subscribers[id];
+                    delete entry.indicatorSubscriptions[id];
                     // FIXED: Pass 'name' as first arg to _send()
                     this._send(name, {
                         action: "unsubscribe",

@@ -156,13 +156,15 @@ async def fetch_and_broadcast_indicator(
             )
            
             # Add metadata to response
+            # indicator_id is echoed back so the frontend can match this message
+            # to the exact subscription without rebuilding the key itself.
+            data["indicator_id"] = indicator_id
             data["ticker"] = ticker
             data["interval"] = interval
             data["indicator"] = indicator
             # Include the original properties so clients can correlate messages
             data["properties"] = properties
             data["timestamp"] = datetime.datetime.now().isoformat()
-            print(data)
             # Check if value changed to avoid redundant broadcasts
             if indicator_id in indicator_cache:
                 if indicator_cache[indicator_id] == data:
@@ -209,7 +211,7 @@ def start_indicator_fetcher(ticker: str, interval: str, indicator: str, properti
             fetch_and_broadcast_indicator(ticker, interval, indicator, properties)
         )
         indicator_fetcher_tasks[indicator_id] = task
-        print(f"[INDICATOR] Started fetcher for {indicator_id}")
+        # print(f"[INDICATOR] Started fetcher for {indicator_id}")
 
 def stop_indicator_fetcher(ticker: str, interval: str, indicator: str, properties: dict):
     """
@@ -224,7 +226,7 @@ def stop_indicator_fetcher(ticker: str, interval: str, indicator: str, propertie
     if indicator_id in indicator_fetcher_tasks and len(indicator_subscribers[indicator_id]) == 0:
         task = indicator_fetcher_tasks.pop(indicator_id)
         task.cancel()
-        print(f"[INDICATOR] Stopped fetcher for {indicator_id}")
+        # print(f"[INDICATOR] Stopped fetcher for {indicator_id}")
 
 @app.websocket("/ws/indicator")
 async def indicator_ws(websocket: WebSocket):
@@ -295,7 +297,7 @@ async def indicator_ws(websocket: WebSocket):
                         "indicator_id": indicator_id,
                         "message": f"Now receiving {indicator} updates for {ticker}"
                     })
-                    print(f"[INDICATOR] Client subscribed to {indicator_id}")
+                    # print(f"[INDICATOR] Client subscribed to {indicator_id}")
             
             elif action == "unsubscribe":
                 # Check if we're actually subscribed
@@ -317,7 +319,7 @@ async def indicator_ws(websocket: WebSocket):
                             "status": "unsubscribed",
                             "message": f"Stopped receiving {indicator} updates for {ticker}"
                         })
-                        print(f"[INDICATOR] Client unsubscribed from {indicator_id}")
+                        # print(f"[INDICATOR] Client unsubscribed from {indicator_id}")
             
             else:
                 await websocket.send_json({
@@ -348,7 +350,7 @@ async def indicator_ws(websocket: WebSocket):
                     stop_indicator_fetcher(ticker_part, interval_part, indicator_part, props_part)
         
         await websocket.close()
-        print(f"[INDICATOR] Client disconnected")
+        # print(f"[INDICATOR] Client disconnected")
 
 
 

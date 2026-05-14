@@ -8,6 +8,34 @@ import { useTicker } from "../../hooks/useTicker.js";
 import { PaneManager } from "../../lib/paneManager.js";
 import { wsManager } from "../../lib/wsManager";
 
+// Helper to batch rapid series updates onto the next animation frame.
+const makeBufferedSeriesUpdater = (series) => {
+    let scheduled = false;
+    let lastPoint = null;
+    return (point) => {
+        if (!point) return;
+        lastPoint = point;
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => {
+            try {
+                if (lastPoint) series.update(lastPoint);
+            } catch (e) {
+                console.warn('Series update failed', e);
+            }
+            scheduled = false;
+            lastPoint = null;
+        });
+    };
+};
+
+// Create a lightweight stable id for an indicator without serializing large
+// `data` arrays. Avoiding JSON.stringify(item) prevents freezing when items
+// contain large historical arrays.
+const makeIndicatorId = (item) => {
+    return `${item.ticker}::${item.interval}::${item.indicator}::${item.timeperiod ?? ''}::${item.matype ?? ''}::${item.fastkPeriod ?? ''}::${item.slowkPeriod ?? ''}`;
+};
+
 const INTERVAL_SECONDS = {
     "1m": 60,
     "5m": 300,
@@ -27,56 +55,86 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRef = useRef(null);
+    const bufferedCandleUpdaterRef = useRef(null);
     const [data, SetData] = useState([]);
 
     const paneManagerRef = useRef(null);
     const ohlcvDataRef = useRef([]);
     const indicatorHandlersRef = useRef(new Map()); // id -> { handler, properties }
+    const latestQuotePriceRef = useRef(null);
+    const lastAppliedQuotePriceRef = useRef(null);
+    const [historyLoaded, setHistoryLoaded] = useState(false);
+
+    const getIndicatorTime = (msg) => {
+        // For BBAND, use the message Date if available
+        if (msg && typeof msg === "object" && msg.Date) {
+            return (new Date(msg.Date)).getTime() / 1000;
+        }
+        // Fall back to the last candle's time (don't use current time for indicators!)
+        // This ensures indicators align with candle timestamps
+        if (ohlcvDataRef.current && ohlcvDataRef.current.length > 0) {
+            return ohlcvDataRef.current[ohlcvDataRef.current.length - 1].time;
+        }
+        return Math.floor(Date.now() / 1000);
+    };
+
+    const getIndicatorValue = (msg, fieldName) => {
+        // Support both numeric payloads and object payloads like:
+        // { Date, SMA }, { Date, Volume }, { Date, BBAND_UP }, { Date, SLOWK }, etc.
+        if (msg === null || msg === undefined) return null;
+        if (typeof msg === "number") return msg;
+        if (typeof msg !== "object") return Number(msg);
+        if (fieldName && msg[fieldName] !== undefined) return Number(msg[fieldName]);
+        if (msg.value !== undefined) return Number(msg.value);
+        return null;
+    };
 
 
     // function to update chart
     const mergePriceIntoLastCandle = useCallback((price) => {
-        SetData(prevData => {
-            if (!seriesRef.current || !prevData.length) return prevData;
+        if (!Number.isFinite(price)) return;
 
-            const intervalSec = INTERVAL_SECONDS[interval];
-            const now = Math.floor(Date.now() / 1000);
-            const candleTime = Math.floor(now / intervalSec) * intervalSec;
+        if (!seriesRef.current || !ohlcvDataRef.current.length) return;
 
-            const lastCandle = prevData[prevData.length - 1];
+        const intervalSec = INTERVAL_SECONDS[interval];
+        const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
+        const nextCandleTime = lastCandle.time + intervalSec;
 
-            let updated;
-            if (lastCandle.time === candleTime) {
-                updated = {
-                    ...lastCandle,
-                    high: Math.max(lastCandle.high, price),
-                    low: Math.min(lastCandle.low, price),
-                    close: price,
-                };
-                ohlcvDataRef.current[ohlcvDataRef.current.length - 1] = updated;
-                seriesRef.current.update(updated);
+        if (nextCandleTime <= lastCandle.time) {
+            return;
+        }
 
-                return [
-                    ...prevData.slice(0, -1),
-                    updated,
-                ];
-            } else if (candleTime > lastCandle.time) {
-                const newCandle = {
-                    time: candleTime,
-                    open: lastCandle.close,
-                    high: price,
-                    low: price,
-                    close: price,
-                };
-                ohlcvDataRef.current.push(newCandle);
-                seriesRef.current.update(newCandle);
-
-                return [...prevData, newCandle];
-            }
-
-            return prevData;
-        });
+        if (Math.floor(Date.now() / 1000) < nextCandleTime) {
+            const updated = {
+                ...lastCandle,
+                high: Math.max(lastCandle.high, price),
+                low: Math.min(lastCandle.low, price),
+                close: price,
+            };
+            ohlcvDataRef.current[ohlcvDataRef.current.length - 1] = updated;
+            const updater = bufferedCandleUpdaterRef.current ?? ((p) => seriesRef.current.update(p));
+            updater(updated);
+        } else {
+            const newCandle = {
+                time: nextCandleTime,
+                open: lastCandle.close,
+                high: price,
+                low: price,
+                close: price,
+            };
+            ohlcvDataRef.current.push(newCandle);
+            const updater = bufferedCandleUpdaterRef.current ?? ((p) => seriesRef.current.update(p));
+            updater(newCandle);
+        }
     }, [interval]);
+
+    const applyQuoteToChart = useCallback((price) => {
+        if (!Number.isFinite(price)) return;
+        if (lastAppliedQuotePriceRef.current === price) return;
+
+        lastAppliedQuotePriceRef.current = price;
+        mergePriceIntoLastCandle(price);
+    }, [mergePriceIntoLastCandle]);
 
     // const mergeCurrentIndicatorValuesWithChart = useCallback(()=>{
 
@@ -85,6 +143,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
     //fetching Historical data
     useEffect(() => {
         const getData = async () => {
+            setHistoryLoaded(false);
             const rawData = await fetchData(ticker, interval, period);
             const finalData = rawData.map((quote) => {
                 return ({
@@ -97,6 +156,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             });
             ohlcvDataRef.current = finalData
             SetData(finalData);
+            setHistoryLoaded(true);
         }
         getData();
     }, [ticker, interval, period]);
@@ -141,6 +201,9 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
 
         chartRef.current = chart;
         seriesRef.current = series;
+        // Create a buffered updater for the main candlestick series to avoid
+        // blocking the main thread when many quote updates arrive.
+        bufferedCandleUpdaterRef.current = makeBufferedSeriesUpdater(series);
         paneManagerRef.current = new PaneManager(chart);
 
         const handleResize = () => {
@@ -165,11 +228,23 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
 
     // Websockts updating candlestick
     useEffect(() => {
-        if (!seriesRef.current || currentData.currentPrice === 0) return;
-        const quote = currentData;
-        const price = quote.currentPrice;
-        mergePriceIntoLastCandle(price);
-    }, [mergePriceIntoLastCandle, currentData]);
+        const price = Number(currentData.currentPrice);
+        if (!Number.isFinite(price) || price === 0) return;
+
+        latestQuotePriceRef.current = price;
+        if (seriesRef.current && historyLoaded) {
+            applyQuoteToChart(price);
+        }
+    }, [applyQuoteToChart, currentData, historyLoaded]);
+
+    useEffect(() => {
+        if (!seriesRef.current || !historyLoaded) return;
+
+        const pendingPrice = latestQuotePriceRef.current;
+        if (pendingPrice === null) return;
+
+        applyQuoteToChart(pendingPrice);
+    }, [applyQuoteToChart, historyLoaded]);
 
 
     //Render indicators whenever indicatorList changes
@@ -177,15 +252,28 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
 
         const pm = paneManagerRef.current;
         const chart = chartRef.current;
-        if (!pm || !chart || !data.length) return;
+        if (!pm || !chart || !historyLoaded || !ohlcvDataRef.current.length) return;
+
+        // Properly unsubscribe old indicators before clearing
+        for (const [key, entry] of indicatorHandlersRef.current.entries()) {
+            try {
+                wsManager.unsubscriber("indicator", ticker, entry.handler, entry.properties);
+            } catch (error) {
+                console.warn("Failed to unsubscribe during indicator update", key, error);
+            }
+        }
+        
+        // Clear all old indicators and subscriptions before rendering new ones
+        pm.removeAll();
+        indicatorHandlersRef.current.clear();
 
         if (indicatorList.length !== 0) {
 
-            const priceByTime = new Map(data.map((candle) => [candle.time, candle]));
+            const priceByTime = new Map(ohlcvDataRef.current.map((candle) => [candle.time, candle]));
 
             for (let i in indicatorList) {
                 const item = indicatorList[i];
-                const id = JSON.stringify(item);
+                const id = makeIndicatorId(item);
                 if (pm.has(id)) continue;
 
                 const indicatorType = item.indicator;
@@ -209,15 +297,20 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
 
                         // subscribe to real-time updates for this indicator
                         {
-                            const props = item; // the properties object stored in indicator list
+                            // Build clean properties for subscription (exclude data, colors, etc.)
+                            const props = {
+                                ticker,
+                                interval,
+                                indicator: indicatorType,
+                                timeperiod: item.timeperiod
+                            };
+                            const bufferedLineUpdate = makeBufferedSeriesUpdater(line);
                             const handler = (msg) => {
                                 if (!msg) return;
-                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
-                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
-                                // msg could be a number or an object containing value
-                                const value = typeof msg === 'number' ? msg : (msg.value ?? msg["SMA"] ?? msg["EMA"] ?? msg);
+                                const time = getIndicatorTime(msg);
+                                const value = getIndicatorValue(msg, indicatorType);
                                 if (value === undefined || value === null) return;
-                                line.update({ time, value: Number(value) });
+                                bufferedLineUpdate({ time, value: Number(value) });
                             };
                             const idKey = id;
                             indicatorHandlersRef.current.set(idKey, { handler, properties: props });
@@ -259,14 +352,18 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                         // console.log("final data: ", finalData);
                         hist.setData(finalData);
                         {
-                            const props = item;
+                            const props = {
+                                ticker,
+                                interval,
+                                indicator: "VOL"
+                            };
+                            const bufferedHistUpdate = makeBufferedSeriesUpdater(hist);
                             const handler = (msg) => {
                                 if (!msg) return;
-                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
-                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
-                                const value = typeof msg === 'number' ? msg : (msg.value ?? msg["VOL"] ?? msg);
+                                const time = getIndicatorTime(msg);
+                                const value = getIndicatorValue(msg, "Volume");
                                 if (value === undefined || value === null) return;
-                                hist.update({ time, value: Number(value) });
+                                bufferedHistUpdate({ time, value: Number(value) });
                             };
                             const idKey = id;
                             indicatorHandlersRef.current.set(idKey, { handler, properties: props });
@@ -325,14 +422,19 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                         })
                         rsiLine.setData(finalData);
                         {
-                            const props = item;
+                            const props = {
+                                ticker,
+                                interval,
+                                indicator: "RSI",
+                                timeperiod: item.timeperiod
+                            };
+                            const bufferedRsiUpdate = makeBufferedSeriesUpdater(rsiLine);
                             const handler = (msg) => {
                                 if (!msg) return;
-                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
-                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
-                                const value = typeof msg === 'number' ? msg : (msg.value ?? msg["RSI"] ?? msg);
+                                const time = getIndicatorTime(msg);
+                                const value = getIndicatorValue(msg, "RSI");
                                 if (value === undefined || value === null) return;
-                                rsiLine.update({ time, value: Number(value) });
+                                bufferedRsiUpdate({ time, value: Number(value) });
                             };
                             const idKey = id;
                             indicatorHandlersRef.current.set(idKey, { handler, properties: props });
@@ -364,14 +466,18 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                         })
                         OBVLine.setData(finalData);
                         {
-                            const props = item;
+                            const props = {
+                                ticker,
+                                interval,
+                                indicator: "OBV"
+                            };
+                            const bufferedObvUpdate = makeBufferedSeriesUpdater(OBVLine);
                             const handler = (msg) => {
                                 if (!msg) return;
-                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
-                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
-                                const value = typeof msg === 'number' ? msg : (msg.value ?? msg["OBV"] ?? msg);
+                                const time = getIndicatorTime(msg);
+                                const value = getIndicatorValue(msg, "OBV");
                                 if (value === undefined || value === null) return;
-                                OBVLine.update({ time, value: Number(value) });
+                                bufferedObvUpdate({ time, value: Number(value) });
                             };
                             const idKey = id;
                             indicatorHandlersRef.current.set(idKey, { handler, properties: props });
@@ -386,6 +492,16 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                         const MIDDLE = item.data["MIDDLE"];
                         const UP = item.data["UP"];
 
+                        // Validate BBAND data structure
+                        if (!Array.isArray(DOWN) || !Array.isArray(MIDDLE) || !Array.isArray(UP)) {
+                            console.error("BBAND data structure invalid. DOWN/MIDDLE/UP must be arrays.", {
+                                DOWN: DOWN ? `array(${DOWN.length})` : typeof DOWN,
+                                MIDDLE: MIDDLE ? `array(${MIDDLE.length})` : typeof MIDDLE,
+                                UP: UP ? `array(${UP.length})` : typeof UP,
+                                fullData: item.data
+                            });
+                            break; // Skip this indicator
+                        }
 
                         const finalDataDown = DOWN.map((quote) => {
                             return {
@@ -414,20 +530,49 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                             { type: 'line', options: { color: item.downLineColor, lineWidth: 1 } }
                         ], true)
 
+                        // setData calls - chart library handles rendering efficiently
                         lineUp.setData(finalDataUp);
                         lineMiddle.setData(finalDataMiddle);
                         lineDown.setData(finalDataDown);
 
                         {
-                            const props = item;
+                            const props = {
+                                ticker,
+                                interval,
+                                indicator: "BBAND",
+                                timeperiod: item.timeperiod,
+                                stdUp: item.stdUp,
+                                stdDown: item.stdDown,
+                                matype: item.matype
+                            };
+                            const bufferedUp = makeBufferedSeriesUpdater(lineUp);
+                            const bufferedMiddle = makeBufferedSeriesUpdater(lineMiddle);
+                            const bufferedDown = makeBufferedSeriesUpdater(lineDown);
+                            let bbandMessageCount = 0;
                             const handler = (msg) => {
                                 if (!msg) return;
-                                const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
-                                const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
-                                // msg expected: { UP: x, MIDDLE: y, DOWN: z } or similar
-                                if (msg.UP !== undefined) lineUp.update({ time, value: Number(msg.UP) });
-                                if (msg.MIDDLE !== undefined) lineMiddle.update({ time, value: Number(msg.MIDDLE) });
-                                if (msg.DOWN !== undefined) lineDown.update({ time, value: Number(msg.DOWN) });
+                                bbandMessageCount++;
+                                if (bbandMessageCount <= 3) { // Log first 3 messages
+                                    console.debug("BBAND message #" + bbandMessageCount, {
+                                        msgKeys: Object.keys(msg),
+                                        UP: msg.UP ? (Array.isArray(msg.UP) ? `array[${msg.UP.length}]` : `${typeof msg.UP} - ${JSON.stringify(msg.UP).substring(0, 100)}`) : undefined,
+                                        MIDDLE: msg.MIDDLE ? (Array.isArray(msg.MIDDLE) ? `array[${msg.MIDDLE.length}]` : `${typeof msg.MIDDLE} - ${JSON.stringify(msg.MIDDLE).substring(0, 100)}`) : undefined,
+                                        DOWN: msg.DOWN ? (Array.isArray(msg.DOWN) ? `array[${msg.DOWN.length}]` : `${typeof msg.DOWN} - ${JSON.stringify(msg.DOWN).substring(0, 100)}`) : undefined,
+                                    });
+                                }
+                                const time = getIndicatorTime(msg);
+                                // Handle both array and single-object message formats
+                                if (Array.isArray(msg.UP)) {
+                                    // Array format - take the latest value
+                                    if (msg.UP.length > 0) bufferedUp({ time, value: Number(msg.UP[msg.UP.length - 1].BBAND_UP) });
+                                    if (msg.MIDDLE.length > 0) bufferedMiddle({ time, value: Number(msg.MIDDLE[msg.MIDDLE.length - 1].BBAND_MIDDLE) });
+                                    if (msg.DOWN.length > 0) bufferedDown({ time, value: Number(msg.DOWN[msg.DOWN.length - 1].BBAND_DOWN) });
+                                } else {
+                                    // Object format - use directly
+                                    if (msg.UP?.BBAND_UP !== undefined) bufferedUp({ time, value: Number(msg.UP.BBAND_UP) });
+                                    if (msg.MIDDLE?.BBAND_MIDDLE !== undefined) bufferedMiddle({ time, value: Number(msg.MIDDLE.BBAND_MIDDLE) });
+                                    if (msg.DOWN?.BBAND_DOWN !== undefined) bufferedDown({ time, value: Number(msg.DOWN.BBAND_DOWN) });
+                                }
                             };
                             const idKey = id;
                             indicatorHandlersRef.current.set(idKey, { handler, properties: props });
@@ -457,26 +602,31 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                             })
 
                             const [slowD, slowK] = pm.add(id, [
-                                { type: 'line', options: { color: item.slowLineColor, lineWidth: 1, priceScaleID: stochScaleId } },
-                                { type: 'line', options: { color: item.fastLineColor, lineWidth: 1, priceScaleID: stochScaleId } }
+                                { type: 'line', options: { color: item.slowLineColor, lineWidth: 1, priceScaleId: stochScaleId } },
+                                { type: 'line', options: { color: item.fastLineColor, lineWidth: 1, priceScaleId: stochScaleId } }
                             ])
 
-                            // slowD.priceScale().applyOptions({
-                            //     autoscale: false,
-                            //     scaleMargins: { top: 0.1, bottom: 0.1 },
-
-                            // });
+                            // setData calls - chart library handles rendering efficiently
                             slowD.setData(finalSlowd);
                             slowK.setData(finalSlowk);
                             {
-                                const props = item;
+                                const props = {
+                                    ticker,
+                                    interval,
+                                    indicator: "STOCH",
+                                    fastkPeriod: item.fastkPeriod,
+                                    slowkPeriod: item.slowkPeriod,
+                                    slowkMaType: item.slowkMaType,
+                                    slowdPeriod: item.slowdPeriod,
+                                    slowdMaType: item.slowdMaType
+                                };
+                                const bufferedSlowD = makeBufferedSeriesUpdater(slowD);
+                                const bufferedSlowK = makeBufferedSeriesUpdater(slowK);
                                 const handler = (msg) => {
                                     if (!msg) return;
-                                    const lastCandle = ohlcvDataRef.current[ohlcvDataRef.current.length - 1];
-                                    const time = lastCandle ? lastCandle.time : Math.floor(Date.now() / 1000);
-                                    // msg expected: { SLOWD: value, SLOWK: value } or latest values
-                                    if (msg.SLOWD !== undefined) slowD.update({ time, value: Number(msg.SLOWD) });
-                                    if (msg.SLOWK !== undefined) slowK.update({ time, value: Number(msg.SLOWK) });
+                                    const time = getIndicatorTime(msg);
+                                    if (msg.SLOWD?.SLOWD !== undefined) bufferedSlowD({ time, value: Number(msg.SLOWD.SLOWD) });
+                                    if (msg.SLOWK?.SLOWK !== undefined) bufferedSlowK({ time, value: Number(msg.SLOWK.SLOWK) });
                                 };
                                 const idKey = id;
                                 indicatorHandlersRef.current.set(idKey, { handler, properties: props });
@@ -493,18 +643,57 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             // Cleanup will be handled when indicators are explicitly removed or
             // when the component unmounts.
         }
+    }, [indicatorList, setIndicatorList, ticker , interval, historyLoaded]);
+
+    // When the ticker or interval changes, fully clear any active indicators
+    // and reset the shared `IndicatorsList` so indicators reload with fresh data.
+    useEffect(() => {
+        if (!paneManagerRef.current && indicatorHandlersRef.current.size === 0) return;
+
+        // Unsubscribe all active indicator handlers first
+        for (const [key, entry] of indicatorHandlersRef.current.entries()) {
+            try {
+                wsManager.unsubscriber("indicator", ticker, entry.handler, entry.properties);
+            } catch (error) {
+                console.warn("Failed to unsubscribe during ticker/interval change", key, error);
+            }
+        }
+
+        // Remove all panes and clear handler map
+        try {
+            paneManagerRef.current?.removeAll();
+        } catch (e) {
+            console.warn("Failed to remove panes on ticker/interval change", e);
+        }
+        indicatorHandlersRef.current.clear();
+
+        // Clear the shared indicator list so UI and chart start fresh
+        try {
+            setIndicatorList([]);
+        } catch (e) {
+            console.warn("Failed to reset indicator list", e);
+        }
+
+        // Note: individual indicator subscribers will be recreated if the user
+        // re-add indicators via the UI; cleanup effect below handles any
+        // remaining unsubscribes on unmount.
+    }, [ticker, interval, setIndicatorList]);
+
+    useEffect(() => {
+        const activeIndicatorHandlers = indicatorHandlersRef.current;
         return () => {
-            // Unsubscribe all indicator handlers on cleanup (component unmount or deps change)
-            for (const [key, entry] of indicatorHandlersRef.current.entries()) {
+            // Cleanup runs when the chart instance is torn down or the ticker/interval
+            // changes, so old subscriptions do not keep receiving websocket messages.
+            for (const [key, entry] of activeIndicatorHandlers.entries()) {
                 try {
                     wsManager.unsubscriber("indicator", ticker, entry.handler, entry.properties);
-                } catch (e) {
-                    console.warn("Failed to unsubscribe indicator during cleanup", key, e);
+                } catch (error) {
+                    console.warn("Failed to unsubscribe indicator during cleanup", key, error);
                 }
             }
-            indicatorHandlersRef.current.clear();
+            activeIndicatorHandlers.clear();
         };
-    }, [indicatorList, setIndicatorList, ticker , interval]);
+    }, [ticker, interval]);
 
 
     return (

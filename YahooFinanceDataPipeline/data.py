@@ -10,41 +10,114 @@ import datetime
 from talib import MA_Type
 import time
 
+
+def _normalize_history_period(interval: str, timeperiod: int) -> str:
+    """Convert an interval/timeperiod request into a Yahoo Finance period."""
+    interval = str(interval)
+    timeperiod = max(1, int(timeperiod))
+
+    if interval.endswith("m"):
+        amount = int(interval[:-1] or 1)
+        lookback_days = int(np.ceil(((timeperiod + 1) * amount * 3) / (60 * 24)))
+    elif interval.endswith("h"):
+        amount = int(interval[:-1] or 1)
+        lookback_days = int(np.ceil(((timeperiod + 1) * amount * 3) / 24))
+    elif interval.endswith("d"):
+        amount = int(interval[:-1] or 1)
+        lookback_days = (timeperiod + 1) * amount * 3
+    elif interval.endswith("wk"):
+        amount = int(interval[:-2] or 1)
+        lookback_days = (timeperiod + 1) * amount * 7 * 3
+    else:
+        lookback_days = (timeperiod + 1) * 3
+
+    buckets = [
+        (1, "1d"),
+        (5, "5d"),
+        (30, "1mo"),
+        (90, "3mo"),
+        (180, "6mo"),
+        (365, "1y"),
+        (730, "2y"),
+        (1825, "5y"),
+        (3650, "10y"),
+    ]
+    for max_days, period in buckets:
+        if lookback_days <= max_days:
+            return period
+    return "max"
+
+def _serialize_for_json(data):
+    """
+    Convert pandas Timestamp and numpy objects to JSON-serializable types.
+    Recursively handles dicts, lists, and nested structures.
+    """
+    if isinstance(data, dict):
+        return {k: _serialize_for_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [_serialize_for_json(item) for item in data]
+    elif isinstance(data, (pd.Timestamp, np.datetime64)):
+        # Convert to ISO string format
+        return str(pd.Timestamp(data).isoformat())
+    elif isinstance(data, (np.integer, np.floating)):
+        # Convert numpy types to Python native types
+        return data.item()
+    elif isinstance(data, np.ndarray):
+        return _serialize_for_json(data.tolist())
+    return data
+
 async def last_value(ticker:str , interval:str , indicator:str , properties:dict):
-    int_interval = int(interval.rstrip('abcdefghijklmnopqrstuvwxyz'))
-    unit_interval = interval.lstrip('1234567890')
-    period = str((properties["timeperiod"]+1)*int_interval) + unit_interval
+    timeperiod = int(properties.get("timeperiod", 14))
+    period = _normalize_history_period(interval, timeperiod)
     data = await collect_data(ticker=ticker , interval=interval , period=period)
     df = format_data(data)
+    
+    # Validate we have enough data
+    if df is None or len(df) == 0:
+        raise HTTPException(status_code=400, detail=f"No data available for {ticker} at {interval} interval")
+    
     match indicator:
         case "SMA":
-            timeperiod = properties["timeperiod"]
-            final_data = SMA_(df=df , timeperiod=timeperiod)[-1]
-            return final_data
+            result_data = SMA_(df=df , timeperiod=timeperiod)
+            if not result_data or len(result_data) == 0:
+                raise HTTPException(status_code=400, detail=f"SMA calculation returned no data for {ticker}")
+            final_data = result_data[-1]
+            return _serialize_for_json(final_data)
         case "EMA":
-            timeperiod = properties["timeperiod"]
-            final_data = EMA_(df=df , timeperiod=timeperiod)[-1]
-            return final_data
+            result_data = EMA_(df=df , timeperiod=timeperiod)
+            if not result_data or len(result_data) == 0:
+                raise HTTPException(status_code=400, detail=f"EMA calculation returned no data for {ticker}")
+            final_data = result_data[-1]
+            return _serialize_for_json(final_data)
         case "RSI":
-            timeperiod = properties["timeperiod"]
-            final_data = RSI_(df=df , timeperiod=timeperiod)[-1]
-            return final_data
+            result_data = RSI_(df=df , timeperiod=timeperiod)
+            if not result_data or len(result_data) == 0:
+                raise HTTPException(status_code=400, detail=f"RSI calculation returned no data for {ticker}")
+            final_data = result_data[-1]
+            return _serialize_for_json(final_data)
         case "BBAND":
-            timeperiod = properties["timeperiod"]
             stdUp = properties["stdUp"]
             stdDown = properties["stdDown"]
             matype = properties["matype"]
             finalData = BBAND_(df , timeperiod , stdUp , stdDown , matype)
-            finalDict = {"UP":finalData["UP"][-1] ,
-                         "MIDDLE": finalData["MIDDLE"][-1],
-                         "DOWN":finalData["DOWN"][-1]}
+            if not finalData or not all(finalData.get(key) for key in ["UP", "MIDDLE", "DOWN"]):
+                raise HTTPException(status_code=400, detail=f"BBAND calculation returned incomplete data for {ticker}")
+            finalDict = {"UP":_serialize_for_json(finalData["UP"][-1]) ,
+                         "MIDDLE": _serialize_for_json(finalData["MIDDLE"][-1]),
+                         "DOWN":_serialize_for_json(finalData["DOWN"][-1])}
             return finalDict
         case "VOL":
-            final_data = VOL_(df)[-1]
-            return final_data
+            result_data = VOL_(df)
+            if not result_data or len(result_data) == 0:
+                raise HTTPException(status_code=400, detail=f"VOL calculation returned no data for {ticker}")
+            final_data = result_data[-1]
+            return _serialize_for_json(final_data)
         case "OBV":
-            final_data = OBV_(df)[-1]
-            return final_data
+            result_data = OBV_(df)
+            if not result_data or len(result_data) == 0:
+                raise HTTPException(status_code=400, detail=f"OBV calculation returned no data for {ticker}")
+            final_data = result_data[-1]
+            return _serialize_for_json(final_data)
         case "STOCH":
             fastk_period = properties["fastkPeriod"]
             slowk_period = properties["slowkPeriod"]
@@ -53,9 +126,11 @@ async def last_value(ticker:str , interval:str , indicator:str , properties:dict
             slowd_matype = properties["slowdMaType"]
             final_data = STOCH_(df , fastk_period , slowk_period , slowk_matype,
                    slowd_period , slowd_matype)
+            if not final_data or not all(final_data.get(key) for key in ["SLOWK", "SLOWD"]):
+                raise HTTPException(status_code=400, detail=f"STOCH calculation returned incomplete data for {ticker}")
             finalDict = {
-                "SLOWK":final_data["SLOWK"][-1],
-                "SLOWD":final_data["SLOWD"][-1]
+                "SLOWK":_serialize_for_json(final_data["SLOWK"][-1]),
+                "SLOWD":_serialize_for_json(final_data["SLOWD"][-1])
             }
             return finalDict
             
@@ -106,6 +181,8 @@ async def get_quote(ticker):
 
 
 def format_data(df):
+    if df is None or df.empty:
+        return df
     df.reset_index(inplace=True)
     df.rename(columns={df.columns[0]: "Date"}, inplace=True)
     df['Date'] = df['Date'].apply(lambda x: x.isoformat())
