@@ -52,7 +52,9 @@ class WebSocketManager {
         if (!entry || !entry.shouldReconnect) return; // if connection not exist or shouldReconnect is false then return
 
         /* WebSocket is browser builtin API that opens a connection to a ws server */
-        const ws = new WebSocket(entry.url);
+        const token = localStorage.getItem("token");
+
+        const ws = new WebSocket(entry.url , [token]);
         entry.ws = ws;
 
         // ATTACHING EVENT LISTENERS

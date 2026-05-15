@@ -1,4 +1,4 @@
-from fastapi import  WebSocket , FastAPI , WebSocketDisconnect
+from fastapi import  WebSocket , FastAPI , WebSocketDisconnect , status
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from currency import update_rates_every_24h , get_currency
@@ -10,11 +10,39 @@ from data import get_quote , last_candle , last_value
 from collections import defaultdict
 import json
 import datetime
+import jwt
+import os
 
+JWT_SECRET = os.getenv('JWT_SECRET')
 '''
 This is an under development websocket server whose purpose
 is to reduce constant http polling.
 '''
+
+async def verifyJWT(websocket:WebSocket):
+    subprotocols = websocket.headers.get("sec-websocket-protocol")
+    
+    if subprotocols:
+        # Clean the header string (browsers separate multiple protocols with commas)
+        token = [p.strip() for p in subprotocols.split(",")][0]
+        
+        # IMPORTANT: You must accept the matching subprotocol during handshake!
+        await websocket.accept(subprotocol=token)
+        print(f"Token successfully received via subprotocol: {token}")
+    else:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return False
+
+    try:
+        decoded_payload = jwt.decode(token , JWT_SECRET , algorithms = ["HS256"])
+        return True
+    except jwt.ExpiredSignatureError:
+        # await websocket.send_text("Auth falied : Expired Session")
+        await websocket.close()
+        return False
+    except jwt.InvalidTokenError:
+        await websocket.close()
+        return False
 
 ticker_subscribers:dict[str , list[WebSocket]] = defaultdict(list)
 fetcher_tasks: dict[str, asyncio.Task] = {} # stores all the fetch_broadcast() running for different tickers
@@ -66,8 +94,12 @@ def stop_fetcher(ticker:str):
 
 @app.websocket("/ws/quote")
 async def quote_ws(websocket: WebSocket): # This endpoint just maintains the ticker_subscriber dictionary
+    
+    isVerified = await verifyJWT( websocket)
+    if(isVerified == False):return
+    
     subscribed:set[str] = set() # each user have their own subscribed set
-    await websocket.accept() # Initial Handshake request by client
+    # await websocket.accept() # Initial Handshake request by client
     try:
         while True:
             # msg-example: {action:"subscribe" or "unsubscribe" , ticker: "AAPL"}
@@ -230,6 +262,10 @@ def stop_indicator_fetcher(ticker: str, interval: str, indicator: str, propertie
 
 @app.websocket("/ws/indicator")
 async def indicator_ws(websocket: WebSocket):
+    
+    isVerified = await verifyJWT(websocket)
+    if(isVerified == False):return
+    
     """
     WebSocket endpoint for real-time indicator updates.
     
@@ -252,7 +288,7 @@ async def indicator_ws(websocket: WebSocket):
         ...
     }
     """
-    await websocket.accept()  # Accept WebSocket handshake
+    # await websocket.accept()  # Accept WebSocket handshake
     
     # Track which indicators this client has subscribed to
     subscribed_indicators: set[str] = set()
