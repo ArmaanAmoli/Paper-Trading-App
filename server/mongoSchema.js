@@ -1,3 +1,4 @@
+import { Double } from "mongodb";
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema({
@@ -16,7 +17,6 @@ const watchlistSchema = new mongoose.Schema({
     userId:{type:mongoose.Schema.Types.ObjectId , ref: 'User' , required: true},
     symbols:{type:[String] , required:true , default:[]}
 });
-
 const Watchlist = mongoose.model('Watchlist' , watchlistSchema);
 
 const PortfolioSchema = new mongoose.Schema({
@@ -33,12 +33,23 @@ const TradeSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     symbol: { type: String, required: true },
     shares: { type: Number, required: true },
-    price: { type: Number, required: true },
-    type: { type: String, enum: ['buy', 'sell'], required: true },
+    price:  { type: Number, required: true },
+    type:   { type: String, enum: ['buy', 'sell'], required: true },
     timestamp: { type: Date, default: Date.now },
     realizedPL: { type: Number, required: true },
     orderId: { type: String, required: true, unique: true }
 });
 const Trade = mongoose.model('Trade', TradeSchema);
 
-export { User, Portfolio, Trade , Watchlist};
+const StopLossSchema = new mongoose.Schema({
+    userId:{type:mongoose.ObjectId , ref:'User' , required: true},
+    symbol:{type:String , required: true},
+    price:{type:Double , required:true},
+    startDate:{type:Date , default:Date.now() , required: true},
+    type: {type:String , enum:['buy' , 'sell'] , required: true},
+    quantity:{type:Number},
+    
+});
+const StopLoss = mongoose.model('StopLoss' , StopLossSchema);
+
+export { User, Portfolio, Trade , Watchlist , StopLoss};

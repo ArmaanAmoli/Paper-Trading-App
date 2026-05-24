@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 import process from 'node:process';
-import { User, Portfolio, Trade, Watchlist } from "./mongoSchema.js"
+import { User, Portfolio, Trade, Watchlist, StopLoss } from "./mongoSchema.js"
 import bcrypt from "bcrypt";
 import { ObjectId } from "mongodb";
+import { v4 as uuidv4 } from 'uuid';
 
 mongoose.connect(String(process.env.MONGO_URL)).then(() => {
     console.log("CONNECTED");
@@ -50,6 +51,7 @@ async function newTradeF(userId, symbol, shares, price, type, realizedPL, sessio
         orderId: orderId
     })
     await newTrade.save({ session });
+    return newTrade;
 }
 
 export async function executeTrade(positionDetails, userId) {
@@ -97,7 +99,7 @@ export async function executeTrade(positionDetails, userId) {
 
         let closedQty = 0;
 
-        if (portfolio) {
+        if (portfolio) { // Already have a position
 
             if (Math.sign(oldShares) === Math.sign(delta)) {
                 // Same direction add
@@ -233,7 +235,7 @@ export async function executeTrade(positionDetails, userId) {
         //           SAVE TRADE
         // ================================
 
-        await newTradeF(
+        const newTrade = await newTradeF(
             userId,
             symbol,
             qty,
@@ -247,7 +249,7 @@ export async function executeTrade(positionDetails, userId) {
         await user.save({ session });
 
         await session.commitTransaction();
-        return { success: true };
+        return { success: true, newTrade };
 
     } catch (err) {
         await session.abortTransaction();
@@ -283,27 +285,56 @@ export async function AddToWatchlist(userID, symbol) {
     try {
         await Watchlist.updateOne(
             { "userId": new ObjectId(userID) },
-            { $addToSet: {symbols:symbol} },
+            { $addToSet: { symbols: symbol } },
             { upsert: true }
         );
         return true;
-    }catch(err){
+    } catch (err) {
         console.log(`Error while posting new symbol to watchlist: ${err}`)
         return false;
     }
-    
+
 }
 
-export async function RemoveFromWatchlist(userID , symbol){
-    try{
+export async function RemoveFromWatchlist(userID, symbol) {
+    try {
         await Watchlist.updateOne(
             { "userId": new ObjectId(userID) },
-            { $pull: {symbols:symbol} }
+            { $pull: { symbols: symbol } }
         )
         return true;
 
-    }catch(err){
+    } catch (err) {
         console.log(`Error while deleteing from watchlist: ${err}`);
         return false;
+    }
+}
+
+export async function StopLossExecuter(StopLossInfo) {
+    const { userId, symbol, price, startDate, quantity, type } = StopLossInfo;
+    const positionDetails =
+    {
+        symbol: symbol,
+        qty: quantity,
+        price: price,
+        side: type,
+        orderId: uuidv4(),
+    };
+    let StopLossObject = {};
+    try {
+        await executeTrade(positionDetails, userId);
+        StopLossObject = {
+            userId: userId,
+            symbol: symbol,
+            price: price,
+            startDate: startDate,
+            type: type,
+            quantity: quantity,
+        }
+        await StopLoss.deleteOne(StopLossObject);
+    }
+    catch (e) {
+        console.log(`An error occured while executing stoploss \n
+            ${StopLossObject}\n Error: ${e}`);
     }
 }

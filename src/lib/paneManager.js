@@ -20,7 +20,7 @@ export class PaneManager{
     }
 
     // add an indicator - returns array of created series
-    add(id , seriesConfigs , onMainPane=false){
+    add(id , seriesConfigs , onMainPane=false){ // SeriesConfig -> {Type: , Options(Json which contains properties of that series): }
         if(this.panes.find(p=>p.id===id)){
             console.warn(`Indicator ${id} already exist`);
         }
@@ -43,7 +43,7 @@ export class PaneManager{
         
         //Remove all the series belonging to this indicator
         this.panes[idx].seriesList.forEach(s => {
-            try {this.chart.removeSeries(s);} catch(e) {console.error(e);}
+            try {this.chart.removeSeries(s);} catch(e) {console.error(`An error occured while removing series ${id} :`,e);}
         });
 
         this.panes.splice(idx , 1);

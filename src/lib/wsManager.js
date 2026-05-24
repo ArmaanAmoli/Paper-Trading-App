@@ -107,7 +107,7 @@ class WebSocketManager {
                     // Debug: log whether we have handlers for this indicator_id
                     try {
                         console.debug(`[WS:${name}] indicator message for ${indicator_id} — handlers: ${handlers ? handlers.size : 0}`);
-                    } catch (e) { /* ignore logging errors */ }
+                    } catch (e) { /* ignore logging errors */  console.error(e);}
 
                     // Fallback: if exact id lookup fails, try matching by prefix
                     if (!handlers) {
@@ -173,7 +173,7 @@ class WebSocketManager {
                 entry.subscribers[id] = new Set();
             }
             const isFirst = entry.subscribers[id].size === 0;
-            entry.subscribers[id].add(handler);
+            entry.subscribers[id].add(handler); // Handlers of indicators will have .updateSeries() fucntion of lightweight charts
             if (isFirst) {
                 const message = {action: "subscribe" , ticker , interval , indicator , properties}
                 this._send(name , message);
