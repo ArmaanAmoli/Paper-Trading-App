@@ -338,3 +338,8 @@ export async function StopLossExecuter(StopLossInfo) {
             ${StopLossObject}\n Error: ${e}`);
     }
 }
+
+export async function getAllStopLoss(){
+    const stopLosses = await StopLoss.find({});
+    return stopLosses;
+}

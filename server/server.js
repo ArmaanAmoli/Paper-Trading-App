@@ -8,10 +8,10 @@ import axios from 'axios';
 import { getQuote } from './getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
 
-
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
 const port = 3000;
+
 
 try {
     await mongoose.connect(process.env.MONGO_URL);

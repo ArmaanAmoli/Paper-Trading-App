@@ -37,7 +37,8 @@ const TradeSchema = new mongoose.Schema({
     type:   { type: String, enum: ['buy', 'sell'], required: true },
     timestamp: { type: Date, default: Date.now },
     realizedPL: { type: Number, required: true },
-    orderId: { type: String, required: true, unique: true }
+    orderId: { type: String, required: true, unique: true },
+    wasStopLoss: {type: Boolean , required: true , default:false}
 });
 const Trade = mongoose.model('Trade', TradeSchema);
 
