@@ -63,11 +63,11 @@ async function stopLossWS() {
     });
 
     socket.addEventListener("error" , (event)=>{
-        setTimeout(stopLossWS() , 5000);
+        setTimeout(stopLossWS , 5000);
     });
 
     socket.addEventListener("close" , (event) => {
-        socket.close();
+        console.log("Stop loss socket closed gracefully.");
         return;
     })
 

@@ -7,6 +7,9 @@ import cors from "cors";
 import axios from 'axios';
 import { getQuote } from './getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
+import { allStopLoss, tickerToSL } from './StopLoss/getAllStopLoss.js';
+import { socket } from './StopLoss/stoploss.js';
+import { StopLoss } from './mongoSchema.js';
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
@@ -373,7 +376,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
     catch (err) {
         next(err);
     }
-})
+});
 
 //-----------------------------------------------------------------------TRADE-------------------------------------------------------------------------------------------
 
@@ -390,7 +393,7 @@ server.post('/buy', verifyToken, async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-})
+});
 
 server.post('/sell', verifyToken, async (req, res, next) => {
     try {
@@ -407,7 +410,31 @@ server.post('/sell', verifyToken, async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-})
+});
+
+server.post('/stopLoss', verifyToken, async (req, res, next) => {
+    try {
+        const stopLossInfo = req.body;
+        const userId = req.user.userId;
+        stopLossInfo.userId = userId;
+        const stopLossObj = new StopLoss(stopLossInfo);
+        const ticker = stopLossObj.symbol;
+        if (!tickerToSL.has(ticker)) {
+            socket.send({
+                action: "subscribe",
+                ticker: ticker
+            });
+            tickerToSL.set(ticker, []);
+        }
+        const value = tickerToSL.get(ticker)
+        value.push(stopLossObj.toJSON());
+
+        return res.status(200).json({message:"Stop loss order placed."})
+    }
+    catch(err){
+        next(err);
+    }
+});
 
 
 // Global Error Handler Middleware
