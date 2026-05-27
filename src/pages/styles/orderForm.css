@@ -46,7 +46,7 @@
     color: #0849fd;
 }
 
-.Qty {
+/* .Qty {
     width: 100%;
     margin-top: 40px;
     height: 40px;
@@ -73,7 +73,7 @@
 
 .qty-input[type=number] {
     appearance: none;
-}
+} */
 .placeOrder{
     margin-top: 40px;
     width: 75%;

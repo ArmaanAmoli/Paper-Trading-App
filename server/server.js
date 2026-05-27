@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist } from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist} from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { allStopLoss, tickerToSL } from './StopLoss/getAllStopLoss.js';
 import { socket } from './StopLoss/stoploss.js';
 import { StopLoss } from './mongoSchema.js';
+import { stopLossWS } from './StopLoss/stoploss.js';
 
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
@@ -34,6 +35,7 @@ server.use(express.json());
 // }));
 server.use(cors());
 
+await stopLossWS()
 
 const validateEmail = (req, res, next) => {
     const { email } = req.body;
@@ -67,6 +69,8 @@ const verifyToken = (req, res, next) => {
         return res.status(401).json({ message: "Token is invalid or expired", error: String(err) });
     }
 }
+
+stopLossWS();
 
 //Request Handlers
 
@@ -418,6 +422,7 @@ server.post('/stopLoss', verifyToken, async (req, res, next) => {
         const userId = req.user.userId;
         stopLossInfo.userId = userId;
         const stopLossObj = new StopLoss(stopLossInfo);
+        stopLossObj.save();
         const ticker = stopLossObj.symbol;
         if (!tickerToSL.has(ticker)) {
             socket.send({

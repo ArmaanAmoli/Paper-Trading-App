@@ -3,17 +3,58 @@ import "./styles/orderForm.css";
 import { useParams } from "react-router-dom";
 import { placeOrder } from "./placeOrder.js";
 import Ticker from "./ticker.jsx";
+import { useTicker } from "../hooks/useTicker.js";
+
 export default function OrderForm() {
-    const [orderType, setOrderType] = useState('buy');
+    const [stopLossQty , setStopLossQty] = useState([]);
+    const [stopLossLvl , setStopLossLvl] = useState([]);
+    const [takeProfitQty , setTakeProfitQty] = useState([]);
+    const [takeProfitLvl , setTakeProfitLvl] = useState([]);
+
     const { ticker } = useParams();
-    const [qty, setQty] = useState(0);
+    const data = useTicker("quote", ticker);
+    const [orderType, setOrderType] = useState('buy');
+    const [qty, setQty] = useState();
+
     function handleChangeInQty(event) {
         setQty(event.target.value);
     }
+    function handleChangeSlQty(event) {
+        setStopLossQty(event.target.value);
+    }
+    function handleChangeTpQty(event) {
+        setTakeProfitQty(event.target.value);
+    }
+    function handleChangeSlLvl(event) {
+        setStopLossLvl(event.target.value);
+    }
+    function handleChangeTpLvl(event) {
+        setTakeProfitLvl(event.target.value);
+    }
+
+    async function placeTrade(){
+        if(!(stopLossLvl || stopLossQty )){
+            await placeOrder(ticker, qty, orderType , null);
+        }
+        else{
+
+            const stopLossObj = {
+                symbol:ticker,
+                type:orderType === 'buy' ? 'sell' : 'buy',
+                qty:qty,
+                price:stopLossLvl
+            }
+
+            await placeOrder(ticker , qty , orderType , stopLossObj);
+
+        }
+    }
+
+
     return (
         <div className="Order-Form">
 
-            <h1>Order</h1>
+            <h1 className="mb-2">Order</h1>
 
             <div className="Select-buy-sell">
                 <div className="Position-type-button"
@@ -26,16 +67,51 @@ export default function OrderForm() {
                 </div>
             </div>
 
-            <div className="Qty">
-                <input value={qty} onChange={handleChangeInQty} inputMode="numeric" pattern="[0-9]*" placeholder="Quantity" className="qty-input"></input>
+            <div className="flex g-1 w-full mt-5">
+                <div className="flex w-full justify-between"><p>Current Price </p><p>${data.currentPrice}</p></div>
             </div>
 
-            <div className="market-price">
-                <Ticker name={ticker} />
+            <div className="flex w-full h-12 md:shadow-none mt-2">
+                <input value={qty} onChange={handleChangeInQty} inputMode="numeric" pattern="[0-9]*" placeholder="Quantity"
+                    className="w-full border-2 border-white/25 rounded-2xl px-5 active:border-2 active:border-white/30"></input>
             </div>
 
-            <button className="placeOrder" style={orderType === 'buy' ? { backgroundColor: '#2195f342' } : { backgroundColor: '#ff52523d' }}
-                onClick={async () => { await placeOrder(ticker, qty, orderType) }}>Place Order</button>
+            <div className="flex g-1 w-full mt-2">
+                <div className="flex w-full justify-between"><p>Total </p><p>${(qty ? qty * data.currentPrice : 0).toFixed(2)}</p></div>
+            </div>
+
+            <div className="flex flex-col w-full mt-5">
+                <div className="flex flex-col w-full">
+                    <p>Stop Loss</p>
+                    <div className="flex w-full h-12 md:shadow-none mt-2">
+                        <input value={stopLossLvl} onChange={handleChangeSlLvl} inputMode="numeric" pattern="[0-9]*" placeholder="Level"
+                            className="w-full border-2 border-white/25 rounded-2xl px-5 active:border-2 active:border-white/30"></input>
+                    </div>
+                    <div className="flex w-full h-12 md:shadow-none mt-2">
+                        <input value={stopLossQty} onChange={handleChangeSlQty} inputMode="numeric" pattern="[0-9]*" placeholder="Quantity"
+                            className="w-full border-2 border-white/25 rounded-2xl px-5 active:border-2 active:border-white/30"></input>
+                    </div>
+                </div>
+            </div>
+
+            {/* <div className="flex flex-col w-full mt-5">
+                <div className="flex flex-col w-full">
+                    <p>Take Profit</p>
+                    <div className="flex w-full h-12 md:shadow-none mt-2">
+                        <input value={takeProfitLvl} onChange={setTakeProfitLvl} inputMode="numeric" pattern="[0-9]*" placeholder="Level"
+                            className="w-full border-2 border-white/25 rounded-2xl px-5 active:border-2 active:border-white/30"></input>
+                    </div>
+                    <div className="flex w-full h-12 md:shadow-none mt-2">
+                        <input value={takeProfitQty} onChange={setTakeProfitQty} inputMode="numeric" pattern="[0-9]*" placeholder="Quantity"
+                            className="w-full border-2 border-white/25 rounded-2xl px-5 active:border-2 active:border-white/30"></input>
+                    </div>
+                </div>
+            </div> */}
+
+            <button className="flex w-full  justify-center items-center rounded-2xl h-12 mt-3" style={orderType === 'buy' ? { backgroundColor: '#2195f342' } : { backgroundColor: '#ff52523d' }}
+                onClick={async () => { 
+                    await placeTrade();
+                }}>Place Order</button>
 
         </div>
     );

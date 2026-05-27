@@ -48,7 +48,7 @@ const StopLossSchema = new mongoose.Schema({
     price:{type:Double , required:true},
     startDate:{type:Date , default:Date.now() , required: true},
     type: {type:String , enum:['buy' , 'sell'] , required: true},
-    quantity:{type:Number},
+    qty:{type:Number , required:true},
     
 });
 const StopLoss = mongoose.model('StopLoss' , StopLossSchema);

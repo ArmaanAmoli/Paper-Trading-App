@@ -311,17 +311,17 @@ export async function RemoveFromWatchlist(userID, symbol) {
 }
 
 export async function StopLossExecuter(StopLossInfo) {
-    const { userId, symbol, price, startDate, quantity, type } = StopLossInfo;
+    const { userId, symbol, price, startDate, qty, type } = StopLossInfo;
     const positionDetails =
     {
         symbol: symbol,
-        qty: quantity,
+        qty: qty,
         price: price,
         side: type,
         orderId: uuidv4(),
     };
-    let StopLossObject = {};
     try {
+        let StopLossObject = {};
         await executeTrade(positionDetails, userId);
         StopLossObject = {
             userId: userId,
@@ -329,17 +329,16 @@ export async function StopLossExecuter(StopLossInfo) {
             price: price,
             startDate: startDate,
             type: type,
-            quantity: quantity,
+            qty: qty,
         }
         await StopLoss.deleteOne(StopLossObject);
     }
     catch (e) {
-        console.log(`An error occured while executing stoploss \n
-            ${StopLossObject}\n Error: ${e}`);
+        console.log(`An error occured while executing stoploss \n ${StopLossObject}\n Error: ${e}`);
     }
 }
 
-export async function getAllStopLoss(){
+export async function getAllSL(){
     const stopLosses = await StopLoss.find({});
     return stopLosses;
 }

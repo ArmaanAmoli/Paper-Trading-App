@@ -1,6 +1,6 @@
 import axios from "axios";
 import clickSound from '../assets/sound/position-sound.mp3'
-export async function placeOrder(ticker, Qty, side) {
+export async function placeOrder(ticker, Qty, side , stopLossOrder) {
     // const {currentPrice} = await fetchQuote(ticker);
     const jwtToken = localStorage.getItem("token")
     const config = {
@@ -18,6 +18,9 @@ export async function placeOrder(ticker, Qty, side) {
     }
     const url = `http://localhost:3000/${side}`;
     const response = axios.post(url, data , config);
+    if(stopLossOrder != null){
+        const response2 = axios.post("http://localhost:3000/stopLoss" , stopLossOrder , config);
+    }
     const audio = new Audio(clickSound);
     audio.play();
     console.log(response);

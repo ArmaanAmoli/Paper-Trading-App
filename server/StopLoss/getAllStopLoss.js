@@ -1,11 +1,11 @@
-import { getAllStopLoss } from "../queryManager";
-export const allStopLoss = await getAllStopLoss();
+import { getAllSL } from "../queryManager.js";
+export const allStopLoss = await getAllSL();
 export const tickerToSL = new Map();
 allStopLoss.forEach((slo)=>{
     const ticker = slo.symbol;
     if(!tickerToSL.has(ticker)){
         tickerToSL.set(slo.symbol , [slo]);
-        continue;
+        return;
     }
     const value = tickerToSL.get(ticker);
     value.push(slo);
