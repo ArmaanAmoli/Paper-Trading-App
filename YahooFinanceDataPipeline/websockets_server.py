@@ -21,7 +21,7 @@ is to reduce constant http polling.
 
 async def verifyJWT(websocket:WebSocket):
     subprotocols = websocket.headers.get("sec-websocket-protocol")
-    
+    print(subprotocols)
     if subprotocols:
         # Clean the header string (browsers separate multiple protocols with commas)
         token = [p.strip() for p in subprotocols.split(",")][0]

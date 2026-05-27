@@ -35,7 +35,6 @@ server.use(express.json());
 // }));
 server.use(cors());
 
-await stopLossWS()
 
 const validateEmail = (req, res, next) => {
     const { email } = req.body;
@@ -70,7 +69,6 @@ const verifyToken = (req, res, next) => {
     }
 }
 
-stopLossWS();
 
 //Request Handlers
 
@@ -450,9 +448,15 @@ server.use((err, req, res, next) => {
 });
 
 server.listen(port, (error) => {
+    stopLossWS();
     if (!error) {
         console.log(`Server running on http:/localhost:${port}`)
     } else {
         console.log("An error occured, unable to start server.")
     }
+
+    process.on('SIGTERM' , ()=>{
+        console.log("Stop Loss Web Socket connection closed.");
+        socket.close();
+    });
 });

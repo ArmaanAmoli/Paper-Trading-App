@@ -1,6 +1,7 @@
 import { getAllSL } from "../queryManager.js";
-export const allStopLoss = await getAllSL();
-export const tickerToSL = new Map();
+const allStopLoss = await getAllSL();
+const tickerToSL = new Map();
+// console.log(allStopLoss)
 allStopLoss.forEach((slo)=>{
     const ticker = slo.symbol;
     if(!tickerToSL.has(ticker)){
@@ -11,3 +12,5 @@ allStopLoss.forEach((slo)=>{
     value.push(slo);
     tickerToSL.set(ticker , value);
 })
+// console.log(tickerToSL)
+export {allStopLoss , tickerToSL};

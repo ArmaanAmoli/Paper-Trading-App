@@ -322,7 +322,7 @@ export async function StopLossExecuter(StopLossInfo) {
     };
     try {
         let StopLossObject = {};
-        await executeTrade(positionDetails, userId);
+        const tradeStatus = await executeTrade(positionDetails, userId);
         StopLossObject = {
             userId: userId,
             symbol: symbol,
@@ -331,7 +331,11 @@ export async function StopLossExecuter(StopLossInfo) {
             type: type,
             qty: qty,
         }
-        await StopLoss.deleteOne(StopLossObject);
+        if(tradeStatus.success === true){
+            await StopLoss.deleteOne(StopLossObject);
+            return {success:true};
+        }
+        return {success:false};
     }
     catch (e) {
         console.log(`An error occured while executing stoploss \n ${StopLossObject}\n Error: ${e}`);
