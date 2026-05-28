@@ -1,7 +1,7 @@
 import { useState } from "react";
-import "./styles/orderForm.css";
+import "../pages/styles/orderForm.css";
 import { useParams } from "react-router-dom";
-import { placeOrder } from "./placeOrder.js";
+import { placeOrder } from "../services/placeOrder.js";
 import Ticker from "./ticker.jsx";
 import { useTicker } from "../hooks/useTicker.js";
 

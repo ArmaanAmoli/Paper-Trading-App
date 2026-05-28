@@ -3,7 +3,7 @@ import {useState , useContext } from "react";
 import SearchTabPopUp from "./floatingSearchTab.jsx";
 import { createPortal } from "react-dom";
 // import { getWatchlist } from "./watchlist.js";
-import { WatchlistContext } from "./context.js";
+import { WatchlistContext } from "../Context/context.js";
 
 export default function Watchlist() {
     const [searchTabOpen, setSearchTabOpen] = useState(false);

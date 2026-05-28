@@ -203,6 +203,7 @@ async def get_quote(ticker: str):
         current_price = current_price/rate
         change = change / rate
         response = {
+            "ticker":ticker,
             "currentPrice":round(current_price,2),
             "change":round(change,3),
             "percentChange":round(per_change,3)

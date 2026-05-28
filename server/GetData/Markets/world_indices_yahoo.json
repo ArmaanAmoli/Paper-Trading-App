@@ -1,0 +1,253 @@
+{
+  "North America": {
+    "United States": {
+      "S&P 500": "^GSPC",
+      "Dow Jones Industrial Average": "^DJI",
+      "NASDAQ Composite": "^IXIC",
+      "NASDAQ 100": "^NDX",
+      "S&P 100": "^OEX",
+      "Russell 2000": "^RUT",
+      "Russell 1000": "^RUI",
+      "Russell 3000": "^RUA",
+      "NYSE Composite": "^NYA",
+      "NYSE AMEX Composite": "^XAX",
+      "Cboe Volatility Index (VIX)": "^VIX",
+      "Dow Jones Transportation Average": "^DJT",
+      "Dow Jones Utility Average": "^DJU",
+      "S&P 400 MidCap": "^MID",
+      "S&P 600 SmallCap": "^SML",
+      "Wilshire 5000": "^W5000"
+    },
+    "Canada": {
+      "S&P/TSX Composite": "^GSPTSE",
+      "S&P/TSX 60": "^TSX60",
+      "S&P/TSX Venture Composite": "^JX"
+    },
+    "Mexico": {
+      "IPC (Indice de Precios y Cotizaciones)": "^MXX"
+    }
+  },
+
+  "Europe": {
+    "United Kingdom": {
+      "FTSE 100": "^FTSE",
+      "FTSE 250": "^FTMC",
+      "FTSE All-Share": "^FTAS"
+    },
+    "Germany": {
+      "DAX": "^GDAXI",
+      "MDAX": "^MDAXI",
+      "SDAX": "^SDAXI",
+      "TecDAX": "^TECDAX",
+      "HDAX": "^HDAXI"
+    },
+    "France": {
+      "CAC 40": "^FCHI",
+      "SBF 120": "^SBF120"
+    },
+    "Switzerland": {
+      "SMI (Swiss Market Index)": "^SSMI",
+      "SPI (Swiss Performance Index)": "^SSHI"
+    },
+    "Netherlands": {
+      "AEX": "^AEX"
+    },
+    "Belgium": {
+      "BEL 20": "^BFX"
+    },
+    "Spain": {
+      "IBEX 35": "^IBEX"
+    },
+    "Italy": {
+      "FTSE MIB": "FTSEMIB.MI",
+      "FTSE Italia All-Share": "^ITMIB"
+    },
+    "Portugal": {
+      "PSI 20": "^PSI20"
+    },
+    "Sweden": {
+      "OMX Stockholm 30 (OMXS30)": "^OMX"
+    },
+    "Finland": {
+      "OMX Helsinki 25 (OMXH25)": "^OMXH25"
+    },
+    "Denmark": {
+      "OMX Copenhagen 25 (OMXC25)": "^OMXC25"
+    },
+    "Norway": {
+      "OBX": "^OBX"
+    },
+    "Austria": {
+      "ATX": "^ATX"
+    },
+    "Greece": {
+      "Athens General Composite": "^ATG"
+    },
+    "Russia": {
+      "MOEX Russia Index": "IMOEX.ME",
+      "RTS Index": "^RTS.RS"
+    },
+    "Poland": {
+      "WIG20": "^WIG20"
+    },
+    "Czech Republic": {
+      "PX Index": "^PX"
+    },
+    "Hungary": {
+      "BUX": "^BUX"
+    },
+    "Turkey": {
+      "BIST 100": "XU100.IS"
+    },
+    "Ireland": {
+      "ISEQ Overall Index": "^ISEQ"
+    }
+  },
+
+  "Asia": {
+    "Japan": {
+      "Nikkei 225": "^N225",
+      "TOPIX": "^TPX",
+      "Nikkei 300": "^N300",
+      "JPX-Nikkei 400": "^JPX400"
+    },
+    "China": {
+      "Shanghai Composite (SSE)": "000001.SS",
+      "Shenzhen Component (SZSE)": "399001.SZ",
+      "CSI 300": "000300.SS",
+      "CSI 500": "000905.SS",
+      "Shanghai 50 (SSE 50)": "000016.SS"
+    },
+    "Hong Kong": {
+      "Hang Seng Index": "^HSI",
+      "Hang Seng Tech Index": "^HSTECH",
+      "Hang Seng China Enterprises (H-Shares)": "^HSCE"
+    },
+    "South Korea": {
+      "KOSPI": "^KS11",
+      "KOSDAQ": "^KQ11",
+      "KOSPI 200": "^KS200"
+    },
+    "India": {
+      "BSE SENSEX": "^BSESN",
+      "NSE NIFTY 50": "^NSEI",
+      "NIFTY Bank": "^NSEBANK",
+      "BSE 100": "^BSE100",
+      "BSE 200": "^BSE200",
+      "BSE SmallCap": "^BSESMLCAP",
+      "BSE MidCap": "^BSEMDCAP"
+    },
+    "Taiwan": {
+      "TAIEX (Taiwan Weighted)": "^TWII"
+    },
+    "Singapore": {
+      "Straits Times Index (STI)": "^STI"
+    },
+    "Malaysia": {
+      "FTSE Bursa Malaysia KLCI": "^KLSE"
+    },
+    "Indonesia": {
+      "IDX Composite (IHSG)": "^JKSE"
+    },
+    "Thailand": {
+      "SET Index": "^SET.BK"
+    },
+    "Philippines": {
+      "PSEi Composite": "^PSEi"
+    },
+    "Vietnam": {
+      "VN-Index": "^VNINDEX"
+    },
+    "Pakistan": {
+      "KSE 100": "^KSE100"
+    },
+    "Sri Lanka": {
+      "CSE All Share": "^CSE"
+    }
+  },
+
+  "Middle East": {
+    "Israel": {
+      "TA-35": "^TA35",
+      "TA-125": "^TA125.TA"
+    },
+    "Saudi Arabia": {
+      "Tadawul All Share Index (TASI)": "^TASI.SR"
+    },
+    "UAE": {
+      "ADX General Index": "^FTFADGI",
+      "DFM General Index": "^DFMGI"
+    },
+    "Qatar": {
+      "QE General Index": "^QSI"
+    },
+    "Kuwait": {
+      "Kuwait All Share Index": "^KWSE"
+    },
+    "Bahrain": {
+      "Bahrain All Share Index": "^BHSE"
+    }
+  },
+
+  "Africa": {
+    "South Africa": {
+      "FTSE/JSE All Share": "^J203.JO",
+      "FTSE/JSE Top 40": "^J200.JO"
+    },
+    "Egypt": {
+      "EGX 30": "^CASE30"
+    },
+    "Nigeria": {
+      "NGX All Share": "^NGSEINDEX"
+    },
+    "Morocco": {
+      "MASI (Moroccan All Shares Index)": "^MASI.CA"
+    },
+    "Kenya": {
+      "NSE 20 Share Index": "^NASI.NR"
+    }
+  },
+
+  "South America": {
+    "Brazil": {
+      "IBOVESPA": "^BVSP",
+      "IBrX-50": "^IBX50"
+    },
+    "Argentina": {
+      "MERVAL": "^MERV"
+    },
+    "Chile": {
+      "IPSA": "^IPSA"
+    },
+    "Colombia": {
+      "COLCAP": "^COLCAP"
+    },
+    "Peru": {
+      "S&P/BVL Peru General Index": "^SPBLPGPT"
+    }
+  },
+
+  "Oceania": {
+    "Australia": {
+      "S&P/ASX 200": "^AXJO",
+      "S&P/ASX All Ordinaries": "^AORD",
+      "S&P/ASX 50": "^AFLI"
+    },
+    "New Zealand": {
+      "S&P/NZX 50": "^NZ50"
+    }
+  },
+
+  "Global / Regional": {
+    "World": {
+      "MSCI World Index": "^990100-USD-STRD",
+      "MSCI ACWI": "^990300-USD-STRD",
+      "MSCI Emerging Markets": "^891800-USD-STRD"
+    },
+    "Europe (Regional)": {
+      "STOXX Europe 600": "^STOXX",
+      "Euro STOXX 50": "^STOXX50E",
+      "STOXX Europe 50": "^STOXX50"
+    }
+  }
+}

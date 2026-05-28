@@ -1,9 +1,9 @@
-import { WatchlistContext } from "./context";
+import { WatchlistContext } from "../Context/context.js";
 // import { fetchQuote } from "./Charts/dataRequester";
 import { useContext} from "react";
 import { useNavigate } from 'react-router-dom';
-import { deleteFromWatchlist } from "./watchlist";
-import { useTicker } from "../hooks/useTicker";
+import { deleteFromWatchlist } from "../services/watchlist.js";
+import { useTicker } from "../hooks/useTicker.js";
 
 export default function Ticker({ name }) {
     const navigate = useNavigate();

@@ -6,7 +6,7 @@ import ProtectedRoutes from "./protectedRoutes.jsx";
 import StockMainChart from "../pages/stockChart.jsx";
 import PortfolioPage from "../pages/portfolioPage.jsx";
 import UserProfile from "../pages/userProfile.jsx";
-import { WatchlistProvider, UserEquityProvider, UserAccountProvider ,IndicatorsListProvider} from "../pages/context.jsx";
+import { WatchlistProvider, UserEquityProvider, UserAccountProvider ,IndicatorsListProvider} from "../Context/context.jsx";
 
 const AuthenticatedProviders = () => {
     return (

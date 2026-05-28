@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import process from 'node:process';
-import { User, Portfolio, Trade, Watchlist, StopLoss } from "./mongoSchema.js"
+import { User, Portfolio, Trade, Watchlist, StopLoss } from "./Schemas/mongoSchema.js"
 import bcrypt from "bcrypt";
 import { ObjectId } from "mongodb";
 import { v4 as uuidv4 } from 'uuid';

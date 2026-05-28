@@ -1,6 +1,6 @@
 import { useContext } from "react";
-import { addToWatchlist } from "./watchlist";
-import { WatchlistContext } from "./context";
+import { addToWatchlist } from "../services/watchlist.js";
+import { WatchlistContext } from "../Context/context.js";
 // symbol shortName type exchange
 export default function SearchResultComponent(info = null) {
     const [watchlistArray , setWatchlistArray] = useContext(WatchlistContext);

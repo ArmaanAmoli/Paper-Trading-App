@@ -5,11 +5,11 @@ import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, G
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
-import { getQuote } from './getQuote.js';
+import { getQuote } from './GetData/getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
 import { allStopLoss, tickerToSL } from './StopLoss/getAllStopLoss.js';
 import { socket } from './StopLoss/stoploss.js';
-import { StopLoss } from './mongoSchema.js';
+import { StopLoss } from './Schemas/mongoSchema.js';
 import { stopLossWS } from './StopLoss/stoploss.js';
 
 const JWT_SECRET = process.env.JWT_SECRET

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { WatchlistContext, UserAccountContext, UserEquityContext , IndicatorsList} from "./context.js";
-import api from "./api.js";
-import { fetchQuote } from "./Charts/dataRequester.js";
-import { getWatchlist } from "./watchlist.js";
+import { WatchlistContext, UserAccountContext, UserEquityContext , IndicatorsList} from "../Context/context.js";
+import api from "../services/api.js";
+import { fetchQuote } from "../services/dataRequesterForCharts.js";
+import { getWatchlist } from "../services/watchlist.js";
 
 /*Provide the watchlist array state to all the elements
 so that we can add a new element to watchlist from anywhere*/

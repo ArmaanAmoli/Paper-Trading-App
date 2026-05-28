@@ -1,12 +1,12 @@
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries } from "lightweight-charts";
 import { useEffect, useRef, useState, useContext } from "react";
-import { fetchData } from "./dataRequester";
+import { fetchData } from "../../services/dataRequesterForCharts.js";
 import { useCallback } from "react";
 import { CrosshairMode } from "lightweight-charts";
-import { IndicatorsList } from "../context.js";
+import { IndicatorsList } from "../../Context/context.js";
 import { useTicker } from "../../hooks/useTicker.js";
 import { PaneManager } from "../../lib/paneManager.js";
-import { wsManager } from "../../lib/wsManager";
+import { wsManager } from "../../lib/wsManager.js";
 
 // Helper to batch rapid series updates onto the next animation frame.
 const makeBufferedSeriesUpdater = (series) => {

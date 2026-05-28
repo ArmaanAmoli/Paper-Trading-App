@@ -1,6 +1,6 @@
 import { createChart, ColorType, AreaSeries } from "lightweight-charts";
 import React, { useEffect, useRef, useState } from "react";
-import { fetchData } from "./dataRequester.js";
+import { fetchData } from "../../services/dataRequesterForCharts.js";
 // import { Daily } from "../../../AlphaVantageApi/Daily.js";
 //import { weeklyAjusted } from "../../../AlphaVantageApi/weeklyAdjusted.js";
 

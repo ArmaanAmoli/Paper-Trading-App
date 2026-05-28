@@ -1,7 +1,7 @@
 import { useContext} from "react";
-import Navbar from "./navbar";
+import Navbar from "../Components/navbar.jsx";
 import './styles/portfolioPage.css'
-import { UserAccountContext, UserEquityContext } from "./context.js";
+import { UserAccountContext, UserEquityContext } from "../Context/context.js";
 
 export default function PortfolioPage() {
     const [userAccountInformation, setUserAccountInformation] = useContext(UserAccountContext);

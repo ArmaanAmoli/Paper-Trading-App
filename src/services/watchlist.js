@@ -1,5 +1,5 @@
 import api from "./api.js";
-import { WatchlistContext } from "./context.js";
+import { WatchlistContext } from "../Context/context.js";
 // "/user-watchlist":"http://localhost:3000",
 // "/user-watchlist/add":"http://localhost:3000",
 

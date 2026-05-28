@@ -1,10 +1,10 @@
 import { useParams } from 'react-router-dom';
-import CandleStickChartComponent from './Charts/candlestick.jsx';
-import Watchlist from './watchlist.jsx';
+import CandleStickChartComponent from '../Components/Charts/candlestick.jsx';
+import Watchlist from '../Components/watchlist.jsx';
 import "./styles/stockChart.css"
 import { useState } from 'react';
-import OrderForm from './orderForm.jsx';
-import { IndicatorsList } from './context.js';
+import OrderForm from '../Components/orderForm.jsx';
+import { IndicatorsList } from '../Context/context.js';
 import MovingAvgPopUp from './IndicatorPopUps/movingAvgPopUp.jsx';
 import RSIPopUp from './IndicatorPopUps/rsiPopUp.jsx';
 import BBandPopUp from './IndicatorPopUps/boilingerBandPopUp.jsx';

@@ -1,7 +1,7 @@
-import api from './api.js';
+import api from '../services/api.js';
 import { useEffect, useState, useContext } from "react";
-import { UserAccountContext, UserEquityContext } from './context.js';
-import { getTradeHistory } from './tradeHistory.js';
+import { UserAccountContext, UserEquityContext } from '../Context/context.js';
+import { getTradeHistory } from '../services/tradeHistory.js';
 import { useNavigate } from 'react-router-dom';
 /*
 userData:

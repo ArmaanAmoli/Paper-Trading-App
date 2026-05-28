@@ -1,6 +1,6 @@
 import { useState } from "react";
-import api from "./api";
-import SearchResultComponent from "./searchResultComponent";
+import api from "../services/api.js";
+import SearchResultComponent from "./searchResultComponent.jsx";
 export default function SearchTabPopUp({ close }) {
     const [userInput, setUserInput] = useState("");
     const [searchResult, setSearchResult] = useState(null);
