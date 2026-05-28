@@ -1,23 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { WatchlistContext, UserAccountContext, UserEquityContext , IndicatorsList} from "../Context/context.js";
+import { WatchlistContext, UserAccountContext, UserEquityContext, IndicatorsList } from "../Context/context.js";
 import api from "../services/api.js";
 import { fetchQuote } from "../services/dataRequesterForCharts.js";
 import { getWatchlist } from "../services/watchlist.js";
+import { WebSocketManager } from "../lib/wsManager.js";
+import indicesFullName from "../services/Indices data/indicesFullName.json";
+import { marketQuoteHandler } from "../services/Indices data/IndicesPageData.js";
 
 /*Provide the watchlist array state to all the elements
 so that we can add a new element to watchlist from anywhere*/
 const WatchlistProvider = (({ children }) => {
     const [watchlistArray, setWatchlistArray] = useState([]);
     useEffect(() => {
-            async function fetchWatchlistData() {
-                const res = await getWatchlist();
-                setWatchlistArray(res.symbols);
-                // console.log(watchlistArray);
-            }
-            fetchWatchlistData();
-            const intervalID = setInterval(fetchWatchlistData, 10000);
-            return () => clearInterval(intervalID);
-        }, []);
+        async function fetchWatchlistData() {
+            const res = await getWatchlist();
+            setWatchlistArray(res.symbols);
+            // console.log(watchlistArray);
+        }
+        fetchWatchlistData();
+        const intervalID = setInterval(fetchWatchlistData, 10000);
+        return () => clearInterval(intervalID);
+    }, []);
     return (
         <WatchlistContext.Provider value={[watchlistArray, setWatchlistArray]}>
             {children}
@@ -28,10 +31,10 @@ const WatchlistProvider = (({ children }) => {
 /* Provider for user account information balance and blocked margin*/
 const UserAccountProvider = (({ children }) => {
     const [userAccountInformation, setUserAccountInformation] = useState({
-        username:"",
-        email:"",
-        balance:0,
-        blockedMargin:0
+        username: "",
+        email: "",
+        balance: 0,
+        blockedMargin: 0
     });
     useEffect(() => {
         async function collectUserAccInfo() {
@@ -65,7 +68,7 @@ const UserEquityProvider = (({ children }) => {
     const [userPortfolio, setUserPortfolio] = useState([]);
     const [userPnlList, setUserPnlList] = useState([]);
     const [totalPnl, setTotalPnl] = useState(0);
-    const [Equity , setEquity] = useState(0);
+    const [Equity, setEquity] = useState(0);
 
     useEffect(() => {
         async function updateUserPnlList(portfolio) {
@@ -79,7 +82,7 @@ const UserEquityProvider = (({ children }) => {
 
                 //collecting the current prices for all the symbols in portfolio
                 const quotes = await Promise.all(portfolio.map((item) => fetchQuote(item.symbol)));
-                console.log("Quotes",quotes);
+                console.log("Quotes", quotes);
                 // Keep in mind that order of symbols in quotes and userPortfolio is same
                 const updatedData = {}; //will store fresh calculated pnl data
                 let total = Number(0); //consist the sum of pnl which will later be added to equity
@@ -135,17 +138,38 @@ const UserEquityProvider = (({ children }) => {
                 portfolio: [userPortfolio, setUserPortfolio],
                 pnl: [userPnlList, setUserPnlList],
                 totalPnl: [totalPnl, setTotalPnl],
-                totalEquity:[Equity , setEquity]
+                totalEquity: [Equity, setEquity]
             }
         }>{children}</UserEquityContext.Provider>
     );
 })
 
-const IndicatorsListProvider = (({children}) => {
-    const [indicatorList , setIndicatorList]= useState([]);
-    return(
-        <IndicatorsList.Provider value={[indicatorList , setIndicatorList]}>{children}</IndicatorsList.Provider>
+const IndicatorsListProvider = (({ children }) => {
+    const [indicatorList, setIndicatorList] = useState([]);
+    return (
+        <IndicatorsList.Provider value={[indicatorList, setIndicatorList]}>{children}</IndicatorsList.Provider>
     );
 });
 
-export { WatchlistProvider, UserEquityProvider, UserAccountProvider , IndicatorsListProvider};
+const MarketDataProvider = (({ children }) => {
+
+    useEffect(() => {
+        const ws = new WebSocketManager();
+
+        ws.connect("quote", "ws://127.0.0.1:8001/ws/quote");
+        const tickers = Object.keys(indicesFullName);
+        tickers.forEach((ticker) => {
+            ws.subscriber("quote", ticker, marketQuoteHandler);
+        })
+        return ()=>{
+            ws.disconnect("quote");
+        }
+    },[]);
+
+    return (
+        <MarketData.Provider>{children}</MarketData.Provider>
+    )
+})
+
+
+export { WatchlistProvider, UserEquityProvider, UserAccountProvider, IndicatorsListProvider };

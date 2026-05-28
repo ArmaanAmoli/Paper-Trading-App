@@ -1,6 +1,6 @@
 import Navbar from "../Components/navbar.jsx";
 import Watchlist from "../Components/watchlist.jsx";
-
+import Market from "./market.jsx";
 import LineChart from "../Components/Charts/lineChart.jsx";
 export default function LandingPage() {
     return (
@@ -13,6 +13,7 @@ export default function LandingPage() {
                     <div className="w-full h-[400px]">^GSPC<LineChart ticker="^GSPC" /></div>
                     <div className="w-full h-[400px]">^N225<LineChart ticker="^N225" /></div>
                     <div className="w-full h-[400px]">^DJI<LineChart ticker="^DJI" /></div> */}
+                    <Market/>
                 </div>
                 <div className="col-span-5 h-full min-h-0 overflow-hidden border-l border-white/20 ">
                     <Watchlist />

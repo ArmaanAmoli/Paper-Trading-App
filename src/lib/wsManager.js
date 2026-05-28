@@ -2,7 +2,7 @@
 /* 
 This class will manage multiple websockets connection with auto reconnect
 */
-class WebSocketManager {
+export class WebSocketManager {
     constructor() {
         this.connections = {};
         // { name: { ws, handlers, reconnectTimer, shouldReconnect } }

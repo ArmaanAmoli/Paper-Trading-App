@@ -5,11 +5,11 @@ import "./styles/stockChart.css"
 import { useState } from 'react';
 import OrderForm from '../Components/orderForm.jsx';
 import { IndicatorsList } from '../Context/context.js';
-import MovingAvgPopUp from './IndicatorPopUps/movingAvgPopUp.jsx';
-import RSIPopUp from './IndicatorPopUps/rsiPopUp.jsx';
-import BBandPopUp from './IndicatorPopUps/boilingerBandPopUp.jsx';
-import VolumePopUp from './IndicatorPopUps/volumeIndicatorPopUp.jsx';
-import StochasticOscillatorPopUp from './IndicatorPopUps/stochasticOscillatorPopUp.jsx';
+import MovingAvgPopUp from '../Components/IndicatorPopUps/movingAvgPopUp.jsx';
+import RSIPopUp from '../Components/IndicatorPopUps/rsiPopUp.jsx';
+import BBandPopUp from '../Components/IndicatorPopUps/boilingerBandPopUp.jsx';
+import VolumePopUp from '../Components/IndicatorPopUps/volumeIndicatorPopUp.jsx';
+import StochasticOscillatorPopUp from '../Components/IndicatorPopUps/stochasticOscillatorPopUp.jsx';
 
 export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
