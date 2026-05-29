@@ -10,7 +10,10 @@ export default function Watchlist() {
     const toggleSearchTab = () => {
         setSearchTabOpen(prev => !prev)
     }
-    const [watchlistArray, setWatchlistArray] = useContext(WatchlistContext);
+    const {watchlistArrayState , watchlistMap }= useContext(WatchlistContext);
+    console.log(typeof(watchlistMap));
+    const watchlistArray = watchlistArrayState[0];
+    const setWatchlistArray = watchlistArrayState[1];
 
     return (
         <div className="w-full h-full min-h-0 flex flex-col overflow-hidden">

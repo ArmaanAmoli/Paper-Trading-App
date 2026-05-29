@@ -3,7 +3,9 @@ import { addToWatchlist } from "../services/watchlist.js";
 import { WatchlistContext } from "../Context/context.js";
 // symbol shortName type exchange
 export default function SearchResultComponent(info = null) {
-    const [watchlistArray , setWatchlistArray] = useContext(WatchlistContext);
+    const {watchlistArrayState , watchlistMap }= useContext(WatchlistContext);
+    const watchlistArray = watchlistArrayState[0];
+    const setWatchlistArray = watchlistArrayState[1];
     //if (info === null) return (<></>);
     console.log(info.info);
     const { symbol, shortname, typeDisp, exchange } = info.info;

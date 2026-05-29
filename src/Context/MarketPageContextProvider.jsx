@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState} from "react";
+import { useRef } from "react";
 import { wsManager } from "../lib/wsManager"
 import marketSymbols from "../services/Indices data/indicesFullName.json"
 import { useTicker } from "../hooks/useTicker";
@@ -8,22 +9,28 @@ Store a global mapping of useTicker hook from where all the market data can be t
 */
 export default function MarketDataProvider({ children }) {
     const [marketDataMap, setMarketDataMap] = useState(new Map());
+    const dataRef = useRef(new Map());
+    const flushPending = useRef(false);
+
     useEffect(() => {
         const tickers = Object.keys(marketSymbols);
         const handlers = new Map();
-
-        tickers.forEach((ticker) => {
-            const handler = ((data) => {
-                setMarketDataMap((prev) => {
-                    console.log(data);
-                    const next = new Map(prev);
-                    next.set(ticker, data);
-                    return next;
+        const handler = (ticker) => (data) => {
+            dataRef.current.set(ticker , data);
+            if(!flushPending.current){
+                flushPending.current = true;
+                requestAnimationFrame(()=>{
+                    flushPending.current = false;
+                    setMarketDataMap(dataRef.current);
                 });
-            });
-            handlers.set(ticker, handler);
-            wsManager.subscriber("quote", ticker, handler);
-        });
+            }
+        };
+
+        tickers.forEach((ticker)=>{
+            handlers.set(ticker , handler(ticker));
+            wsManager.subscriber("quote" , ticker , handlers.get(ticker));
+        })
+
         return () => {
             tickers.forEach((ticker)=>{
                 wsManager.unsubscriber("quote" , ticker , handlers.get(ticker));

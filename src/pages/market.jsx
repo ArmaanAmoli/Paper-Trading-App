@@ -23,7 +23,7 @@ export default function Market() {
                 <tbody className="w-full">
                     {marketDataMap && marketDataMap.size > 0 && tickers.map((ticker, index) => {
                         const quote = marketDataMap.get(ticker);
-                        console.log(quote);
+                        // console.log(quote);
                         if(quote === undefined)return;
                         const indexFullName = marketSymbols[ticker];
                         const value = quote.change;

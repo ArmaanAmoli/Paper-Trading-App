@@ -1,25 +1,59 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { WatchlistContext, UserAccountContext, UserEquityContext, IndicatorsList } from "../Context/context.js";
 import api from "../services/api.js";
 import { fetchQuote } from "../services/dataRequesterForCharts.js";
 import { getWatchlist } from "../services/watchlist.js";
+import { wsManager } from "../lib/wsManager.js";
 
 /*Provide the watchlist array state to all the elements
 so that we can add a new element to watchlist from anywhere*/
 const WatchlistProvider = (({ children }) => {
     const [watchlistArray, setWatchlistArray] = useState([]);
+    const [watchlistMap, setWatchListMap] = useState(new Map());
+    const dataRef = useRef(new Map());
+    const flushPending = useRef(false);
+
     useEffect(() => {
+
         async function fetchWatchlistData() {
             const res = await getWatchlist();
             setWatchlistArray(res.symbols);
-            // console.log(watchlistArray);
+            console.log("Fetch effect watchilst", res.symbols);
         }
-        fetchWatchlistData();
+        fetchWatchlistData(); //Getting watchlist array form the database;
         const intervalID = setInterval(fetchWatchlistData, 10000);
         return () => clearInterval(intervalID);
     }, []);
+
+    useEffect(() => {
+        // console.log("Subscribe effect watchlist: " , watchlistArray)
+        const handlers = new Map();
+        watchlistArray.forEach((ticker) => {
+
+            const handler = (data) => {
+                dataRef.current.set(ticker, data);
+                if (!flushPending.current) {
+                    flushPending.current = true;
+                    requestAnimationFrame(() => {
+                        flushPending.current = false;
+                        setWatchListMap(new Map(dataRef.current));
+                    }
+                    );
+                }
+            }
+            handlers.set(ticker, handler);
+            wsManager.subscriber("quote", ticker, handler);
+        });
+
+        return () => {
+            watchlistArray.forEach((ticker) => {
+                wsManager.unsubscriber("quote", ticker, handlers.get(ticker));
+            })
+        };
+    }, [watchlistArray]);
+
     return (
-        <WatchlistContext.Provider value={[watchlistArray, setWatchlistArray]}>
+        <WatchlistContext.Provider value={{ "watchlistArrayState": [watchlistArray, setWatchlistArray], "watchlistMap": watchlistMap }}>
             {children}
         </WatchlistContext.Provider>
     );
@@ -79,7 +113,7 @@ const UserEquityProvider = (({ children }) => {
 
                 //collecting the current prices for all the symbols in portfolio
                 const quotes = await Promise.all(portfolio.map((item) => fetchQuote(item.symbol)));
-                console.log("Quotes", quotes);
+                // console.log("Quotes", quotes);
                 // Keep in mind that order of symbols in quotes and userPortfolio is same
                 const updatedData = {}; //will store fresh calculated pnl data
                 let total = Number(0); //consist the sum of pnl which will later be added to equity
