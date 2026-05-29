@@ -6,17 +6,21 @@ import ProtectedRoutes from "./protectedRoutes.jsx";
 import StockMainChart from "../pages/stockChart.jsx";
 import PortfolioPage from "../pages/portfolioPage.jsx";
 import UserProfile from "../pages/userProfile.jsx";
-import { WatchlistProvider, UserEquityProvider, UserAccountProvider ,IndicatorsListProvider} from "../Context/context.jsx";
+import { WatchlistProvider, UserEquityProvider, UserAccountProvider, IndicatorsListProvider } from "../Context/context.jsx";
+import MarketDataProvider from "../Context/MarketPageContextProvider.jsx";
+
 
 const AuthenticatedProviders = () => {
     return (
         <UserAccountProvider>
             <UserEquityProvider>
-                <WatchlistProvider>
-                    <IndicatorsListProvider>
-                        <Outlet />
-                    </IndicatorsListProvider>
-                </WatchlistProvider>
+                <MarketDataProvider>
+                    <WatchlistProvider>
+                        <IndicatorsListProvider>
+                            <Outlet />
+                        </IndicatorsListProvider>
+                    </WatchlistProvider>
+                </MarketDataProvider>
             </UserEquityProvider>
         </UserAccountProvider>
     );

@@ -3,9 +3,6 @@ import { WatchlistContext, UserAccountContext, UserEquityContext, IndicatorsList
 import api from "../services/api.js";
 import { fetchQuote } from "../services/dataRequesterForCharts.js";
 import { getWatchlist } from "../services/watchlist.js";
-import { WebSocketManager } from "../lib/wsManager.js";
-import indicesFullName from "../services/Indices data/indicesFullName.json";
-import { marketQuoteHandler } from "../services/Indices data/IndicesPageData.js";
 
 /*Provide the watchlist array state to all the elements
 so that we can add a new element to watchlist from anywhere*/
@@ -151,25 +148,7 @@ const IndicatorsListProvider = (({ children }) => {
     );
 });
 
-const MarketDataProvider = (({ children }) => {
 
-    useEffect(() => {
-        const ws = new WebSocketManager();
-
-        ws.connect("quote", "ws://127.0.0.1:8001/ws/quote");
-        const tickers = Object.keys(indicesFullName);
-        tickers.forEach((ticker) => {
-            ws.subscriber("quote", ticker, marketQuoteHandler);
-        })
-        return ()=>{
-            ws.disconnect("quote");
-        }
-    },[]);
-
-    return (
-        <MarketData.Provider>{children}</MarketData.Provider>
-    )
-})
 
 
 export { WatchlistProvider, UserEquityProvider, UserAccountProvider, IndicatorsListProvider };

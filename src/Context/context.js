@@ -13,4 +13,4 @@ const IndicatorsList = createContext();
 
 const MarketData = createContext();
 
-export {WatchlistContext , UserAccountContext , UserEquityContext , IndicatorsList};
+export {WatchlistContext , UserAccountContext , UserEquityContext , IndicatorsList , MarketData};
