@@ -149,19 +149,15 @@ async def get_quote(ticker):
      # LOGIC
     stock = yf.Ticker(ticker)
     # info =stock.info
-    info = await asyncio.to_thread(lambda: stock.info)
+    fast_info = await asyncio.to_thread(lambda: stock.fast_info)
+    current_price = fast_info.get('last_price') or fast_info.get('regularMarketPrice')
+    prev_close = fast_info.get('previous_close') or fast_info.get('regularMarketPreviousClose')
     
-    if info is None or 'currentPrice' not in info:
-        hist = stock.history(period="1d" , interval = "1m")
-        if(hist.empty):
-            raise ValueError("No price data found for the ticker.")
-        
-        current_price = stock.fast_info['last_price']
-        prev_close = stock.fast_info['previous_close']
-        
-    else:  
-        current_price = info.get('currentPrice')
-        prev_close = info.get('previousClose')
+    if current_price is None or prev_close is None:
+        raise ValueError("No price data found for the ticker.")
+    # else:  
+    #     current_price = info.get('currentPrice')
+    #     prev_close = info.get('previousClose')
         
     change = current_price - prev_close
     per_change = (change/prev_close)*100

@@ -34,15 +34,17 @@ async def update_rates_every_24h():
         await asyncio.sleep(86400)
         await fetch_rates()
 
+_currency_cache = {}
 async def get_currency(ticker):
-    try:
-        t = yf.Ticker(ticker)
-        info = await asyncio.to_thread(lambda: t.fast_info)
-        return info.get("currency", "USD")
-    except:
-        return "USD"
+    if ticker not in _currency_cache:
+        try:
+            t = yf.Ticker(ticker)
+            info = await asyncio.to_thread(lambda: t.fast_info)
+            _currency_cache[ticker] = info.get("currency", "USD")
+        except:
+            _currency_cache[ticker] = "USD"
+    return _currency_cache[ticker]
         
-    
 
 '''
 {
