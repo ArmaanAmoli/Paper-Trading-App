@@ -79,14 +79,13 @@ async def fetch_and_broadcast(ticker:str):
             ticker_subscribers[ticker].remove(ws)
         await asyncio.sleep(10)
 
-async def delayed_start(ticker , delay):
-    await asyncio.sleep(delay)
-    await fetch_and_broadcast(ticker)
+# async def delayed_start(ticker , delay):
+#     await asyncio.sleep(delay)
+#     await fetch_and_broadcast(ticker)
 
 def start_fetcher(ticker:str):
     if ticker not in fetcher_tasks:
-        delay = len(fetcher_tasks)*0.5
-        task = asyncio.create_task(delayed_start(ticker , delay))
+        task = asyncio.create_task(fetch_and_broadcast(ticker))
         fetcher_tasks[ticker] = task
         
 def stop_fetcher(ticker:str):

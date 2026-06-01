@@ -10,6 +10,7 @@ import datetime
 from talib import MA_Type
 import time
 
+tickerCache = {}
 
 def _normalize_history_period(interval: str, timeperiod: int) -> str:
     """Convert an interval/timeperiod request into a Yahoo Finance period."""
@@ -146,32 +147,53 @@ async def last_candle(ticker , interval):
     return output
 
 async def get_quote(ticker):
-     # LOGIC
-    stock = yf.Ticker(ticker)
-    # info =stock.info
-    fast_info = await asyncio.to_thread(lambda: stock.fast_info)
-    current_price = fast_info.get('last_price') or fast_info.get('regularMarketPrice')
-    prev_close = fast_info.get('previous_close') or fast_info.get('regularMarketPreviousClose')
-    
-    if current_price is None or prev_close is None:
-        raise ValueError("No price data found for the ticker.")
-    # else:  
-    #     current_price = info.get('currentPrice')
-    #     prev_close = info.get('previousClose')
-        
-    change = current_price - prev_close
-    per_change = (change/prev_close)*100
-    
     curr = (await get_currency(ticker)).strip().upper()
-    rate = currency.rates["rates"].get(curr, 1)
+    
+    if(ticker in tickerCache):
+        
+        currentTime = datetime.datetime.now()
+        timeDifference = currentTime - tickerCache[ticker]["time"]
+        timeDifferenceInSeconds = timeDifference.total_seconds()
+        if(timeDifferenceInSeconds < 15):
+            return tickerCache[ticker]["quote"]
+     # LOGIC
+    def _fetch():
+        try:
+            stock = yf.Ticker(ticker)
+            # info =stock.info
+            fast_info = stock.fast_info
+            current_price = fast_info.get('lastPrice') or fast_info.get('regularMarketPrice')
+            prev_close = fast_info.get('previousClose') or fast_info.get('regularMarketPreviousClose')
+            
+            if current_price is None or prev_close is None:
+                raise ValueError("No price data found for the ticker.")
+            # else:  
+            #     current_price = info.get('currentPrice')
+            #     prev_close = info.get('previousClose')
+                
+            change = current_price - prev_close
+            per_change = (change/prev_close)*100
+            
+            # curr = (get_currency(ticker)).strip().upper()
+            rate = currency.rates["rates"].get(curr, 1)
 
-    current_price = current_price/rate
-    change = change / rate
-    response = {
-        "currentPrice":round(current_price,2),
-        "change":round(change,3),
-        "percentChange":round(per_change,3)
-    }
+            current_price = current_price/rate
+            change = change / rate
+            response = {
+                "ticker":ticker,
+                "currentPrice":round(current_price,2),
+                "change":round(change,3),
+                "percentChange":round(per_change,3)
+            }
+            tickerCache[ticker] = {
+                "quote":response,
+                "time":datetime.datetime.now()
+            }
+            return response
+        except Exception as e:
+            print("An error occured in get_quote function in data.py :\n ",e)
+    
+    response = await asyncio.to_thread(_fetch)
     print(response)
     return response
 

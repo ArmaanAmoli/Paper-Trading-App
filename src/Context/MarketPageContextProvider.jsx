@@ -21,7 +21,7 @@ export default function MarketDataProvider({ children }) {
                 flushPending.current = true;
                 requestAnimationFrame(()=>{
                     flushPending.current = false;
-                    setMarketDataMap(dataRef.current);
+                    setMarketDataMap(new Map(dataRef.current));
                 });
             }
         };
