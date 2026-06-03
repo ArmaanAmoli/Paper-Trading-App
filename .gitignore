@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
 
 # Editor directories and files
 .vscode/*
@@ -24,7 +25,6 @@ dist-ssr
 *.sw?
 
 YahooFinanceDataPipeline/yahoo/.yahoo
-YahooFinanceDataPipeline/__pycache__
 YahooFinanceDataPipeline/exchange_rates.json
 YahooFinanceDataPipeline/test.ipynb
 YahooFinanceDataPipeline/Main/__pycache__

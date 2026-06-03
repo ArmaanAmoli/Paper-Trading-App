@@ -10,9 +10,9 @@ import { wsManager } from "../../lib/wsManager.js";
 
 // Helper to batch rapid series updates onto the next animation frame.
 const makeBufferedSeriesUpdater = (series) => {
-    let scheduled = false;
-    let lastPoint = null;
-    return (point) => {
+    let scheduled = false; // If alreay a reqAnimationFrame scheduled ?
+    let lastPoint = null; // The latest price quote.
+    return (point) => { // function that we will return to a useRef;
         if (!point) return;
         lastPoint = point;
         if (scheduled) return;
@@ -136,9 +136,6 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
         mergePriceIntoLastCandle(price);
     }, [mergePriceIntoLastCandle]);
 
-    // const mergeCurrentIndicatorValuesWithChart = useCallback(()=>{
-
-    // });
 
     //fetching Historical data
     useEffect(() => {
@@ -168,15 +165,15 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
         const chart = createChart(chartContainerRef.current, {
             autoSize: true,
             layout: {
-                background: '#161616',
+                background: '#000000',
                 textColor: 'rgba(255, 255, 255, 0.9)',
                 panes: {
                     separatorColor: 'rgba(255, 255, 255, 0.2)'
                 }
             },
             grid: {
-                vertLines: { color: '#ffffff1a' },
-                horzLines: { color: '#ffffff1a' },
+                vertLines: { color: '#ffffff0c' },
+                horzLines: { color: '#ffffff0c' },
             },
             timeScale: {
                 borderColor: 'rgba(197, 203, 206, 0.8)',
@@ -199,7 +196,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             wickDownColor: '#ef5350',
         }, 0);
 
-        chartRef.current = chart;
+        chartRef.current = chart; // Saving the chart object accross rerender
         seriesRef.current = series;
         // Create a buffered updater for the main candlestick series to avoid
         // blocking the main thread when many quote updates arrive.
@@ -349,7 +346,6 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                                 color: isGreen ? 'rgba(76, 175, 80, 0.5)' : 'rgba(255, 82, 82, 0.5)'
                             };
                         })
-                        // console.log("final data: ", finalData);
                         hist.setData(finalData);
                         {
                             const props = {

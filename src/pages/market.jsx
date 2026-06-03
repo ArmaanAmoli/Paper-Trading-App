@@ -35,7 +35,7 @@ export default function Market() {
                             };
 
                             return (
-                                <tr className='w-full grid grid-cols-10 gap-2 py-4 hover:bg-white/15' key={ticker + index} onClick={() => {
+                                <tr className='w-full grid grid-cols-10 gap-2 py-4 hover:bg-white/15 hover:overflow-hidden' key={ticker + index} onClick={() => {
                                     navigate(`/chart/${ticker}`)
                                 }}>
                                     <td className='col-span-1 grid justify-center items-center'>{index + 1}</td>

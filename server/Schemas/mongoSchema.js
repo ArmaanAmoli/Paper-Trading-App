@@ -1,4 +1,4 @@
-import { Double } from "mongodb";
+import { Double, MongoOIDCError } from "mongodb";
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema({
@@ -8,7 +8,13 @@ const UserSchema = new mongoose.Schema({
     balance: { type: Number, default: 1000000 },
     blockedMargin: {type: Number , default:0},
     createdAt: { type: Date, default: Date.now },
-    lastLogin: { type: Date }
+    lastLogin: { type: Date },
+
+    notificationSubscription:{
+        type:NotificationSubscribers,
+        default:null
+    }
+
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -52,5 +58,26 @@ const StopLossSchema = new mongoose.Schema({
     
 });
 const StopLoss = mongoose.model('StopLoss' , StopLossSchema);
+
+const NotificationSubscribers = new mongoose.Schema({
+    endpoint:{
+        type:String,
+        required:true
+    },
+    expirationTime:{
+        type:Number,
+        default:null
+    },
+    keys:{
+        p256dh:{
+            type:String,
+            required:true,
+        },
+        auth:{
+            type:String,
+            require:true,
+        }
+    }
+},{_id:false})
 
 export { User, Portfolio, Trade , Watchlist , StopLoss};

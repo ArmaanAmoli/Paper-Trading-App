@@ -25,16 +25,10 @@ try {
     process.exit(1);
 }
 
+
 //MIDDLEWARES
 server.use(express.json());
-
-// server.use(cors({
-//     origin: "http://localhost:5173",
-//     methods: ["GET", "POST", "PUT", "DELETE"],
-//     allowedHeaders: ["Content-Type", "Authorization"]
-// }));
 server.use(cors());
-
 
 const validateEmail = (req, res, next) => {
     const { email } = req.body;
