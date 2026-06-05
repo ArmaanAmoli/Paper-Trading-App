@@ -4,12 +4,14 @@ import { useParams } from "react-router-dom";
 import { placeOrder } from "../services/placeOrder.js";
 import Ticker from "./ticker.jsx";
 import { useTicker } from "../hooks/useTicker.js";
+import { ToastContainer, toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function OrderForm() {
-    const [stopLossQty , setStopLossQty] = useState([]);
-    const [stopLossLvl , setStopLossLvl] = useState([]);
-    const [takeProfitQty , setTakeProfitQty] = useState([]);
-    const [takeProfitLvl , setTakeProfitLvl] = useState([]);
+    const [stopLossQty, setStopLossQty] = useState([]);
+    const [stopLossLvl, setStopLossLvl] = useState([]);
+    const [takeProfitQty, setTakeProfitQty] = useState([]);
+    const [takeProfitLvl, setTakeProfitLvl] = useState([]);
 
     const { ticker } = useParams();
     const data = useTicker("quote", ticker);
@@ -32,28 +34,40 @@ export default function OrderForm() {
         setTakeProfitLvl(event.target.value);
     }
 
-    async function placeTrade(){
-        if(!(stopLossLvl || stopLossQty )){
-            await placeOrder(ticker, qty, orderType , null);
+    const notifySuccess = ()=> toast.success('Trade Execution Successful');
+    const notifyFail = ()=> toast.error('Trade Execution Failed');
+
+    async function placeTrade() {
+        if (!(stopLossLvl || stopLossQty)) {
+            await placeOrder(ticker, qty, orderType, null);
         }
-        else{
+        else {
 
             const stopLossObj = {
-                symbol:ticker,
-                type:orderType === 'buy' ? 'sell' : 'buy',
-                qty:qty,
-                price:stopLossLvl
+                symbol: ticker,
+                type: orderType === 'buy' ? 'sell' : 'buy',
+                qty: qty,
+                price: stopLossLvl
             }
 
-            await placeOrder(ticker , qty , orderType , stopLossObj);
+            console.log("ORDER TYPE ------------------------> ",orderType)
+            const response = await placeOrder(ticker, qty, orderType, stopLossObj);
+            console.log("ORDER----------------------------------->" , response)
+            if(response.trade.success){
+                notifySuccess();
+            }
+            else{
+                notifyFail();
+            }
 
         }
     }
 
 
     return (
+        
         <div className="Order-Form">
-
+            <ToastContainer />
             <h1 className="mb-2">Order</h1>
 
             <div className="Select-buy-sell">
@@ -109,7 +123,7 @@ export default function OrderForm() {
             </div> */}
 
             <button className="flex w-full  justify-center items-center rounded-2xl h-12 mt-3" style={orderType === 'buy' ? { backgroundColor: '#2195f342' } : { backgroundColor: '#ff52523d' }}
-                onClick={async () => { 
+                onClick={async () => {
                     await placeTrade();
                 }}>Place Order</button>
 

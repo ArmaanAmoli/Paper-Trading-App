@@ -384,9 +384,10 @@ server.post('/buy', verifyToken, async (req, res, next) => {
         positionDetails.price = currentPrice;
         positionDetails.orderId = uuidv4();
         const b = await executeTrade(positionDetails, userId)
-        if (b.success) return res.status(200).json({ message: "Order Successfull" });
-        else return res.status(422).json({ message: "Not enough balance" });
+        if(b.success && b.duplicate) return;
+        if (b.success) return res.status(200).json(b);
     } catch (err) {
+        res.status(422).json({success:false , problem:err})
         next(err);
     }
 });

@@ -10,10 +10,10 @@ const UserSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     lastLogin: { type: Date },
 
-    notificationSubscription:{
-        type:NotificationSubscribers,
-        default:null
-    }
+    // notificationSubscription:{
+    //     type:NotificationSubscribers,
+    //     default:null
+    // }
 
 });
 

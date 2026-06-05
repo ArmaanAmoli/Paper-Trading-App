@@ -17,12 +17,14 @@ export async function placeOrder(ticker, Qty, side , stopLossOrder) {
         side: side
     }
     const url = `http://localhost:3000/${side}`;
-    const response = axios.post(url, data , config);
-    if(stopLossOrder != null){
-        const response2 = axios.post("http://localhost:3000/stopLoss" , stopLossOrder , config);
+    const responseOfTradeExecution = await axios.post(url, data , config);
+    let responseOfStopLossPlacement = {}
+    if(stopLossOrder != null && stopLossOrder.qty != 0 && stopLossOrder.price != 0){
+        responseOfStopLossPlacement = await axios.post("http://localhost:3000/stopLoss" , stopLossOrder , config);
     }
     const audio = new Audio(clickSound);
     audio.play();
-    console.log(response);
+    
+    return {trade:responseOfTradeExecution.data ?? null , stopLoss: responseOfStopLossPlacement.data ?? null};
 
 }
