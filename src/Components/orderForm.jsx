@@ -50,9 +50,9 @@ export default function OrderForm() {
                 price: stopLossLvl
             }
 
-            console.log("ORDER TYPE ------------------------> ",orderType)
+            // console.log("ORDER TYPE ------------------------> ",orderType)
             const response = await placeOrder(ticker, qty, orderType, stopLossObj);
-            console.log("ORDER----------------------------------->" , response)
+            // console.log("ORDER----------------------------------->" , response)
             if(response.trade.success){
                 notifySuccess();
             }
