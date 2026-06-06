@@ -1,3 +1,9 @@
+import mongoose from 'mongoose';
+
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env' });
+
+import { User } from '../Schemas/mongoSchema.js';
 import webpush from 'web-push';
 const WEB_PUSH_PUBLIC_KEY = process.env.WEB_PUSH_PUBLIC_KEY;
 const WEB_PUSH_PRIVATE_KEY = process.env.WEB_PUSH_PRIVATE_KEY;
@@ -8,7 +14,11 @@ webpush.setVapidDetails(
     WEB_PUSH_PRIVATE_KEY
 );
 
-export async function sendPushNotification(subscription , title , body){
+export async function sendPushNotification(userId , title , body){
+
+    const user = await User.findById(userId);
+    if(!user) throw Error("Can't find user");
+    const subscription = user.notificationSubscription;
     const payload = JSON.stringify({
         title:title,
         body:body,

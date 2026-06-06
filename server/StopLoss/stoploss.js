@@ -1,6 +1,7 @@
 import process from "node:process";
 import { StopLossExecuter } from "../queryManager.js";
 import { tickerToSL } from "./getAllStopLoss.js";
+import { sendPushNotification } from "../Services/notificationService.js";
 
 const url = "ws://127.0.0.1:8001/ws/quote";
 const token = process.env.JWT_TOKEN_05_2036;
@@ -43,12 +44,14 @@ function createSocket() {
                     await StopLossExecuter(sl);
                     toBeDeleted.push(sl);
                     console.log("Stop loss executed", sl);
+                    await sendPushNotification(sl.userId , `Paper Trading App`,`Stop Loss executed for ${sl.ticker} at price ${sl.price}`);
                 }
             } else if (sl.type === "sell") {
                 if (receivedData.currentPrice <= sl.price) {
                     await StopLossExecuter(sl);
                     toBeDeleted.push(sl);
                     console.log("Stop loss executed", sl);
+                    await sendPushNotification(sl.userId , `Paper Trading App`,`Stop Loss executed for ${sl.ticker} at price ${sl.price}`);
                 }
             }
         }

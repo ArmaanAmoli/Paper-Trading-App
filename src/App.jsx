@@ -15,11 +15,11 @@ function App() {
       console.log('This browser does not support desktop notifications.');
       return;
     }
-    if (Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
+    if (Notification.permission === "default") {
+      Notification.requestPermission().then(async (permission) => {
         console.log('Permission result:', permission);
 
-        if (permission === 'granted') {
+        if (permission === "granted") {
           new Notification('Paper Trading App: Notification enabled');
 
           const reg = await navigator.serviceWorker.ready;
@@ -28,9 +28,10 @@ function App() {
             applicationServerKey: import.meta.env.WEB_PUSH_PUBLIC_KEY
           });
 
-          console.log("Subscription object --> " , subscription);
+          console.log("Subscription object --> ", subscription);
 
-          await api.post('/save-subscription', {data:subscription})
+          const res = await api.post('/save-subscription', { data: subscription })
+          console.log("response----------->",res)
 
         } else {
           console.log('User permission not granted');

@@ -114,12 +114,18 @@ server.get('/user-data', verifyToken, async (req, res, next) => {
 })
 
 server.post('/save-subscription' ,verifyToken , async(req , res , next) => {
-    const subscriptionObject = JSON.parse(req.data);
+    const subscriptionObject = req.body.data;
+
+    if (!subscriptionObject) {
+        return res.status(400).json({ message: 'Subscription payload is required' });
+    }
+
     console.log('subscription object: ' , subscriptionObject);
     const userId = req.user.userId;
     try{
         const status = await saveSubscription(userId , subscriptionObject);
         if(status.success){
+            console.log(status);
             res.status(200).json(status);
         }
     }catch(error){
