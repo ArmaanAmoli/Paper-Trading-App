@@ -351,3 +351,15 @@ export async function getAllSL(){
     const stopLosses = await StopLoss.find({});
     return stopLosses;
 }
+
+export async function saveSubscription(userId , subscriptionObject){
+    const user = await User.findById(userId);
+    if(user){
+        user.notificationSubscription = subscriptionObject;
+        await user.save();
+        return {success:true};
+    }
+    else{
+        throw new error("user not found")
+    }
+}

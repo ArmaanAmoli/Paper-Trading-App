@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist} from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist , saveSubscription} from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -112,6 +112,22 @@ server.get('/user-data', verifyToken, async (req, res, next) => {
         next(err);
     }
 })
+
+server.post('/save-subscription' ,verifyToken , async(req , res , next) => {
+    const subscriptionObject = JSON.parse(req.data);
+    console.log('subscription object: ' , subscriptionObject);
+    const userId = req.user.userId;
+    try{
+        const status = await saveSubscription(userId , subscriptionObject);
+        if(status.success){
+            res.status(200).json(status);
+        }
+    }catch(error){
+        res.status(404).send(`error while subscribing for notificaton: ${error}`)
+        next(error);
+    }
+})
+
 //-------------------------------------------------------------------STOCK-DATA-------------------------------------------------------------------------------------------
 
 server.get('/quote', verifyToken, async (req, res, next) => {
