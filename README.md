@@ -1,124 +1,183 @@
+
 # Paper Trading App
 
-A full-stack paper trading platform for exploring stocks, placing simulated trades, tracking a portfolio, and monitoring watchlists and stop-loss orders.
+This repository houses a full-stack paper-trading application. It features a React + Vite frontend, an Express API that manages user auth and trade persistence in MongoDB, and a Python FastAPI service that supplies real-time market data and technical indicators powered by Yahoo Finance.
 
-The app is split into three parts:
+---
 
-- A React + Vite frontend for authentication, charting, portfolio views, and trade actions.
-- An Express + MongoDB API for user accounts, portfolio data, trade history, watchlists, and stop-loss storage.
-- A Python market-data service that fetches quotes, historical data, search results, and technical indicators.
+## Architecture & Component Map
 
-## Architecture
+### System Architecture
 
 ```mermaid
 flowchart LR
-	U[User] --> FE[React + Vite frontend]
-	FE --> API[Express API :3000]
-	API --> DB[(MongoDB)]
-	API --> PY[Python market-data service :8000]
-	FE --> WS[Quote / indicator websocket stream :8001]
+    User[User] --> FE[Frontend]
+    FE --> API[API Node/Express :3000]
+    API --> DB[(MongoDB)]
+    API --> PY[Market Data Service :8000]
+    FE --> WS[WebSockets]
 
-	FE -->|routes| R[Login, Signup, Landing, Chart, Portfolio, Profile]
-	API -->|auth| JWT[JWT authentication]
-	API -->|watchlists / trades| DB
-	PY -->|prices, history, indicators| API
+    FE -->|HTTP routes| R[Routes]
+    API -->|auth| JWT[JWT Tokens]
+    API -->|proxy| PY
+    PY -->|market data| FE
+
 ```
 
-### Frontend
+### Component Map (Where to look)
 
-The frontend lives in [src/](src) and is routed from [src/routes/AppRouter.jsx](src/routes/AppRouter.jsx).
+* **Frontend:** `src/` — Main router located at `src/routes/AppRouter.jsx`.
+* **Backend API:** `server/server.js` — Main Express server and route handlers.
+* **Market Data Pipelines:** `YahooFinanceDataPipeline/Main/server.py` — FastAPI endpoints handling technical indicators, pricing data, and search.
 
-- [src/pages/login.jsx](src/pages/login.jsx) and [src/pages/signup.jsx](src/pages/signup.jsx) handle authentication.
-- [src/pages/landingPage.jsx](src/pages/landingPage.jsx), [src/pages/stockChart.jsx](src/pages/stockChart.jsx), [src/pages/portfolioPage.jsx](src/pages/portfolioPage.jsx), and [src/pages/userProfile.jsx](src/pages/userProfile.jsx) make up the protected app area.
-- [src/lib/wsManager.js](src/lib/wsManager.js) connects the UI to live quote and indicator streams.
+---
 
-### Backend
-
-The Node server lives in [server/server.js](server/server.js).
-
-- Authentication uses JWT.
-- Persistent data is stored in MongoDB through Mongoose.
-- Trade execution, watchlists, user data, and stop-loss management are handled by the API.
-- Market data requests are forwarded to the Python service.
-
-### Market Data Service
-
-The Python service lives in [YahooFinanceDataPipeline/server.py](YahooFinanceDataPipeline/server.py).
-
-- It serves quote and historical data from Yahoo Finance.
-- It exposes indicator endpoints for SMA, EMA, RSI, Bollinger Bands, stochastic oscillator, volume, and OBV.
-- It also provides search results for symbols.
-
-## Setup
+## Quick Start (Development)
 
 ### Prerequisites
 
-- Node.js 18 or newer
-- npm
-- Python 3.10 or newer
-- MongoDB running locally or a MongoDB connection string
+Ensure you have **Node.js (v18+)**, **Python 3.10+**, and a running instance of **MongoDB** installed on your machine.
 
-### 1. Install the frontend and API dependencies
+### 1. Install Node Dependencies
 
-From the project root:
+From the repository root, install the dependencies for both the frontend and the Express server:
 
 ```bash
 npm install
+
 ```
 
-### 2. Configure environment variables
+### 2. Configure Environment Variables
 
-Create a `.env` file for the Node API with:
+Create a `.env` file in the root directory of the project:
 
-```bash
-MONGO_URL=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
+```env
+MONGO_URL=mongodb://localhost:27017/paper-trading
+JWT_SECRET=change_this_to_a_secure_secret_in_production
+
 ```
 
-If your Python service needs its own environment, create and activate it before starting the service.
+### 3. Spin up the Python Market-Data Service
 
-### 3. Start the Python market-data service
-
-From the `YahooFinanceDataPipeline` directory, install the Python packages used by the service and run it on port `8000`.
-
-Example:
+The Python service must be running for the Express API to fetch stock data properly.
 
 ```bash
+cd YahooFinanceDataPipeline/Main
 python -m venv .venv
-source .venv/bin/activate
-pip install fastapi uvicorn pandas yfinance TA-Lib
-uvicorn server:app --reload --host 127.0.0.1 --port 8000
+
 ```
 
-### 4. Start the Node API server
+* **On macOS/Linux:** `source .venv/bin/activate`
+* **On Windows (CMD):** `.venv\Scripts\activate.bat`
 
-From the project root, run:
+```bash
+pip install -r requirements.txt
+# Note: If requirements.txt is missing, fallback to:
+# pip install fastapi uvicorn pandas yfinance talib
+
+uvicorn server:app --reload --host 127.0.0.1 --port 8000
+
+```
+
+> **Note:** The Express server expects this service to be running explicitly at `http://127.0.0.1:8000`.
+
+### 4. Start the Node Express API
+
+Open a new terminal window, navigate back to the project root, and run:
 
 ```bash
 node server/server.js
+
 ```
 
-The API listens on port `3000`.
+The API will spin up on port `3000`.
 
-### 5. Start the frontend
+### 5. Start the Frontend Dev Server
 
-In a second terminal, run:
+Open another terminal window at the project root and run:
 
 ```bash
 npm run dev
+
 ```
 
-Vite starts the frontend on port `5173` and proxies API calls to the Node server.
+Vite will host the frontend at `http://localhost:5173` and automatically proxy endpoints targeting port `3000` via its internal configuration (`vite.config.js`).
 
-## Project Structure
+---
 
-```text
-src/                    React app, pages, hooks, charts, and UI state
-server/                 Express API, MongoDB queries, trade logic, stop-loss logic
-YahooFinanceDataPipeline/ Python market-data service and indicator calculations
+## Ports, Endpoints, & Environments
+
+### Port Reference Table
+
+| Service | Port | Key Endpoints / Features |
+| --- | --- | --- |
+| **Frontend (Vite)** | `5173` | UI Client Dashboard |
+| **Express API** | `3000` | `/sign-up`, `/login`, `/portfolio`, `/buy`, `/sell`, `/data`, `/quote` |
+| **FastAPI Service** | `8000` | `/indicators/*`, `/data`, `/quote`, `/search` |
+
+### Environment Setup
+
+* `MONGO_URL`: Connection string for MongoDB database.
+* `JWT_SECRET`: Secret key used to sign authorization tokens (1-hour default expiration lifecycle).
+
+> **Tip:** If you need to map custom ports, remember to update `server/server.js`, `vite.config.js` (proxy targets), and the WebSocket connection strings inside `src/lib/wsManager.js`.
+
+---
+
+## Key Files Directory
+
+* **API Entrypoint:** `server/server.js`
+* **Query & Business Logic:** `server/queryManager.js`
+* **MongoDB Schema Definition:** `server/Schemas/mongoSchema.js`
+* **Frontend Client Routing:** `src/routes/AppRouter.jsx`
+* **WebSocket State Manager:** `src/lib/wsManager.js`
+* **Market-Data Backend:** `YahooFinanceDataPipeline/Main/server.py`
+
+---
+
+## Data Flow (Subscription Lifecycle)
+
+```mermaid
+sequenceDiagram
+    participant Frontend
+    participant API
+    participant PY
+    participant DB
+
+    Frontend->>API: HTTP login/signup
+    Frontend->>API: Authenticated requests (portfolio, trades)
+    Frontend->>PY: WebSocket subscribe
+    PY-->>Frontend: Quote / indicator updates
+    Frontend->>API: Place trade (buy/sell)
+    API->>DB: Persist trade / update portfolio
+
 ```
 
-## Notes
+---
 
-- The frontend expects live quote and indicator websocket services to be available at the addresses configured in [src/App.jsx](src/App.jsx).
-- If you change backend ports, update [vite.config.js](vite.config.js) and the websocket URLs in the frontend.
+## Troubleshooting & Dev Tips
+
+* **Authentication Issues:** Ensure all requests to protected Express routes include the `Authorization: Bearer <token>` header.
+* **MongoDB Connection Failures:** Ensure your local Mongo daemon is active (`mongod`) and matches your `.env` connection string.
+* **Missing Market Data:** If indicators or quotes fail to load, check that the FastAPI server on port `8000` is active and hasn't run into a `yfinance` rate limit.
+* **CORS / Proxy Misconfigurations:** If network calls return 404 errors in the browser, double-check the target setups inside `vite.config.js`.
+
+---
+
+## Production Builds
+
+To compile the frontend package for production deployment, run:
+
+```bash
+npm run build
+
+```
+
+The production assets will optimize into a static `/dist` directory, ready to be served via Nginx or integrated into your Express static asset handler.
+
+---
+
+## Contributing
+
+* Open an issue for bugs, structural feedback, or feature requests.
+* Create feature branches and submit pull requests with focused, testable changes.
