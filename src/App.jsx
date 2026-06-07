@@ -6,40 +6,72 @@ import api from './services/api.js';
 // import { useEffect } from 'react';
 // import { useNavigate } from 'react-router-dom';
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 function App() {
 
-
   useEffect(() => {
-    console.log("notification effect fired")
-    if (!('Notification' in window)) {
-      console.log('This browser does not support desktop notifications.');
-      return;
-    }
-    if (Notification.permission === "default") {
-      Notification.requestPermission().then(async (permission) => {
-        console.log('Permission result:', permission);
 
-        if (permission === "granted") {
-          new Notification('Paper Trading App: Notification enabled');
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
 
-          const reg = await navigator.serviceWorker.ready;
-          const subscription = await reg.pushManager.subscribe({
+
+    const syncSubscription = async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        let subscription = await reg.pushManager.getSubscription();
+        // If no subscription exist create an new one
+        if (!subscription) {
+          const convertedVapidKey = urlBase64ToUint8Array(import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY);
+          subscription = await reg.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: import.meta.env.WEB_PUSH_PUBLIC_KEY
+            applicationServerKey: convertedVapidKey
           });
 
-          console.log("Subscription object --> ", subscription);
-
-          const res = await api.post('/save-subscription', { data: subscription })
-          console.log("response----------->",res)
-
-        } else {
-          console.log('User permission not granted');
+          // brand new subscription send to backend
+          console.log("New subscription created, sending to backend...");
+          await api.post('/save-subscription', { data: subscription });
+          return;
         }
-      });
+
+        // 4. Check LocalStorage to see if we already synced this specific subscription
+        const lastSyncedSub = localStorage.getItem('last_synced_subscription');
+        const currentSubString = JSON.stringify(subscription);
+
+        if (lastSyncedSub !== currentSubString) {
+          console.log("Subscription changed or unsynced, updating backend...");
+          await api.post('/save-subscription', { data: subscription });
+          // Save to local storage so we don't send it again next time
+          localStorage.setItem('last_synced_subscription', currentSubString);
+        } else {
+          console.log("Subscription is already up-to-date on the backend.");
+        }
+
+
+      } catch (error) {
+        console.error("Error syncing push subscription: ", error);
+      }
     }
 
-  }, [])
+    // Only run if permission is granted
+    if(Notification.permission === "granted"){
+      syncSubscription();
+    }
+    else if(Notification.permission === "default"){
+      Notification.requestPermission().then((permission)=>{
+        if(permission === "granted")syncSubscription();
+      });
+    }
+  },[]);
+
   //code to connect to websockets data feed
   useLayoutEffect(() => {
     wsManager.connect("quote", "ws://127.0.0.1:8001/ws/quote");

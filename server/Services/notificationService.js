@@ -15,8 +15,8 @@ webpush.setVapidDetails(
 );
 
 export async function sendPushNotification(userId , title , body){
-
-    const user = await User.findById(userId);
+    console.log("push notification called")
+    const user = await User.findById(userId).lean();
     if(!user) throw Error("Can't find user");
     const subscription = user.notificationSubscription;
     const payload = JSON.stringify({
@@ -24,9 +24,9 @@ export async function sendPushNotification(userId , title , body){
         body:body,
         icon:'../../src/assets/Icons/ico.png'
     });
-
     try{
         await webpush.sendNotification(subscription , payload);
+        console.log('notificaiton sended');
         return {success:true}
     }catch(error){
         console.error('Push notification failed: ' , error);
