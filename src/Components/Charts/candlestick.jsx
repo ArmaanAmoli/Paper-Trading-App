@@ -1,4 +1,4 @@
-import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries } from "lightweight-charts";
+import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries , LineStyle} from "lightweight-charts";
 import { useEffect, useRef, useState, useContext } from "react";
 import { fetchData } from "../../services/dataRequesterForCharts.js";
 import { useCallback } from "react";
@@ -20,6 +20,7 @@ const makeBufferedSeriesUpdater = (series) => {
         requestAnimationFrame(() => {
             try {
                 if (lastPoint) series.update(lastPoint);
+
             } catch (e) {
                 console.warn('Series update failed', e);
             }
@@ -259,7 +260,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                 console.warn("Failed to unsubscribe during indicator update", key, error);
             }
         }
-        
+
         // Clear all old indicators and subscriptions before rendering new ones
         pm.removeAll();
         indicatorHandlersRef.current.clear();
@@ -326,24 +327,26 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                             }
                         }], true);
 
+                        hist.applyOptions({
+                            priceLineColor: '#FFFFFF',
+                            priceLineStyle: LineStyle.Dotted
+                        });
+
                         chart.priceScale('volume-overlay').applyOptions({
                             scaleMargins: {
                                 top: 0.85,    // Volume starts at 80% from the top
                                 bottom: 0.01, // Tiny gap at the very bottom
                             },
-
-
                         });
 
                         const finalData = item.data.map((quote) => {
                             const time = (new Date(quote.Date)).getTime() / 1000;
                             const candle = priceByTime.get(time);
-                            const isGreen = candle ? (candle.close - candle.open >= 0) : true;
-
+                            const color = quote.color;
                             return {
                                 time,
                                 value: Number(quote['Volume']),
-                                color: isGreen ? 'rgba(76, 175, 80, 0.5)' : 'rgba(255, 82, 82, 0.5)'
+                                color: color
                             };
                         })
                         hist.setData(finalData);
@@ -358,8 +361,9 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
                                 if (!msg) return;
                                 const time = getIndicatorTime(msg);
                                 const value = getIndicatorValue(msg, "Volume");
-                                if (value === undefined || value === null) return;
-                                bufferedHistUpdate({ time, value: Number(value) });
+                                const color = getIndicatorValue(msg, "color");
+                                if (value === undefined || value === null || value === 0) return;
+                                bufferedHistUpdate({ time, value: Number(value), color: color });
                             };
                             const idKey = id;
                             indicatorHandlersRef.current.set(idKey, { handler, properties: props });
@@ -639,7 +643,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
             // Cleanup will be handled when indicators are explicitly removed or
             // when the component unmounts.
         }
-    }, [indicatorList, setIndicatorList, ticker , interval, historyLoaded]);
+    }, [indicatorList, setIndicatorList, ticker, interval, historyLoaded]);
 
     // When the ticker or interval changes, fully clear any active indicators
     // and reset the shared `IndicatorsList` so indicators reload with fresh data.

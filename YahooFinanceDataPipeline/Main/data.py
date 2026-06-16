@@ -112,6 +112,8 @@ async def last_value(ticker:str , interval:str , indicator:str , properties:dict
             if not result_data or len(result_data) == 0:
                 raise HTTPException(status_code=400, detail=f"VOL calculation returned no data for {ticker}")
             final_data = result_data[-1]
+            final_data["interval"] = interval
+            print(final_data)
             return _serialize_for_json(final_data)
         case "OBV":
             result_data = OBV_(df)
@@ -322,6 +324,8 @@ def BBAND_(df , timeperiod=20 , stdUp=2 , stdDown=2 , matype=0):
 def VOL_(df):
     try:
         data = df[['Date','Volume']]
+        condition =  df["Close"] - df["Open"] >=0
+        data['color'] = np.where(condition , 'rgba(76, 175, 80, 0.5)' ,  'rgba(255, 82, 82, 0.5)')
         final_dict = data.to_dict(orient="records")
         # print(len(final_dict))
         return final_dict

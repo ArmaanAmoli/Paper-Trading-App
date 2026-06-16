@@ -209,8 +209,7 @@ async def fetch_and_broadcast_indicator(
                     continue
             
             # Update cache with new value
-            indicator_cache[indicator_id] = data.copy()
-            
+            indicator_cache[indicator_id] = data
             # Broadcast to all subscribers, track dead connections
             dead_connections = []
             for ws in indicator_subscribers[indicator_id]:

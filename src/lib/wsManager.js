@@ -124,7 +124,7 @@ export class WebSocketManager {
                     }
 
                     if (handlers) {
-                        handlers.forEach((fn) => fn(data)); // Call each handler with indicator data
+                        handlers.forEach((fn) => {fn(data)}); // Call each handler with indicator data
                     }
                 } else if (data.ticker) {
                     // QUOTE UPDATE: Use ticker as key
