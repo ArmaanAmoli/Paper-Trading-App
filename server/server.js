@@ -240,8 +240,8 @@ server.delete('/user-watchlist/delete', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const symbol = req.body.symbol;
-        console.log(req.body)
-        console.log(symbol);
+        // console.log(req.body)
+        // console.log(symbol);
         const response = await RemoveFromWatchlist(userId, symbol);
         if (response) {
             res.status(200).json({ success: true });
@@ -286,7 +286,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 timeperiod: timeperiod
                             }
                         })
-                    console.log("SMA:", fastAPIRes.data);
+                    // console.log("SMA:", fastAPIRes.data);
                     res.json(fastAPIRes.data);
                     break;
                 }
@@ -302,7 +302,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 timeperiod: timeperiod
                             }
                         });
-                    console.log("EMA:", fastAPIRes.data);
+                    // console.log("EMA:", fastAPIRes.data);
                     res.json(fastAPIRes.data);
                     break;
                 }
@@ -318,7 +318,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 timeperiod: timeperiod
                             }
                         });
-                    console.log("RSI:", fastAPIRes.data);
+                    // console.log("RSI:", fastAPIRes.data);
                     res.json(fastAPIRes.data);
                     break;
                 }
@@ -333,7 +333,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 interval: interval,
                             }
                         });
-                    console.log("VOL:", fastAPIRes.data);
+                    // console.log("VOL:", fastAPIRes.data);
                     res.json(fastAPIRes.data);
                     break;
                 }
@@ -348,7 +348,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                                 interval: interval,
                             }
                         });
-                    console.log("OBV:", fastAPIRes.data);
+                    // console.log("OBV:", fastAPIRes.data);
                     res.json(fastAPIRes.data);
                     break;
                 }

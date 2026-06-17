@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import CandleStickChartComponent from '../Components/Charts/candlestick.jsx';
 import Watchlist from '../Components/watchlist.jsx';
 import "./styles/stockChart.css"
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import OrderForm from '../Components/orderForm.jsx';
 import { IndicatorsList } from '../Context/context.js';
 import MovingAvgPopUp from '../Components/IndicatorPopUps/movingAvgPopUp.jsx';
@@ -10,6 +10,20 @@ import RSIPopUp from '../Components/IndicatorPopUps/rsiPopUp.jsx';
 import BBandPopUp from '../Components/IndicatorPopUps/boilingerBandPopUp.jsx';
 import VolumePopUp from '../Components/IndicatorPopUps/volumeIndicatorPopUp.jsx';
 import StochasticOscillatorPopUp from '../Components/IndicatorPopUps/stochasticOscillatorPopUp.jsx';
+
+function ClickOutside({children , onClose}){
+    const ref = useRef(null);
+    useEffect(()=>{
+        const handleClick = (e) => {
+            if(ref.current && !ref.current.contains(e.target)){ // if clicked element not inside container close the window
+                onClose();
+            }
+        };
+        document.addEventListener('mousedown' , handleClick);
+        return ()=>document.removeEventListener('mousedown' , handleClick);
+    },[onClose]);
+    return <div className="absolute z-1000 " ref={ref}>{children}</div>
+}
 
 export default function StockMainChart() {
     const [activePanel, setActivePanel] = useState('none');
@@ -34,7 +48,7 @@ export default function StockMainChart() {
 
     return (
 
-        <div className="chart-page">
+        <div className="chart-page" >
             <div className="Drawing-Sidebar">
                 {/* 
                     Simple Moving Average 
@@ -80,12 +94,11 @@ export default function StockMainChart() {
                 <button className="Sidebar-Button" id="place-order" onClick={toggleOrderForm}></button>
             </div>
 
-            {maPopUp && <MovingAvgPopUp Interval={Interval}/>}
-            {rsiPopUp && <RSIPopUp Interval={Interval}/>}
-            {bBandPopUp && <BBandPopUp Interval={Interval}/>}
-            {volPopup && <VolumePopUp Interval={Interval}/>}
-            {stocasticPopUp && <StochasticOscillatorPopUp Interval={Interval}/>}
-
+            {maPopUp && <ClickOutside onClose={()=>{setMaPopUp(false)}}><MovingAvgPopUp Interval={Interval}/></ClickOutside>}
+            {rsiPopUp && <ClickOutside onClose={()=>{setRsiPopUp(false)}}><RSIPopUp Interval={Interval}/></ClickOutside>}
+            {bBandPopUp && <ClickOutside onClose={()=>{setBBandPopUp(false)}}><BBandPopUp Interval={Interval}/></ClickOutside>}
+            {volPopup && <ClickOutside onClose={()=>{setVolPopUp(false)}}><VolumePopUp Interval={Interval}/></ClickOutside>}
+            {stocasticPopUp && <ClickOutside onClose={()=>{setStocasticPopUp(false)}}><StochasticOscillatorPopUp Interval={Interval}/></ClickOutside>}
         </div>
 
     );
