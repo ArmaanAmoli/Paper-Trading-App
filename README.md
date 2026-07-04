@@ -181,3 +181,9 @@ The production assets will optimize into a static `/dist` directory, ready to be
 
 * Open an issue for bugs, structural feedback, or feature requests.
 * Create feature branches and submit pull requests with focused, testable changes.
+
+
+
+https://github.com/user-attachments/assets/89af33dc-971e-4b24-9ae1-a9e26596a0c3
+
+
