@@ -13,7 +13,7 @@ export default function PortfolioPage() {
     return (
         <>
             <div className="Portfolio-page">
-                <Navbar />
+                <div className="w-99/100 sticky top-0 border-2 border-white/25 mt-1 rounded-3xl px-8 py-1"><Navbar/></div>
                 <div className="Portfolio-of-user">
                     <div className="Account-status">
 

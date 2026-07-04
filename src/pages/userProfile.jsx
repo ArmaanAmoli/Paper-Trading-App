@@ -60,7 +60,7 @@ export default function UserProfile() {
     return (
 
         <div className="w-screen h-dvh grid grid-cols-10 gap-1 grid-row-1 overflow-auto">
-
+            
             <div className="grid grid-rows-10 col-span-2 sticky left-0">
 
                 <div className="row-span-7 grid grid-rows-5">
