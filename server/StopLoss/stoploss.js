@@ -3,7 +3,8 @@ import { StopLossExecuter } from "../queryManager.js";
 import { tickerToSL } from "./getAllStopLoss.js";
 import { sendPushNotification } from "../Services/notificationService.js";
 
-const url = "ws://127.0.0.1:8001/ws/quote";
+const FAST_API_WEB_SOCKET_SERVER_DOMAIN = process.env.FAST_API_WEB_SOCKET_SERVER_DOMAIN;
+const url = FAST_API_WEB_SOCKET_SERVER_DOMAIN + "/ws/quote";
 const token = process.env.JWT_TOKEN_05_2036;
 
 export let socket = null;
