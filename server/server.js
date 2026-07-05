@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist , saveSubscription} from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist, saveSubscription } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -12,6 +12,7 @@ import { socket } from './StopLoss/stoploss.js';
 import { StopLoss } from './Schemas/mongoSchema.js';
 import { stopLossWS } from './StopLoss/stoploss.js';
 
+const FAST_API_SERVER_DOMAIN = process.env.FAST_API_SERVER_DOMAIN;
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
 const port = 3000;
@@ -113,22 +114,22 @@ server.get('/user-data', verifyToken, async (req, res, next) => {
     }
 })
 
-server.post('/save-subscription' ,verifyToken , async(req , res , next) => {
+server.post('/save-subscription', verifyToken, async (req, res, next) => {
     const subscriptionObject = req.body.data;
 
     if (!subscriptionObject) {
         return res.status(400).json({ message: 'Subscription payload is required' });
     }
 
-    console.log('subscription object: ' , subscriptionObject);
+    console.log('subscription object: ', subscriptionObject);
     const userId = req.user.userId;
-    try{
-        const status = await saveSubscription(userId , subscriptionObject);
-        if(status.success){
+    try {
+        const status = await saveSubscription(userId, subscriptionObject);
+        if (status.success) {
             console.log(status);
             res.status(200).json(status);
         }
-    }catch(error){
+    } catch (error) {
         res.status(404).send(`error while subscribing for notificaton: ${error}`)
         next(error);
     }
@@ -140,7 +141,7 @@ server.get('/quote', verifyToken, async (req, res, next) => {
     try {
         const query = req.query;
         const ticker = query.ticker;
-        const fastAPIRes = await axios.get('http://127.0.0.1:8000/quote', {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/quote', {
             params: {
                 ticker: ticker
             }
@@ -154,7 +155,7 @@ server.get('/data', verifyToken, async (req, res, next) => {
         const ticker = query.ticker;
         const interval = query.interval;
         const period = query.period;
-        const fastAPIRes = await axios.get('http://127.0.0.1:8000/data', {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/data', {
             params: {
                 ticker: ticker,
                 period: period,
@@ -205,7 +206,7 @@ server.get('/search', verifyToken, async (req, res, next) => {
     const query = req.query.query;
     // console.log(query)
     try {
-        const fastAPIRes = await axios.get('http://127.0.0.1:8000/search', {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/search', {
             params: {
                 query: query,
             }
@@ -276,7 +277,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
         switch (indicator) {
             case "SMA":
                 {
-                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/SMA',
+                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/SMA',
                         {
                             params:
                             {
@@ -292,7 +293,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                 }
             case "EMA":
                 {
-                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/EMA',
+                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/EMA',
                         {
                             params:
                             {
@@ -308,7 +309,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                 }
             case "RSI":
                 {
-                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/RSI',
+                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/RSI',
                         {
                             params:
                             {
@@ -324,7 +325,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                 }
             case "VOL":
                 {
-                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/VOL',
+                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/VOL',
                         {
                             params:
                             {
@@ -339,7 +340,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                 }
             case "OBV":
                 {
-                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/OBV',
+                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/OBV',
                         {
                             params:
                             {
@@ -354,7 +355,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                 }
             case "BBAND":
                 {
-                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/BBAND', {
+                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/BBAND', {
                         params: {
                             ticker: ticker,
                             period: period,
@@ -371,7 +372,7 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
                 }
             case "STOCH":
                 {
-                    const fastAPIRes = await axios.get('http://127.0.0.1:8000/indicators/STOCH', {
+                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/STOCH', {
                         params: {
                             ticker: ticker,
                             period: period,
@@ -406,10 +407,10 @@ server.post('/buy', verifyToken, async (req, res, next) => {
         positionDetails.price = currentPrice;
         positionDetails.orderId = uuidv4();
         const b = await executeTrade(positionDetails, userId)
-        if(b.success && b.duplicate) return;
+        if (b.success && b.duplicate) return;
         if (b.success) return res.status(200).json(b);
     } catch (err) {
-        res.status(422).json({success:false , problem:err})
+        res.status(422).json({ success: false, problem: err })
         next(err);
     }
 });
@@ -449,9 +450,9 @@ server.post('/stopLoss', verifyToken, async (req, res, next) => {
         const value = tickerToSL.get(ticker)
         value.push(stopLossObj.toJSON());
 
-        return res.status(200).json({message:"Stop loss order placed."})
+        return res.status(200).json({ message: "Stop loss order placed." })
     }
-    catch(err){
+    catch (err) {
         next(err);
     }
 });
@@ -467,13 +468,18 @@ server.use((err, req, res, next) => {
 server.listen(port, (error) => {
     stopLossWS();
     if (!error) {
-        console.log(`Server running on http:/localhost:${port}`)
+        console.log(`Server running on port {port}`)
     } else {
         console.log("An error occured, unable to start server.")
     }
 
-    process.on('SIGTERM' , ()=>{
+    process.on('SIGTERM', () => {
         console.log("Stop Loss Web Socket connection closed.");
         socket.close();
+
+        server.close(() => {
+            console.log("HTTP server closed. Exiting process.");
+            process.exit(0); // Cleanly exit
+        });
     });
 });

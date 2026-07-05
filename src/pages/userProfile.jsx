@@ -109,9 +109,9 @@ export default function UserProfile() {
 
                 <div className="row-span-10 w-full h-full">
 
-                    <table className='border-collapse w-full border border-white/20 grid grid-rows-10 '>
-                        <thead className='row-span-1 w-full border border-white/10 sticky top-5 bg-black/20 backdrop-blur-md'>
-                            <tr className='w-full grid grid-cols-10 h-full items-center'>
+                    <table className='border-collapse w-full border border-white/20 flex flex-col '>
+                        <thead className='h-[60px] w-full border border-white/10 sticky top-5 bg-black/20 backdrop-blur-md'>
+                            <tr className='w-full grid grid-cols-10 h-[60px] items-center'>
                                 <th className='col-span-1 grid justify-center items-center h-full'>S.No</th>
                                 <th className='col-span-2 grid justify-center items-center h-full'>Symbol</th>
                                 <th className='col-span-2 grid justify-center items-center h-full'>Side</th>
@@ -120,7 +120,7 @@ export default function UserProfile() {
                                 <th className='col-span-2 grid justify-center items-center h-full'>Timestamp</th>
                             </tr>
                         </thead>
-                        <tbody className='row-span-9 w-full border border-white/10'>
+                        <tbody className='w-full border border-white/10'>
                             {tradeHistory && tradeHistory.length > 0 && tradeHistory.map((item, index) => {
                                 const value = item.realizedPL.toFixed(2);
                                 const textStyle = {

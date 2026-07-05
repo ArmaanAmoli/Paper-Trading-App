@@ -4,7 +4,6 @@ import asyncio
 from currency import update_rates_every_24h , get_currency
 from contextlib import asynccontextmanager
 import yfinance as yf
-import currency
 import uvicorn
 from data import get_quote , last_candle , last_value
 from collections import defaultdict
