@@ -37,7 +37,6 @@ jedi==0.19.2
 Jinja2==3.1.6
 jupyter_client==8.8.0
 jupyter_core==5.9.1
-jwt==1.4.0
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
 matplotlib-inline==0.2.1
