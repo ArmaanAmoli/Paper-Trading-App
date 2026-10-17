@@ -18,9 +18,11 @@ export async function addToWatchlist(symbol){
 export async function getWatchlist(){
     try{
         const res = await api.get('/user-watchlist');
-        return res.data[0];
+        // Return the first watchlist document or a default object with empty symbols array
+        return res.data[0] || { symbols: [] };
     }catch(err){
-        console.log(`Error in add to watchlist function ${err}`);
+        console.log(`Error in getWatchlist function ${err}`);
+        return { symbols: [] };
     }
 }
 
