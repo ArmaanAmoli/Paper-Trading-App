@@ -190,10 +190,10 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
         });
 
         const series = chart.addSeries(CandlestickSeries, {
-            upColor: '#26a69a',   // Green for increasing price
+            upColor: '#3291FF',   // Blue for increasing price (was #26a69a green)
             downColor: '#ef5350', // Red for decreasing price
             borderVisible: false,
-            wickUpColor: '#26a69a',
+            wickUpColor: '#3291FF',
             wickDownColor: '#ef5350',
         }, 0);
 

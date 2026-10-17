@@ -3,7 +3,7 @@
    CSS VARIABLES (Custom Properties)
    Think of these like constants in JavaScript.
    Define once at the top, use everywhere.
-   If you want to change the green accent color,
+   If you want to change the blue accent color,
    you only change it here — not in 50 places.
    ============================================ */
 :root {
@@ -11,7 +11,7 @@
     --surface: #0a0a0a;         /* Slightly lighter black for card backgrounds */
     --border: #1a1a1a;          /* Subtle border color, visible but not distracting */
     --border-bright: #2a2a2a;   /* Brighter border for hover states */
-    --green: #00ff88;           /* Profit green — bright and punchy on black */
+    --blue: #0070F3;            /* Profit blue — matches design system */
     --red: #ff3b5c;             /* Loss red */
     --white: #e8e8e8;           /* Soft white — pure white (#fff) is harsh on OLED */
     --muted: #555555;           /* Muted gray for less important text */
@@ -52,8 +52,8 @@
         0deg,
         transparent,
         transparent 2px,
-        rgba(0, 255, 136, 0.015) 2px,
-        rgba(0, 255, 136, 0.015) 4px
+        rgba(0, 112, 243, 0.015) 2px,
+        rgba(0, 112, 243, 0.015) 4px
     );
 }
 
@@ -88,13 +88,13 @@
     border-spacing: 0;
 
     /* 
-       A very subtle green glow around the entire table.
+       A very subtle blue glow around the entire table.
        box-shadow takes: x-offset y-offset blur-radius color
        Multiple shadows separated by commas stack on each other.
     */
     box-shadow:
         0 0 0 1px var(--border),
-        0 0 40px rgba(0, 255, 136, 0.03);
+        0 0 40px rgba(0, 112, 243, 0.03);
 
     /* Rounded corners on the table */
     border-radius: 8px;
@@ -174,7 +174,7 @@
 }
 
 /* 
-   :last-child targets only the final row in tbody.
+   :last_child targets only the final row in tbody.
    We remove its bottom border since the table itself
    already has a border — otherwise you'd see a double line.
 */
@@ -233,27 +233,27 @@
 
 /* ============================================
    PnL COLUMN (5th column)
-   Color positive PnL green and negative red.
+   Color positive PnL blue and negative red.
    
    We use a CSS trick: if the content starts with '-'
-   we make it red, otherwise green.
+   we make it red, otherwise blue.
    
    NOTE: For this to work dynamically based on value,
    you can add a class in React like:
    className={prices[item.symbol]?.Pnl < 0 ? 'negative' : 'positive'}
    ============================================ */
-/* .Asset-Table tbody td:nth-child(5),
-.Asset-Table tbody td:nth-child(6) {
+/* .Asset-Table tbody td:nth_child(5),
+.Asset-Table tbody td:nth_child(6) {
     
 } */
 
 /* Add these classes in your JSX for color coding */
 .positive {
-    color: var(--green) !important;
+    color: var(--color-blue-text) !important;
 }
 
 .negative {
-    color: var(--red) !important;
+    color: var(--color-red-text) !important;
 }
 
 /* ============================================
@@ -262,11 +262,11 @@
    to your <td> in React for colored side labels.
    ============================================ */
 .long-badge {
-    color: var(--green) !important;
+    color: var(--color-blue-text) !important;
 }
 
 .short-badge {
-    color: var(--red) !important;
+    color: var(--color-red-text) !important;
 }
 
 /* ============================================
