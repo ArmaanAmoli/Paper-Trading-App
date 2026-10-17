@@ -15,7 +15,7 @@ import { stopLossWS } from './StopLoss/stoploss.js';
 const FAST_API_SERVER_DOMAIN = process.env.FAST_API_SERVER_DOMAIN;
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
-const port = 3000;
+const port = process.env.EXPRESS_SERVER_PORT || 3001;
 
 
 try {
@@ -465,19 +465,19 @@ server.use((err, req, res, next) => {
     res.status(statusCode).json({ message: err.message || "server Error" })
 });
 
-server.listen(port, (error) => {
+const httpServer = server.listen(port, (error) => {
     stopLossWS();
     if (!error) {
-        console.log(`Server running on port {port}`)
+        console.log(`Server running on port ${port}`)
     } else {
-        console.log("An error occured, unable to start server.")
+        console.log("An error occured, unable to start server." , error)
     }
 
     process.on('SIGTERM', () => {
         console.log("Stop Loss Web Socket connection closed.");
         socket.close();
 
-        server.close(() => {
+        httpServer.close(() => {
             console.log("HTTP server closed. Exiting process.");
             process.exit(0); // Cleanly exit
         });

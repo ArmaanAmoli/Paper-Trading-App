@@ -393,5 +393,5 @@ async def indicator_ws(websocket: WebSocket):
 
 
 if __name__ =="__main__":
-    print("Server Running in ws://0.0.0.0:8001")
-    uvicorn.run("websockets_server:app", host = "0.0.0.0" , port=8001, reload=True)
+    print("Server Running in ws://localhost:8001")
+    uvicorn.run("websockets_server:app", host = "localhost" , port=8001, reload=True)

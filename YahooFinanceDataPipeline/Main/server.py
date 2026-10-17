@@ -281,5 +281,5 @@ async def get_quote(ticker: str):
 
 
 if __name__ =="__main__":
-    print("Server Running in http://0.0.0.0:8000")
-    uvicorn.run("server:app", host = "0.0.0.0" , port=8000, reload=True)
+    print("Server Running in http://localhost:8000")
+    uvicorn.run("server:app", host = "localhost" , port=8000, reload=True)

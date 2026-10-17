@@ -2,6 +2,7 @@ import './styles/login.css'
 import { Link, useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 
 export default function Signup() {
@@ -21,7 +22,7 @@ export default function Signup() {
     };
 
     const RegisterUser = async () => {
-        const res = await fetch("http://localhost:3000/sign-up", { //########################################################################
+        const res = await fetch(`${API_BASE_URL}/sign-up`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
