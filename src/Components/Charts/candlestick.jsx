@@ -166,15 +166,15 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
         const chart = createChart(chartContainerRef.current, {
             autoSize: true,
             layout: {
-                background: '#000000',
+                background: '#222021',
                 textColor: 'rgba(255, 255, 255, 0.9)',
                 panes: {
                     separatorColor: 'rgba(255, 255, 255, 0.2)'
                 }
             },
             grid: {
-                vertLines: { color: '#ffffff0c' },
-                horzLines: { color: '#ffffff0c' },
+                vertLines: { color: '#ffffff1a' },
+                horzLines: { color: '#ffffff1a' },
             },
             timeScale: {
                 borderColor: 'rgba(197, 203, 206, 0.8)',
@@ -697,7 +697,7 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
 
 
     return (
-        <div ref={chartContainerRef} style={{ width: "100%", height: "100%" }}></div>
+        <div ref={chartContainerRef} style={{ width: "100%", height: "100%", backgroundColor: "#0E0F11" }}></div>
     );
 
 }
