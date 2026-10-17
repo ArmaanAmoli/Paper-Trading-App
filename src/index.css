@@ -1,6 +1,553 @@
 @import "tailwindcss";
-html{
-    background-color: black;
-    font-family: "Geist", sans-serif;
-    color: white;
+
+@theme {
+  /* ============================================
+     GRAPHITE BACKGROUND (dark graphite grey)
+     ============================================ */
+  --color-background: #0E0F11;
+  --color-surface: #141517;
+  --color-surface-raised: #1A1B1E;
+  --color-border: #26272B;
+  --color-border-strong: #3D3D3D;
+
+  /* ============================================
+     SEMANTIC COLOR CODING (Up/Down)
+     ============================================ */
+  /* Button/badge backgrounds - keep original values */
+  --color-up: #0070F3;
+  --color-up-bg: rgba(0, 112, 243, 0.12);
+  --color-up-border: rgba(0, 112, 243, 0.20);
+  --color-up-glow: rgba(0, 112, 243, 0.25);
+
+  --color-down: #E5484D;
+  --color-down-bg: rgba(229, 72, 77, 0.12);
+  --color-down-border: rgba(229, 72, 77, 0.20);
+  --color-down-glow: rgba(229, 72, 77, 0.25);
+
+  /* Text colors for dark backgrounds - lighter shades for readability */
+  --color-blue-text: #3291FF;
+  --color-red-text: #FF6369;
+  --color-neutral-text: #707070;
+
+  --color-neutral: #707070;
+  --color-neutral-bg: rgba(112, 112, 112, 0.10);
+
+  /* ============================================
+     TEXT COLORS
+     ============================================ */
+  --color-text-primary: #EDEDED;
+  --color-text-secondary: #A1A1A1;
+  --color-text-muted: #707070;
+  --color-text-dim: #555555;
+
+  /* ============================================
+     GLASS SURFACE TOKENS (updated for graphite)
+     ============================================ */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bg-strong: rgba(255, 255, 255, 0.05);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-strong: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --glass-blur: blur(12px) saturate(140%);
+  --glass-blur-strong: blur(16px) saturate(160%);
+
+  /* Border radius */
+  --radius-panel: 12px;
+  --radius-input: 6px;
+  --radius-btn: 6px;
+  --radius-pill: 9999px;
+
+  /* ============================================
+     TRANSITIONS
+     ============================================ */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+
+  /* ============================================
+     TYPOGRAPHY
+     ============================================ */
+  --font-sans: "Geist", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
+
+  /* ============================================
+     SPACING
+     ============================================ */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+}
+
+/* ============================================
+   GLOBAL BASE STYLES
+   ============================================ */
+html {
+  background: var(--color-background);
+  min-height: 100vh;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Soft top-of-page highlight */
+html::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  max-width: 1400px;
+  height: 600px;
+  background: radial-gradient(ellipse at center top, rgba(255,255,255,0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Full-page noise overlay */
+html::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+/* ============================================
+   SEMANTIC COLOR CLASSES (single source of truth)
+   ============================================ */
+.positive {
+  color: var(--color-blue-text);
+}
+
+.negative {
+  color: var(--color-red-text);
+}
+
+.neutral {
+  color: var(--color-neutral-text);
+}
+
+/*** Badge backgrounds (for buttons, badges) ***/
+.bg-up {
+  background: var(--color-up-bg);
+  color: var(--color-up);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.bg-down {
+  background: var(--color-down-bg);
+  color: var(--color-down);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.bg-neutral {
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ============================================
+   PANEL / CARD STYLES
+   ============================================ */
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  box-shadow: 
+    var(--glass-shadow),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.panel-strong {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-panel);
+  box-shadow: 
+    var(--glass-shadow),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* ============================================
+   INPUT STYLES
+   ============================================ */
+.input {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+.btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+}
+
+.btn:hover {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-strong);
+}
+
+.btn:active {
+  background: var(--color-border);
+}
+
+.btn-pill {
+  border-radius: var(--radius-pill);
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* ============================================
+   NAVBAR - Flat, sharp, modern
+   ============================================ */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  height: 64px;
+  background: rgba(14, 15, 17, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.navbar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.navbar-brand {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  padding: 4px 0;
+}
+
+.nav-link:hover {
+  color: var(--color-text-primary);
+}
+
+.nav-link.active {
+  color: var(--color-text-primary);
+}
+
+.navbar-search {
+  flex: 1;
+  max-width: 320px;
+}
+
+.navbar-search .input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.navbar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.table thead th {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  height: 44px;
+  transition: background var(--transition-fast);
+}
+
+.table tbody tr:hover {
+  background: var(--color-surface-raised);
+}
+
+.table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+}
+
+/* Market table - explicit column widths */
+.market-table {
+  table-layout: fixed;
+}
+
+.market-table th:nth-child(1),
+.market-table td:nth-child(1) { width: 64px; text-align: left; }
+
+.market-table th:nth-child(2),
+.market-table td:nth-child(2) { width: calc(100% - 64px - 120px - 140px - 130px - 120px); text-align: left; }
+
+.market-table th:nth-child(3),
+.market-table td:nth-child(3) { width: 120px; text-align: left; }
+
+.market-table th:nth-child(4),
+.market-table td:nth-child(4) { width: 140px; text-align: right; }
+
+.market-table th:nth-child(5),
+.market-table td:nth-child(5) { width: 130px; text-align: right; }
+
+.market-table th:nth-child(6),
+.market-table td:nth-child(6) { width: 120px; text-align: right; }
+
+/* Index column: single line with ellipsis */
+.market-table td:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Watchlist table - explicit column widths */
+.watchlist-table {
+  table-layout: fixed;
+}
+
+.watchlist-table th:nth-child(1),
+.watchlist-table td:nth-child(1) { width: calc(100% - 84px - 72px - 72px); min-width: 96px; text-align: left; }
+
+.watchlist-table th:nth-child(2),
+.watchlist-table td:nth-child(2) { width: 84px; text-align: right; }
+
+.watchlist-table th:nth-child(3),
+.watchlist-table td:nth-child(3) { width: 72px; text-align: right; }
+
+.watchlist-table th:nth-child(4),
+.watchlist-table td:nth-child(4) { width: 72px; text-align: right; }
+
+/* Symbol column: single line with ellipsis */
+.watchlist-table td:nth-child(1) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Numeric columns: tabular nums, right align */
+.table td.numeric,
+.table th.numeric {
+  text-align: right;
+}
+
+.table td.numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+}
+
+/* ============================================
+   FOCUS RINGS
+   ============================================ */
+*:focus-visible {
+  outline: none;
+  ring: 2px;
+  ring-color: var(--color-up);
+  ring-offset: 2px;
+  ring-offset-color: var(--color-background);
+}
+
+/* ============================================
+   MONOSPACE TABULAR NUMBERS
+   ============================================ */
+.tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+* {
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+/* ============================================
+   SELECTION COLORS
+   ============================================ */
+::selection {
+  background-color: var(--color-up-glow);
+  color: var(--color-text-primary);
+}
+
+/* ============================================
+   FALLBACK FOR NO BACKDROP-FILTER SUPPORT
+   ============================================ */
+@supports not (backdrop-filter: blur(1px)) {
+  .navbar {
+    background: var(--color-background);
+  }
+  .panel,
+  .panel-strong,
+  .input,
+  .btn {
+    background: var(--color-surface);
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   SUBTLE ENTRY ANIMATIONS
+   ============================================ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel,
+.panel-strong {
+  animation: fade-in 0.3s var(--transition-normal) forwards;
 }

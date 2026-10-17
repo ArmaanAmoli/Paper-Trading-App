@@ -1,52 +1,62 @@
 import { WatchlistContext } from "../Context/context.js";
-// import { fetchQuote } from "./Charts/dataRequester";
-import { useContext} from "react";
+import { useContext } from "react";
 import { useNavigate } from 'react-router-dom';
 import { deleteFromWatchlist } from "../services/watchlist.js";
-import { useTicker } from "../hooks/useTicker.js";
 
 export default function Ticker({ name }) {
     const navigate = useNavigate();
-    // const quote = useTicker("quote" , name);
-    const {watchlistArrayState , watchlistMap }= useContext(WatchlistContext);
-    const watchlistArray = watchlistArrayState[0];
+    const { watchlistArrayState, watchlistMap } = useContext(WatchlistContext);
     const setWatchlistArray = watchlistArrayState[1];
-    console.log(typeof(watchlistMap));
-    console.log(watchlistMap);
     const quote = watchlistMap.get(name);
-    const handleDivClick = ()=>{
-        navigate(`/chart/${name}`);
+    const handleRowClick = () => navigate(`/chart/${name}`);
+
+    if (!quote) {
+        return (
+            <tr className="h-[44px] animate-pulse">
+                <td colSpan={4} className="text-text-dim px-4 py-3">Loading...</td>
+            </tr>
+        );
     }
 
-    if(!quote) return <div>Loading...</div>
+    const isPositive = quote.change > 0;
+    const isNegative = quote.change < 0;
+    const changePrefix = isPositive ? "+" : isNegative ? "" : "";
+    const rowColorClass = isPositive ? 'positive' : isNegative ? 'negative' : 'neutral';
+
     return (
-        
-        <div className="group relative w-full h-[40px] grid grid-cols-9 pl-[4px] items-center border border-white/10
-        hover:bg-white/20 transition-color duration-150 ease-in-out" onClick={handleDivClick}>
-
-            <p className = "col-span-3 ">
-                {name}
-            </p>
-            <p className = "col-span-2">
-                {quote.currentPrice}
-            </p>
-            <p className = "col-span-2" style={{color:quote.change<0?'red':'#8bf31c'}}>
-                {quote.change}
-            </p>
-            <p className = "col-span-2" style={{color:quote.percentChange<0?'red':'#8bf31c'}} >
-                {quote.percentChange}%
-            </p>
-
-            <button className="absolute flex right-2 opacity-0 group-hover:opacity-100 h-full w-[25px]
-            cursor-pointer bg-contain bg-no-repeat bg-[url('../../src/assets/Icons/delete-icon.png')] bg-center" onClick={async (e)=>{
-                e.stopPropagation();
-                const res = await deleteFromWatchlist(name);
-                if(res.success){
-                    setWatchlistArray(prev=>prev.filter(item=>item!==name));
-                }
-                // Here we will run the delete code
-            }}></button>
-
-        </div>
+        <tr
+            className="group h-[44px] hover:bg-surface-raised transition-colors duration-150 cursor-pointer"
+            onClick={handleRowClick}
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleRowClick(); }}
+        >
+            <td className="px-4 py-3">
+                <span className="text-sm font-medium text-text-primary tabular-nums truncate block">{name}</span>
+            </td>
+            <td className="numeric px-4 py-3">
+                <span className={rowColorClass}>{quote.currentPrice.toLocaleString()}</span>
+            </td>
+            <td className="numeric px-4 py-3">
+                <span className={rowColorClass}>{changePrefix}{quote.change.toFixed(2)}</span>
+            </td>
+            <td className="numeric relative px-4 py-3">
+                <span className={rowColorClass}>{changePrefix}{quote.percentChange.toFixed(2)}%</span>
+                <button
+                    className="absolute right-3 opacity-0 group-hover:opacity-100 btn btn-icon btn-pill hover:bg-down-bg hover:border-down/50 hover:text-red-text transition-all duration-150 focus:opacity-100 focus:ring-2 focus:ring-red-text/50 focus:ring-offset-2 focus:ring-offset-background"
+                    onClick={async (e) => {
+                        e.stopPropagation();
+                        const res = await deleteFromWatchlist(name);
+                        if (res.success) {
+                            setWatchlistArray(prev => prev.filter(item => item !== name));
+                        }
+                    }}
+                    aria-label={"Remove " + name + " from watchlist"}
+                >
+                    <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </td>
+        </tr>
     );
 }
