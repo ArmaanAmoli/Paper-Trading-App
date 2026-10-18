@@ -1,352 +1,309 @@
+@import "tailwindcss";
 
 /* ============================================
-   CSS VARIABLES (Custom Properties)
-   Think of these like constants in JavaScript.
-   Define once at the top, use everywhere.
-   If you want to change the blue accent color,
-   you only change it here — not in 50 places.
+   PORTFOLIO PAGE - NEW DESIGN
+   Uses global CSS variables from index.css
    ============================================ */
-:root {
-    --black: #000000;           /* Pure OLED black — saves battery on OLED screens */
-    --surface: #0a0a0a;         /* Slightly lighter black for card backgrounds */
-    --border: #1a1a1a;          /* Subtle border color, visible but not distracting */
-    --border-bright: #2a2a2a;   /* Brighter border for hover states */
-    --blue: #0070F3;            /* Profit blue — matches design system */
-    --red: #ff3b5c;             /* Loss red */
-    --white: #e8e8e8;           /* Soft white — pure white (#fff) is harsh on OLED */
-    --muted: #555555;           /* Muted gray for less important text */
 
-}
-
-/* ============================================
-   PAGE-SCOPED RESET
-   Keep reset local to the portfolio page so it does
-   not override Tailwind utilities in other views.
-   ============================================ */
-.Portfolio-page,
-.Portfolio-page * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* ============================================
-   PAGE WRAPPER
-   This is the outermost div that wraps everything.
-   min-height: 100vh means it always fills the full
-   viewport height (vh = viewport height).
-   ============================================ */
+/* Remove any page-scoped background override - let global graphite background show */
 .Portfolio-page {
-    background-color: var(--black);
-    min-height: 100vh;
-    
-    color: var(--white);
-
-    /* 
-       A very subtle scanline effect using repeating-linear-gradient.
-       This creates thin horizontal lines like an old CRT monitor,
-       giving it a terminal/trading screen vibe.
-       The lines are only 3% opacity so they're barely visible.
-    */
-    background-image: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 112, 243, 0.015) 2px,
-        rgba(0, 112, 243, 0.015) 4px
-    );
+  min-height: 100vh;
+  /* No background override - uses global --color-background from html */
 }
 
-/* ============================================
-   PORTFOLIO CONTAINER
-   Centers the table on the page with some padding.
-   max-width stops it from stretching too wide on
-   large monitors — easier to read.
-   ============================================ */
-.Portfolio-of-user {
-    padding: 40px 32px;
-    max-width: 1100px;
-
-    /* 
-       margin: 0 auto centers a block element horizontally.
-       The top/bottom margin is 0, left/right is auto.
-       Auto margin splits equally on both sides = centered.
-    */
-    margin: 0 auto;
+/* Page container - aligns with navbar-inner max-width */
+.portfolio-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
 }
 
-/* ============================================
-   TABLE
-   width: 100% makes the table fill its container.
-   border-collapse: collapse merges the borders of
-   adjacent cells into one border instead of two.
-   border-spacing: 0 removes gaps between cells.
-   ============================================ */
-.Asset-Table {
-    width: 100%;
-    border-collapse: collapse;
-    border-spacing: 0;
-
-    /* 
-       A very subtle blue glow around the entire table.
-       box-shadow takes: x-offset y-offset blur-radius color
-       Multiple shadows separated by commas stack on each other.
-    */
-    box-shadow:
-        0 0 0 1px var(--border),
-        0 0 40px rgba(0, 112, 243, 0.03);
-
-    /* Rounded corners on the table */
-    border-radius: 8px;
-
-    /* overflow:hidden clips the row backgrounds to the rounded corners */
-    overflow: hidden;
+/* Page header */
+.portfolio-header {
+  margin-bottom: 24px;
 }
 
-/* ============================================
-   TABLE HEADER ROW
-   The <thead> section with column labels.
-   ============================================ */
-.headings tr {
-    background-color: var(--surface);
-
-    /* 
-       border-bottom adds a line under the header row
-       to visually separate it from the data rows.
-    */
-    border-bottom: 1px solid white;
+.portfolio-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
 }
 
-/* ============================================
-   HEADER CELLS (<th>)
-   ============================================ */
-.Asset-Table thead th {
-    padding: 16px 20px;
-    text-align: left;
-    
-    font-size: 11px;
-    font-weight: 600;
-
-    /* 
-       letter-spacing adds space between characters.
-       Great for uppercase labels — looks very professional.
-    */
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    /* color: var(--green); */
-    color: white;
-
-    /* 
-       opacity makes the header slightly transparent,
-       so it's clearly a label, not data.
-    */
-    opacity: 0.7;
+.portfolio-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
 }
 
-/* ============================================
-   DATA ROWS (<tr> inside <tbody>)
-   ============================================ */
-.Asset-Table tbody tr {
-    /* 
-       border-bottom on each row creates the horizontal
-       grid lines you see in tables.
-    */
-    border-bottom: 1px solid var(--border);
-
-    /* 
-       transition tells the browser to animate any
-       property changes smoothly over 0.15 seconds.
-       This is what makes the hover effect smooth.
-    */
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-
-    cursor: default;
+/* Summary cards grid */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
-/* ============================================
-   ROW HOVER EFFECT
-   :hover is a pseudo-class that applies styles
-   when the user's mouse is over the element.
-   ============================================ */
-.Asset-Table tbody tr:hover {
-    background-color: var(--surface);
-    border-color: var(--border-bright);
+@media (max-width: 768px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* 
-   :last_child targets only the final row in tbody.
-   We remove its bottom border since the table itself
-   already has a border — otherwise you'd see a double line.
-*/
-.Asset-Table tbody tr:last-child {
-    border-bottom: none;
+.summary-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  padding: 20px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* ============================================
-   DATA CELLS (<td>)
-   ============================================ */
-.Asset-Table tbody td {
-    padding: 14px 20px;
-    font-size: 13px;
-    color: var(--white);
-
-    /* 
-       white-space: nowrap prevents cell content from
-       wrapping to a new line — keeps rows single-line.
-    */
-    white-space: nowrap;
+.summary-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0 0 8px;
 }
 
-/* ============================================
-   SERIAL NUMBER COLUMN (1st column)
-   The S.No column should be subtle/muted
-   since it's just an index, not real data.
-   
-   :nth-child(1) targets the 1st <td> in each row.
-   ============================================ */
-.Asset-Table tbody td:nth-child(1) {
-    color: var(--muted);
-    font-size: 11px;
+.summary-value {
+  font-size: 28px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+  margin: 0;
+  line-height: 1.2;
 }
 
-/* ============================================
-   SYMBOL COLUMN (2nd column)
-   Stock tickers like AAPL, TSLA should stand out.
-   ============================================ */
-.Asset-Table tbody td:nth-child(2) {
-    color: var(--white);
-    font-weight: bold;
-    font-size: 14px;
-    letter-spacing: 1px;
+.summary-value.positive {
+  color: var(--color-blue-text);
 }
 
-/* ============================================
-   SIDE COLUMN (3rd column - long/short)
-   We'll color these with a data attribute trick below.
-   ============================================ */
-.Asset-Table tbody td:nth-child(3) {
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    font-weight: 600;
+.summary-value.negative {
+  color: var(--color-red-text);
 }
 
-/* ============================================
-   PnL COLUMN (5th column)
-   Color positive PnL blue and negative red.
-   
-   We use a CSS trick: if the content starts with '-'
-   we make it red, otherwise blue.
-   
-   NOTE: For this to work dynamically based on value,
-   you can add a class in React like:
-   className={prices[item.symbol]?.Pnl < 0 ? 'negative' : 'positive'}
-   ============================================ */
-/* .Asset-Table tbody td:nth_child(5),
-.Asset-Table tbody td:nth_child(6) {
-    
-} */
-
-/* Add these classes in your JSX for color coding */
-.positive {
-    color: var(--color-blue-text) !important;
+.summary-value.neutral {
+  color: var(--color-text-muted);
 }
 
-.negative {
-    color: var(--color-red-text) !important;
+/* Positions table card */
+.positions-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
 }
 
-/* ============================================
-   LONG/SHORT COLOR CLASSES
-   Add className="long-badge" or "short-badge"
-   to your <td> in React for colored side labels.
-   ============================================ */
-.long-badge {
-    color: var(--color-blue-text) !important;
+.positions-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.short-badge {
-    color: var(--color-red-text) !important;
+.positions-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
-/* ============================================
-   LOADING STATE DOTS ('...')
-   When prices are loading they show '...'
-   This makes them pulse to show they're loading.
-   
-   @keyframes defines an animation sequence.
-   'loading-pulse' is just a name we gave it.
-   ============================================ */
-@keyframes loading-pulse {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 1; }
+.positions-count-badge {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
-/* 
-   Any td containing just '...' gets the pulse animation.
-   animation: name duration timing-function iteration-count
-*/
-.Asset-Table tbody td:has(~ td) {
-    animation: none;
+/* Table */
+.positions-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
 }
 
-/* Target cells showing loading dots */
+.positions-table thead th {
+  padding: 12px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Column widths and alignment */
+.positions-table th:nth-child(1),
+.positions-table td:nth-child(1) { /* S.NO */
+  width: 72px;
+  text-align: left;
+}
+
+.positions-table th:nth-child(2),
+.positions-table td:nth-child(2) { /* SYMBOL */
+  width: calc(100% - 72px - 100px - 100px - 160px - 140px);
+  min-width: 160px;
+  text-align: left;
+}
+
+.positions-table th:nth-child(3),
+.positions-table td:nth-child(3) { /* SIDE */
+  width: 100px;
+  text-align: left;
+}
+
+.positions-table th:nth-child(4),
+.positions-table td:nth-child(4) { /* QTY */
+  width: 100px;
+  text-align: right;
+}
+
+.positions-table th:nth-child(5),
+.positions-table td:nth-child(5) { /* DAILY PNL */
+  width: 160px;
+  text-align: right;
+}
+
+.positions-table th:nth-child(6),
+.positions-table td:nth-child(6) { /* %RETURN */
+  width: 140px;
+  text-align: right;
+}
+
+.positions-table tbody tr {
+  height: 52px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.positions-table tbody tr:hover {
+  background: var(--color-surface-raised);
+}
+
+.positions-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.positions-table tbody td {
+  padding: 12px 20px;
+  vertical-align: middle;
+  color: var(--color-text-primary);
+}
+
+.positions-table tbody td:nth-child(1) { /* S.NO */
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.positions-table tbody td:nth-child(2) { /* SYMBOL */
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Side badge */
+.side-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.side-long {
+  color: var(--color-blue-text);
+  background: var(--color-up-bg);
+  border: 1px solid var(--color-up-border);
+}
+
+.side-short {
+  color: var(--color-red-text);
+  background: var(--color-down-bg);
+  border: 1px solid var(--color-down-border);
+}
+
+/* QTY */
+.positions-table tbody td:nth-child(4) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+  color: var(--color-text-primary);
+}
+
+/* DAILY PNL and %RETURN */
+.positions-table tbody td:nth-child(5),
+.positions-table tbody td:nth-child(6) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+}
+
+.positions-table tbody td.positive {
+  color: var(--color-blue-text);
+}
+
+.positions-table tbody td.negative {
+  color: var(--color-red-text);
+}
+
+.positions-table tbody td.neutral {
+  color: var(--color-text-muted);
+}
+
+/* Empty state */
+.positions-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.positions-empty-title {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.positions-empty-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Loading state */
 .loading-dot {
-    animation: loading-pulse 1.2s ease-in-out infinite;
-    color: var(--muted);
+  color: var(--color-text-muted);
+  animation: loading-pulse 1.2s ease-in-out infinite;
 }
 
-/* ============================================
-   EMPTY STATE
-   When assetList is empty, show a message.
-   Add this div in your JSX when assetList.length === 0
-   ============================================ */
-.empty-portfolio {
-    text-align: center;
-    padding: 80px 20px;
-    color: var(--muted);
-    font-size: 13px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
 }
 
-/* ============================================
-   SCROLLBAR STYLING
-   Custom scrollbar to match the dark theme.
-   ::-webkit-scrollbar works in Chrome/Edge/Safari.
-   Firefox uses scrollbar-color property.
-   ============================================ */
-::-webkit-scrollbar {
-    width: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--black);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--border-bright);
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--muted);
-}
-
-/* Firefox scrollbar (scoped to portfolio page) */
-.Portfolio-page,
-.Portfolio-page * {
-    scrollbar-color: var(--border-bright) var(--black);
-    scrollbar-width: thin;
-}
-
-.Account-status{
-    display: flex;
-    justify-content: space-around;
-}
-.Account-status-component{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+/* Responsive: horizontal scroll under 900px */
+@media (max-width: 900px) {
+  .positions-table-wrapper {
+    overflow-x: auto;
+  }
+  .positions-table {
+    min-width: 720px;
+  }
 }
