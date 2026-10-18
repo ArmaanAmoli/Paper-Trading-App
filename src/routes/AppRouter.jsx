@@ -17,7 +17,9 @@ const AuthenticatedProviders = () => {
                 <MarketDataProvider>
                     <WatchlistProvider>
                         <IndicatorsListProvider>
-                            <Outlet />
+                            <div style={{ height: '100%', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <Outlet />
+                            </div>
                         </IndicatorsListProvider>
                     </WatchlistProvider>
                 </MarketDataProvider>
@@ -28,20 +30,21 @@ const AuthenticatedProviders = () => {
 
 const AppRouter = () => {
     return (
-        <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            {/* Protected routes wrapped inside the parent route */}
-            <Route element={<ProtectedRoutes />}>
-                <Route element={<AuthenticatedProviders />}>
-                    <Route path="/landing-page" element={<LandingPage />} />
-                    <Route path="/chart/:ticker" element={<StockMainChart />} />
-                    <Route path="/userPortfolio" element={<PortfolioPage />} />
-                    <Route path="/userprofile" element={<UserProfile />} />
+        <div style={{ height: '100%', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Routes>
+                <Route path="/" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                {/* Protected routes wrapped inside the parent route */}
+                <Route element={<ProtectedRoutes />}>
+                    <Route element={<AuthenticatedProviders />}>
+                        <Route path="/landing-page" element={<LandingPage />} />
+                        <Route path="/chart/:ticker" element={<StockMainChart />} />
+                        <Route path="/userPortfolio" element={<PortfolioPage />} />
+                        <Route path="/userprofile" element={<UserProfile />} />
+                    </Route>
                 </Route>
-            </Route>
-        </Routes>
-
+            </Routes>
+        </div>
     );
 }
 export default AppRouter;

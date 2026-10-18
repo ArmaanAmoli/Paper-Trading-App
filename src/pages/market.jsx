@@ -11,8 +11,8 @@ export default function Market() {
     return (
         <div className="w-full h-full flex flex-col">
             <h1 className="text-lg font-semibold text-text-primary mb-4">Markets Today</h1>
-            <div className="panel flex-1 min-h-0 overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="panel flex-1 min-h-0 overflow-hidden flex flex-col">
+                <div className="market-table-container flex-1 min-h-0 overflow-y-auto overflow-x-auto">
                     <table className="table market-table" role="grid">
                         <thead>
                             <tr>

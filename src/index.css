@@ -90,7 +90,7 @@
    ============================================ */
 html {
   background: var(--color-background);
-  min-height: 100vh;
+  height: 100%;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -119,7 +119,7 @@ html::after {
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   pointer-events: none;
   z-index: 0;
   opacity: 0.04;
@@ -128,9 +128,16 @@ html::after {
 
 body {
   margin: 0;
-  min-height: 100vh;
+  height: 100%;
   position: relative;
   z-index: 1;
+}
+
+#root {
+  height: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 * {
