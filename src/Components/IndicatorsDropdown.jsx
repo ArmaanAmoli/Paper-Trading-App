@@ -2,11 +2,11 @@ import { useState, useRef, useEffect, useContext } from "react";
 import { IndicatorsList } from "../Context/context.js";
 
 const INDICATORS = [
-  { id: 'SMA', name: 'MA', fullName: 'Moving Average' },
-  { id: 'BBAND', name: 'BB', fullName: 'Bollinger Bands' },
-  { id: 'RSI', name: 'RSI', fullName: 'Relative Strength Index' },
-  { id: 'VOL', name: 'VOL', fullName: 'Volume' },
-  { id: 'STOCH', name: 'SO', fullName: 'Stochastic Oscillator' },
+  { id: 'SMA', code: 'MA', fullName: 'Moving Average' },
+  { id: 'BBAND', code: 'BB', fullName: 'Bollinger Bands' },
+  { id: 'RSI', code: 'RSI', fullName: 'Relative Strength Index' },
+  { id: 'VOL', code: 'VOL', fullName: 'Volume' },
+  { id: 'STOCH', code: 'SO', fullName: 'Stochastic Oscillator' },
 ];
 
 export default function IndicatorsDropdown({ interval }) {
@@ -45,6 +45,24 @@ export default function IndicatorsDropdown({ interval }) {
     };
   }, [isOpen]);
 
+  const handleIndicatorClick = (indicator) => {
+    const isActive = indicatorList.some(item => item.indicator === indicator.id);
+    
+    if (!isActive) {
+      // Inactive: close menu and open popup
+      setIsOpen(false);
+      window.dispatchEvent(new CustomEvent('open-indicator-popup', {
+        detail: { indicator: indicator.id, interval }
+      }));
+    } else {
+      // Active: keep existing behavior (toggle off or open settings)
+      // For now, we'll open the settings popup for active indicators too
+      window.dispatchEvent(new CustomEvent('open-indicator-popup', {
+        detail: { indicator: indicator.id, interval }
+      }));
+    }
+  };
+
   const renderIndicatorItem = (indicator) => {
     const isActive = indicatorList.some(item => item.indicator === indicator.id);
     return (
@@ -52,19 +70,14 @@ export default function IndicatorsDropdown({ interval }) {
         key={indicator.id}
         type="button"
         className="indicator-menu-item"
-        onClick={() => {
-          // Trigger the corresponding popup
-          window.dispatchEvent(new CustomEvent('open-indicator-popup', {
-            detail: { indicator: indicator.id, interval }
-          }));
-        }}
+        onClick={() => handleIndicatorClick(indicator)}
         role="menuitemcheckbox"
         aria-checked={isActive}
         tabIndex={-1}
       >
         <div className="indicator-menu-item-label">
-          <span className="indicator-menu-item-name">{indicator.name}</span>
-          <span className="indicator-menu-item-desc">{indicator.fullName}</span>
+          <span className="indicator-menu-item-code">{indicator.code}</span>
+          <span className="indicator-menu-item-name">{indicator.fullName}</span>
         </div>
         <div className="indicator-menu-item-check" aria-hidden="true">
           {isActive && (

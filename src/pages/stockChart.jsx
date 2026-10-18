@@ -5,26 +5,9 @@ import OrderForm from '../Components/orderForm.jsx';
 import IndicatorsDropdown from '../Components/IndicatorsDropdown.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { IndicatorsList } from '../Context/context.js';
-import MovingAvgPopUp from '../Components/IndicatorPopUps/movingAvgPopUp.jsx';
-import RSIPopUp from '../Components/IndicatorPopUps/rsiPopUp.jsx';
-import BBandPopUp from '../Components/IndicatorPopUps/boilingerBandPopUp.jsx';
-import VolumePopUp from '../Components/IndicatorPopUps/volumeIndicatorPopUp.jsx';
-import StochasticOscillatorPopUp from '../Components/IndicatorPopUps/stochasticOscillatorPopUp.jsx';
+import IndicatorModal from '../Components/IndicatorPopUps/IndicatorModal.jsx';
+import { indicatorConfigs } from '../Components/IndicatorPopUps/indicatorConfigs.js';
 import "./styles/chartTradePage.css";
-
-function ClickOutside({ children, onClose }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [onClose]);
-  return <div className="absolute z-1000" ref={ref}>{children}</div>;
-}
 
 export default function StockMainChart() {
   const [activeTab, setActiveTab] = useState('order'); // 'order' | 'watchlist'
@@ -32,12 +15,8 @@ export default function StockMainChart() {
 
   const [interval, setInterval] = useState('1h');
 
-  // Indicators pop up states
-  const [maPopUp, setMaPopUp] = useState(false);
-  const [rsiPopUp, setRsiPopUp] = useState(false);
-  const [bBandPopUp, setBBandPopUp] = useState(false);
-  const [volPopup, setVolPopUp] = useState(false);
-  const [stocasticPopUp, setStocasticPopUp] = useState(false);
+  // Single modal state
+  const [modalConfig, setModalConfig] = useState(null);
 
   // Listen for indicator popup open events from the dropdown
   useEffect(() => {
@@ -45,29 +24,27 @@ export default function StockMainChart() {
       const { indicator, interval: eventInterval } = e.detail;
       if (eventInterval !== interval) return;
       
-      switch (indicator) {
-        case 'SMA':
-        case 'EMA':
-          setMaPopUp(true);
-          break;
-        case 'RSI':
-          setRsiPopUp(true);
-          break;
-        case 'BBAND':
-          setBBandPopUp(true);
-          break;
-        case 'VOL':
-          setVolPopUp(true);
-          break;
-        case 'STOCH':
-          setStocasticPopUp(true);
-          break;
+      // Map indicator IDs to config keys
+      const configMap = {
+        SMA: 'SMA',
+        EMA: 'SMA',
+        RSI: 'RSI',
+        BBAND: 'BBAND',
+        VOL: 'VOL',
+        STOCH: 'STOCH'
+      };
+      
+      const configKey = configMap[indicator];
+      if (configKey && indicatorConfigs[configKey]) {
+        setModalConfig(indicatorConfigs[configKey]);
       }
     };
 
     window.addEventListener('open-indicator-popup', handleOpenPopup);
     return () => window.removeEventListener('open-indicator-popup', handleOpenPopup);
   }, [interval]);
+
+  const closeModal = () => setModalConfig(null);
 
   // Reset active tab when ticker changes - use key on the component instead
   // This is handled by the key prop on the component in the parent route
@@ -104,6 +81,16 @@ export default function StockMainChart() {
           <div className="chart-area">
             <CandleStickChartComponent ticker={ticker} interval={interval} period='max' key={interval} />
           </div>
+
+          {/* Indicator Modal - rendered inside chart card for centering */}
+          {modalConfig && (
+            <IndicatorModal
+              isOpen={true}
+              onClose={closeModal}
+              indicatorConfig={modalConfig}
+              interval={interval}
+            />
+          )}
         </div>
 
         {/* SIDE PANEL CARD (right) */}
@@ -171,13 +158,6 @@ export default function StockMainChart() {
           </div>
         </div>
       </div>
-
-      {/* Indicator Popups (unchanged, still portal to body or overlay) */}
-      {maPopUp && <ClickOutside onClose={() => setMaPopUp(false)}><MovingAvgPopUp Interval={interval} /></ClickOutside>}
-      {rsiPopUp && <ClickOutside onClose={() => setRsiPopUp(false)}><RSIPopUp Interval={interval} /></ClickOutside>}
-      {bBandPopUp && <ClickOutside onClose={() => setBBandPopUp(false)}><BBandPopUp Interval={interval} /></ClickOutside>}
-      {volPopup && <ClickOutside onClose={() => setVolPopUp(false)}><VolumePopUp Interval={interval} /></ClickOutside>}
-      {stocasticPopUp && <ClickOutside onClose={() => setStocasticPopUp(false)}><StochasticOscillatorPopUp Interval={interval} /></ClickOutside>}
     </div>
   );
 }
