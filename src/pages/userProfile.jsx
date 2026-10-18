@@ -1,150 +1,238 @@
-import api from '../services/api.js';
+import Navbar from "../Components/navbar.jsx";
 import { useEffect, useState, useContext } from "react";
-import { UserAccountContext, UserEquityContext } from '../Context/context.js';
-import { getTradeHistory } from '../services/tradeHistory.js';
-import { useNavigate } from 'react-router-dom';
-/*
-userData:
-Object { _id: "6975e0d16ef729c5588d27a3", username: "Armaan", email: "armaanmohanamoli@gmail.com", passwordHash: "$2b$10$0hWxPDf5n3eYdgP8fPp/fO0ZpRkvuFvPaFS.J7Gwbn9XtEnaOL7sG", balance: 946502.71, createdAt: "2026-01-25T09:22:25.942Z", lastLogin: "2026-01-25T09:22:25.942Z", __v: 0, blockedMargin: 0 }
-__v: 0
-_id: "6975e0d16ef729c5588d27a3"
-balance: 946502.71
-blockedMargin: 0
-createdAt: "2026-01-25T09:22:25.942Z"
-email: "armaanmohanamoli@gmail.com"
-lastLogin: "2026-01-25T09:22:25.942Z"
-passwordHash: "$2b$10$0hWxPDf5n3eYdgP8fPp/fO0ZpRkvuFvPaFS.J7Gwbn9XtEnaOL7sG"
-username: "Armaan"
-
-TradeHistory:
-0: Object { _id: "699462507738e25153187fac", userId: "6975e0d16ef729c5588d27a3", symbol: "SOL-USD", … }
-__v: 0
-_id: "699462507738e25153187fac"
-orderId: "421b2f26-22b5-4e8d-b80d-03a62321fbbc"
-price: 85.35
-realizedPL: 0
-shares: 5
-symbol: "SOL-USD"
-timestamp: "2026-02-17T12:42:56.879Z"
-type: "buy"
-userId: "6975e0d16ef729c5588d27a3"
-<prototype>: Object { … }
-1: Object { _id: "699462977738e25153187fb4", userId: "6975e0d16ef729c5588d27a3", symbol: "ETH-USD", … }
-*/
+import { UserAccountContext, UserEquityContext } from "../Context/context.js";
+import { getTradeHistory } from "../services/tradeHistory.js";
+import { useNavigate } from "react-router-dom";
+import {
+  formatNumber,
+  formatSignedNumber,
+  getValueColorClass
+} from "../lib/formatters.js";
+import Avatar from "../Components/Avatar.jsx";
+import "./styles/userProfile.css";
 
 export default function UserProfile() {
+  const [userData] = useContext(UserAccountContext);
+  const { totalEquity } = useContext(UserEquityContext);
+  const [Equity] = totalEquity || [0];
+  const [tradeHistory, setTradeHistory] = useState(null);
+  const navigate = useNavigate();
 
-    const [userData, setUserData] = useContext(UserAccountContext); // state of user personal data
-    const [totalPnl, setTotalPnl] = useContext(UserEquityContext).totalPnl || 0;
-    const [tradeHistory, setTradeHistory] = useState(null);
-    const [Equity, setEquity] = useContext(UserEquityContext).totalEquity;
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        async function fetchTradeHistory() {
-            const data = await getTradeHistory();
-            if (data) {
-                setTradeHistory(data);
-            }
-        }
-        fetchTradeHistory();
-        const intervalId = setInterval(fetchTradeHistory, 10000);
-        return () => clearInterval(intervalId);
-    }, [])
-
-    function logOut() {
-        localStorage.removeItem('token');
-
-        navigate("/", { replace: true });
+  useEffect(() => {
+    async function fetchTradeHistory() {
+      const data = await getTradeHistory();
+      if (data) {
+        setTradeHistory(data);
+      }
     }
-    return (
+    fetchTradeHistory();
+    const intervalId = setInterval(fetchTradeHistory, 10000);
+    return () => clearInterval(intervalId);
+  }, []);
 
-        <div className="w-screen h-dvh grid grid-cols-10 gap-1 grid-row-1 overflow-auto">
-            
-            <div className="grid grid-rows-10 col-span-2 sticky left-0">
+  function logOut() {
+    localStorage.removeItem("token");
+    navigate("/", { replace: true });
+  }
 
-                <div className="row-span-7 grid grid-rows-5">
+  const balance = userData?.balance ?? 0;
+  const blockedMargin = userData?.blockedMargin ?? 0;
+  const equity = Equity ?? 0;
+  const holdingsValue = equity;
+  const totalEquityValue = balance + equity;
 
-                    <div className="row-span-2 flex flex-col justify-center items-center">
-                        <div className=' text-xl font-bold'>{userData.username}</div>
-                        <div>{userData.email}</div>
-                        <div className='opacity-50'>{userData._id}</div>
-                        <div className='opacity-50'>Member since {userData.createdAt != null ? userData.createdAt.split('T')[0] : "Loading"}</div>
+  const formatDate = (dateString) => {
+    if (!dateString) return "--";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+  };
 
-                    </div>
+  const formatMemberSince = (dateString) => {
+    if (!dateString) return "--";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  };
 
-                    <div className="row-span-2 flex flex-col gap-4 justify-center items-center">
-                        <button className='shadow-[-2px_-2px_4px_0px_rgba(255,255,255,.25)] border border-white/15 h-[50px] w-[200px] rounded-3xl hover:bg-white/10'>Update Profile</button>
-                        <button className='shadow-[-2px_-2px_4px_0px_rgba(255,255,255,.25)] border border-white/15 h-[50px] w-[200px] rounded-3xl hover:bg-white/10' onClick={logOut}>Log out</button>
-                        <button className='shadow-[-2px_-2px_4px_0px_rgba(255,0,0,.25)] border border-red-400/15 h-[50px] w-[200px] rounded-3xl text-red-400 hover:bg-red-300/10'>Delete Account</button>
-                    </div>
+  return (
+    <>
+      <Navbar />
+      <div className="profile-page">
+        <div className="profile-container">
+          {/* Page Header */}
+          <header className="profile-header">
+            <h1 className="profile-title">Profile</h1>
+            <p className="profile-subtitle">Your account details, balances, and trade history</p>
+          </header>
+
+          {/* Main Layout Grid */}
+          <div className="profile-grid">
+            {/* Left Column: Profile Card */}
+            <aside className="profile-card-wrapper">
+              <div className="profile-card">
+                {/* Avatar & Name */}
+                <div className="profile-top">
+                  <Avatar name={userData?.username} size={64} />
+                  <div className="profile-identity">
+                    <h2 className="profile-name">{userData?.username ?? "--"}</h2>
+                    <p className="profile-email">{userData?.email ?? "--"}</p>
+                  </div>
                 </div>
 
-            </div>
+                <hr className="profile-divider" />
 
-            <div className="grid grid-rows-15 col-span-8 px-2 gap-2 overflow-auto">
+                {/* Details */}
+                <dl className="profile-details">
+                  <div className="profile-detail">
+                    <dt className="profile-detail-label">User ID</dt>
+                    <dd className="profile-detail-value">{userData?._id ?? "--"}</dd>
+                  </div>
+                  <div className="profile-detail">
+                    <dt className="profile-detail-label">Member since</dt>
+                    <dd className="profile-detail-value">{formatMemberSince(userData?.createdAt)}</dd>
+                  </div>
+                </dl>
 
-                <div className="grid grid-cols-2 row-span-6 gap-1">
+                <hr className="profile-divider" />
 
-                    <div className="col-span-1 ">
-                        <div className="w-full h-full grid grid-rows-2 gap-1">
-                            <div className='row-span-1 w-full  grid grid-rows-4 border border-white/10 p-2'> <div className='row-span-1 w-full flex justify-start text-xl opacity-50'>Balance</div> <div className='row-span-3 w-full flex justify-start items-center text-5xl'>${userData.balance.toLocaleString('en-US')}</div></div>
-                            <div className='row-span-1 w-full  grid grid-rows-4 border border-white/10 p-2'> <div className='row-span-1 w-full flex justify-start text-xl opacity-50'>Blocked Margin</div> <div className='row-span-3 w-full flex justify-start items-center text-5xl'>${userData.blockedMargin.toLocaleString('en-US')}</div></div>
-                        </div>
-                    </div>
-
-
-                    <div className="col-span-1 h-full">
-
-
-                        <div className="w-full h-full grid grid-rows-2 gap-1">
-                            <div className='row-span-1 w-full  grid grid-rows-4 border border-white/10 p-2'> <div className='row-span-1 w-full flex justify-start text-xl opacity-50'>Equity</div> <div className='row-span-3 w-full flex justify-start items-center text-5xl'>${(Number(((userData.balance) ? Number(Equity + userData.balance) : 0).toFixed(2))).toLocaleString('en-US')}</div></div>
-                            <div className='row-span-1 w-full  grid grid-rows-4 border border-white/10 p-2'> <div className='row-span-1 w-full flex justify-start text-xl opacity-50'>Holdings Value</div> <div className='row-span-3 w-full flex justify-start items-center text-5xl'>${Number(Equity.toFixed(2)).toLocaleString('en-US')}</div></div>
-                        </div>
-
-                        {/* <p>Equity</p>
-                            <p>${(Number(((userData.balance) ? Number(Equity + userData.balance) : 0).toFixed(2))).toLocaleString('en-US')}</p> */}
-                    </div>
+                {/* Actions */}
+                <div className="profile-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={true} // No handler implemented yet
+                  >
+                    Update Profile
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={logOut}
+                  >
+                    Log out
+                  </button>
                 </div>
 
-                <div className="row-span-10 w-full h-full">
+                {/* Danger Zone */}
+                <hr className="profile-divider" />
+                <div className="profile-danger-zone">
+                  <p className="danger-text">Permanently delete your account and all data.</p>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    disabled={true} // Existing handler/confirmation stays as-is
+                  >
+                    Delete Account
+                  </button>
+                </div>
+              </div>
+            </aside>
 
-                    <table className='border-collapse w-full border border-white/20 flex flex-col '>
-                        <thead className='h-[60px] w-full border border-white/10 sticky top-5 bg-black/20 backdrop-blur-md'>
-                            <tr className='w-full grid grid-cols-10 h-[60px] items-center'>
-                                <th className='col-span-1 grid justify-center items-center h-full'>S.No</th>
-                                <th className='col-span-2 grid justify-center items-center h-full'>Symbol</th>
-                                <th className='col-span-2 grid justify-center items-center h-full'>Side</th>
-                                <th className='col-span-1 grid justify-center items-center h-full'>#</th>
-                                <th className='col-span-2 grid justify-center items-center h-full'>Released PnL</th>
-                                <th className='col-span-2 grid justify-center items-center h-full'>Timestamp</th>
+            {/* Right Column */}
+            <main className="profile-main">
+              {/* Stat Cards */}
+              <div className="stat-grid">
+                <article className="stat-card">
+                  <p className="stat-label">Balance</p>
+                  <p className="stat-value">
+                    ${formatNumber(balance)}
+                  </p>
+                </article>
+                <article className="stat-card">
+                  <p className="stat-label">Equity</p>
+                  <p className="stat-value">
+                    ${formatNumber(totalEquityValue)}
+                  </p>
+                </article>
+                <article className="stat-card">
+                  <p className="stat-label">Blocked Margin</p>
+                  <p className="stat-value">
+                    ${formatNumber(blockedMargin)}
+                  </p>
+                </article>
+                <article className="stat-card">
+                  <p className="stat-label">Holdings Value</p>
+                  <p className="stat-value">
+                    ${formatNumber(holdingsValue)}
+                  </p>
+                </article>
+              </div>
+
+              {/* Trade History Table */}
+              <section className="history-card">
+                <header className="history-header">
+                  <h2 className="history-title">Trade history</h2>
+                  <span className="history-count">
+                    {tradeHistory && tradeHistory.length > 0 ? tradeHistory.length : 0}
+                  </span>
+                </header>
+                <div className="history-table-wrapper">
+                  {tradeHistory && tradeHistory.length > 0 ? (
+                    <table className="history-table" role="grid">
+                      <colgroup>
+                        <col style={{ width: "72px" }} />
+                        <col style={{ minWidth: "120px" }} />
+                        <col style={{ width: "90px" }} />
+                        <col style={{ width: "80px" }} />
+                        <col style={{ width: "130px" }} />
+                        <col style={{ width: "190px" }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th className="align-left">S.NO</th>
+                          <th className="align-left">SYMBOL</th>
+                          <th className="align-left">SIDE</th>
+                          <th className="align-right">QTY</th>
+                          <th className="align-right">REALIZED PNL</th>
+                          <th className="align-right">TIMESTAMP</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tradeHistory.map((item, index) => {
+                          const pnlValue = Number(item.realizedPL);
+                          const pnlColorClass = getValueColorClass(pnlValue);
+                          const pnlDisplay = formatSignedNumber(pnlValue);
+                          const side = (item.type || "").toLowerCase();
+                          const sideLabel = side === "buy" ? "BUY" : "SELL";
+                          const sideClass = side === "buy" ? "side-buy" : "side-sell";
+
+                          return (
+                            <tr key={item._id || item.symbol + index}>
+                              <td className="align-left">{index + 1}</td>
+                              <td className="align-left">{item.symbol}</td>
+                              <td className="align-left">
+                                <span className={`side-badge ${sideClass}`}>{sideLabel}</span>
+                              </td>
+                              <td className="align-right tabular-nums">{item.shares}</td>
+                              <td className={`align-right tabular-nums ${pnlColorClass}`}>{pnlDisplay}</td>
+                              <td className="align-right">{formatDate(item.timestamp)}</td>
                             </tr>
-                        </thead>
-                        <tbody className='w-full border border-white/10'>
-                            {tradeHistory && tradeHistory.length > 0 && tradeHistory.map((item, index) => {
-                                const value = item.realizedPL.toFixed(2);
-                                const textStyle = {
-                                    color: value > 0 ? "#8bf31c" : value < 0 ? "#FF0000" : "white"
-                                };
-                                return (
-                                    <tr className='w-full grid grid-cols-10 h-8 items-center border-b border-white/5 hover:bg-white/5' key={item.symbol + index}>
-                                        <td className='col-span-1 grid justify-center items-center h-full'>{index + 1}</td>
-                                        <td className='col-span-2 grid justify-center items-center h-full'>{item.symbol}</td>
-                                        <td className='col-span-2 grid justify-center items-center h-full'>{item.type}</td>
-                                        <td className='col-span-1 grid justify-center items-center h-full'>{item.shares}</td>
-                                        <td className='col-span-2 grid justify-center items-center h-full' style={textStyle}>{item.realizedPL.toFixed(2)}</td>
-                                        <td className='col-span-2 grid justify-center items-center h-full'>{new Date(item.timestamp).toLocaleString()}</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
+                          );
+                        })}
+                      </tbody>
                     </table>
-
-
+                  ) : (
+                    <div className="history-empty">
+                      <p className="history-empty-title">No trades yet</p>
+                      <p className="history-empty-subtitle">Your executed orders will appear here.</p>
+                    </div>
+                  )}
                 </div>
-
-            </div>
+              </section>
+            </main>
+          </div>
         </div>
-    );
-
+      </div>
+    </>
+  );
 }

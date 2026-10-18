@@ -1,9 +1,13 @@
 import { Link } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useContext } from "react";
+import { UserAccountContext } from "../Context/context.js";
+import Avatar from "./Avatar.jsx";
 
 export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
+    const [userData] = useContext(UserAccountContext);
 
     const isActive = (path) => location.pathname === path;
 
@@ -41,15 +45,10 @@ export default function Navbar() {
                 </div>
                 <button
                     onClick={() => navigate("/userprofile")}
-                    className="btn btn-icon"
-                    aria-label="User profile"
+                    className="navbar-profile-btn"
+                    aria-label="Profile"
                 >
-                    <img
-                        src="https://cdn-icons-png.flaticon.com/512/6325/6325109.png"
-                        alt=""
-                        className="navbar-avatar"
-                        aria-hidden="true"
-                    />
+                    <Avatar name={userData?.username} size={32} />
                 </button>
             </div>
         </nav>

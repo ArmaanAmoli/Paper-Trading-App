@@ -33,6 +33,12 @@
   --color-neutral-bg: rgba(112, 112, 112, 0.10);
 
   /* ============================================
+     SUBTLE BACKGROUND COLORS (for badges, etc.)
+     ============================================ */
+  --color-blue-subtle: rgba(0, 112, 243, 0.12);
+  --color-red-subtle: rgba(229, 72, 77, 0.12);
+
+  /* ============================================
      TEXT COLORS
      ============================================ */
   --color-text-primary: #EDEDED;
@@ -264,6 +270,21 @@ body {
 }
 
 /* ============================================
+   AVATAR COMPONENT
+   ============================================ */
+.avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-family: var(--font-sans);
+  transition: border-color var(--transition-fast);
+}
+
+/* ============================================
    NAVBAR - Flat, sharp, modern
    ============================================ */
 .navbar {
@@ -331,13 +352,32 @@ body {
   font-size: 13px;
 }
 
-.navbar-avatar {
+/*** Navbar profile button ***/
+.navbar-profile-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 32px;
   height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
   border-radius: 50%;
-  border: 1px solid var(--color-border);
-  overflow: hidden;
+  cursor: pointer;
+  transition: none;
 }
+
+.navbar-profile-btn:hover .avatar {
+  border-color: var(--color-text-secondary);
+}
+
+.navbar-profile-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.5);
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.5), 0 0 0 4px var(--color-background);
+}
+
+/*** Remove old navbar-avatar styles (was for img) ***/
 
 /* ============================================
    TABLE STYLES
@@ -516,7 +556,7 @@ body {
   font-size: 12px;
 }
 
-/* Watchlist scroll wrapper */
+/*** Watchlist scroll wrapper ***/
 .watchlist-scroll-wrapper {
   overflow-y: auto;
   overflow-x: hidden;
@@ -719,7 +759,7 @@ body {
   border-left: 4px solid #FFB800;
 }
 
-/* Progress bar */
+/*** Progress bar ***/
 .Toastify__progress-bar {
   height: 3px;
   border-radius: 0 0 12px 12px;
