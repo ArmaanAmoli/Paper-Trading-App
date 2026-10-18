@@ -30,19 +30,31 @@ export default function Ticker({ name }) {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleRowClick(); }}
         >
-            <td className="px-4 py-3">
-                <span className="text-sm font-medium text-text-primary tabular-nums truncate block max-w-[120px]">{name}</span>
+            <td className="col-symbol px-[16px] pr-[8px] py-3 text-left">
+                <span className="text-sm font-semibold text-text-primary tabular-nums truncate block" title={name}>{name}</span>
             </td>
-            <td className="numeric px-4 py-3">
-                <span className={rowColorClass}>{quote.currentPrice.toLocaleString()}</span>
+            <td className="col-price numeric px-[8px] py-3 text-right">
+                <span className={rowColorClass} style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{quote.currentPrice.toLocaleString()}</span>
             </td>
-            <td className="numeric px-4 py-3">
-                <span className={rowColorClass}>{changePrefix}{quote.change.toFixed(2)}</span>
+            <td className="col-change numeric px-[8px] py-3 text-right">
+                <span className={rowColorClass} style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{changePrefix}{quote.change.toFixed(2)}</span>
             </td>
-            <td className="numeric relative px-4 py-3 pr-0">
-                <span className={rowColorClass}>{changePrefix}{quote.percentChange.toFixed(2)}%</span>
+            <td className="col-pctchg numeric relative px-[8px] py-3 pr-[16px] text-right">
+                <span className={rowColorClass} style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{changePrefix}{quote.percentChange.toFixed(2)}%</span>
                 <button
-                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 btn btn-icon btn-pill hover:bg-down-bg hover:border-down/50 hover:text-red-text transition-all duration-150 focus:opacity-100 focus:ring-2 focus:ring-red-text/50 focus:ring-offset-2 focus:ring-offset-background z-20"
+                    className="remove-btn absolute right-[8px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto focus-within:pointer-events-auto z-10"
+                    style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        background: 'var(--color-surface-raised)',
+                        boxShadow: '-12px 0 8px 0 var(--color-surface-raised)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-text-secondary)',
+                    }}
                     onClick={async (e) => {
                         e.stopPropagation();
                         const res = await deleteFromWatchlist(name);
@@ -51,8 +63,12 @@ export default function Ticker({ name }) {
                         }
                     }}
                     aria-label={"Remove " + name + " from watchlist"}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-red-text)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-secondary)'}
+                    onFocus={(e) => e.currentTarget.style.color = 'var(--color-red-text)'}
+                    onBlur={(e) => e.currentTarget.style.color = 'var(--color-text-secondary)'}
                 >
-                    <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="w-[14px] h-[14px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>

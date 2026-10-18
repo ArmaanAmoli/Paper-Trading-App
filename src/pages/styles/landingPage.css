@@ -17,77 +17,30 @@
   min-width: 600px;
 }
 
-/* Watchlist table scrolling - only vertical, no horizontal */
-.watchlist-table-container {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.watchlist-table-container table {
-  width: 100%;
-  min-width: 0;
-  table-layout: fixed;
-}
-
 /* Ensure table cells don't wrap */
 .market-table td,
-.market-table th,
-.watchlist-table td,
-.watchlist-table th {
+.market-table th {
   white-space: nowrap;
 }
 
-/* Explicit column widths for watchlist table - fit within 328px container (360px - 32px padding) */
-/* With 8px horizontal padding per cell (16px per cell * 4 = 64px total padding) */
-/* Available content width: 328px - 64px = 264px */
-.watchlist-table th:nth-child(1),
-.watchlist-table td:nth-child(1) {
-  width: 112px;
-  min-width: 112px;
-}
-
-.watchlist-table th:nth-child(2),
-.watchlist-table td:nth-child(2) {
-  width: 68px;
-  min-width: 68px;
-}
-
-.watchlist-table th:nth-child(3),
-.watchlist-table td:nth-child(3) {
-  width: 68px;
-  min-width: 68px;
-}
-
-.watchlist-table th:nth-child(4),
-.watchlist-table td:nth-child(4) {
-  width: 84px;
-  min-width: 84px;
-}
-
-/* Custom scrollbar for market/watchlist tables */
-.market-table-container::-webkit-scrollbar,
-.watchlist-table-container::-webkit-scrollbar {
+/* Custom scrollbar for market table */
+.market-table-container::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.market-table-container::-webkit-scrollbar-track,
-.watchlist-table-container::-webkit-scrollbar-track {
+.market-table-container::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.market-table-container::-webkit-scrollbar-thumb,
-.watchlist-table-container::-webkit-scrollbar-thumb {
+.market-table-container::-webkit-scrollbar-thumb {
   background: var(--color-border-strong);
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
-.market-table-container::-webkit-scrollbar-thumb:hover,
-.watchlist-table-container::-webkit-scrollbar-thumb:hover {
+.market-table-container::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-dim);
 }
 
@@ -97,8 +50,7 @@
 }
 
 /* Ensure table headers stay visible during scroll */
-.market-table thead th,
-.watchlist-table thead th {
+.market-table thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -126,119 +78,51 @@
   min-width: 600px;
 }
 
-.landing-page .watchlist-table {
-  width: 100%;
-  min-width: 500px;
-}
-
-/*** Watchlist table specific - no horizontal scroll, numeric columns fully visible ***/
-.watchlist-table {
-  width: 100%;
-  table-layout: fixed;
-}
-
-.watchlist-table th,
-.watchlist-table td {
-  padding: 10px 8px; /* 8px horizontal padding to fit all columns */
-  white-space: nowrap;
-}
-
-/* Numeric columns - NO overflow hidden, no ellipsis, fully visible */
-.watchlist-table td.numeric,
-.watchlist-table th.numeric {
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  text-align: right;
-  padding-right: 8px;
-  padding-left: 8px;
-}
-
-/* Symbol column - truncate with ellipsis */
-.watchlist-table td:first-child,
-.watchlist-table th:first-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
-}
-
-/* Numeric columns - fully visible, no clipping */
-.watchlist-table td.numeric,
-.watchlist-table th.numeric {
-  overflow: visible;
-  text-overflow: clip;
-}
-
-/* Custom scrollbar for market/watchlist tables */
-.market-table-container::-webkit-scrollbar,
-.watchlist-table-container::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.market-table-container::-webkit-scrollbar-track,
-.watchlist-table-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.market-table-container::-webkit-scrollbar-thumb,
-.watchlist-table-container::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.market-table-container::-webkit-scrollbar-thumb:hover,
-.watchlist-table-container::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-dim);
-}
-
-* {
-  scrollbar-color: var(--color-border-strong) transparent;
-  scrollbar-width: thin;
-}
-
-/* Ensure table headers stay visible during scroll */
-.market-table thead th,
-.watchlist-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--color-surface-raised);
-}
-
-/* Panel adjustments for landing page */
-.landing-page .panel {
+/* ============================================
+   LANDING PAGE GRID - Flex-based for fixed watchlist width
+   ============================================ */
+.landing-page-grid {
   display: flex;
   flex-direction: column;
+  gap: 16px;
   height: 100%;
   min-height: 0;
 }
 
-.landing-page .panel > .flex-1 {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: auto;
+@media (min-width: 1100px) {
+  .landing-page-grid {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  
+  .market-panel {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  
+  .watchlist-panel {
+    width: 420px;
+    min-width: 400px;
+    flex: 0 0 420px;
+  }
 }
 
-/* Market table specific */
-.landing-page .market-table {
-  width: 100%;
-  min-width: 600px;
-}
-
-.landing-page .watchlist-table {
-  width: 100%;
-  min-width: 500px;
+@media (max-width: 1099px) {
+  .landing-page-grid {
+    flex-direction: column;
+  }
+  
+  .market-panel,
+  .watchlist-panel {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
 }
 
 /* Ensure proper scrolling on mobile */
 @media (max-width: 1024px) {
-  .landing-page .market-table-container,
-  .landing-page .watchlist-table-container {
+  .landing-page .market-table-container {
     overflow-x: auto;
   }
 }

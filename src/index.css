@@ -417,31 +417,136 @@ body {
   white-space: nowrap;
 }
 
-/* Watchlist table - explicit column widths */
+/* ============================================
+   WATCHLIST TABLE - Fixed layout with colgroup
+   ============================================ */
 .watchlist-table {
+  width: 100%;
   table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 13px;
 }
 
-.watchlist-table th:nth-child(1),
-.watchlist-table td:nth-child(1) { width: calc(100% - 84px - 72px - 72px); min-width: 96px; text-align: left; }
+.watchlist-table thead th {
+  padding: 10px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
 
-.watchlist-table th:nth-child(2),
-.watchlist-table td:nth-child(2) { width: 84px; text-align: right; }
+.watchlist-table thead th.col-symbol {
+  text-align: left;
+  padding-left: 16px;
+  padding-right: 8px;
+}
 
-.watchlist-table th:nth-child(3),
-.watchlist-table td:nth-child(3) { width: 72px; text-align: right; }
+.watchlist-table thead th.col-price,
+.watchlist-table thead th.col-change {
+  text-align: right;
+  padding-left: 8px;
+  padding-right: 8px;
+}
 
-.watchlist-table th:nth-child(4),
-.watchlist-table td:nth-child(4) { width: 72px; text-align: right; }
+.watchlist-table thead th.col-pctchg {
+  text-align: right;
+  padding-left: 8px;
+  padding-right: 16px;
+}
 
-/* Symbol column: single line with ellipsis */
-.watchlist-table td:nth-child(1) {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.watchlist-table tbody tr {
+  height: 44px;
+  transition: background var(--transition-fast);
+}
+
+.watchlist-table tbody tr:hover {
+  background: var(--color-surface-raised);
+}
+
+.watchlist-table tbody td {
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
   white-space: nowrap;
 }
 
-/* Numeric columns: tabular nums, right align */
+.watchlist-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.watchlist-table tbody td.col-symbol {
+  padding-left: 16px;
+  padding-right: 8px;
+  text-align: left;
+}
+
+.watchlist-table tbody td.col-symbol span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.watchlist-table tbody td.col-price,
+.watchlist-table tbody td.col-change {
+  padding-left: 8px;
+  padding-right: 8px;
+  text-align: right;
+}
+
+.watchlist-table tbody td.col-pctchg {
+  padding-left: 8px;
+  padding-right: 16px;
+  text-align: right;
+  position: relative;
+}
+
+.watchlist-table tbody td.numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-size: 12px;
+}
+
+/* Watchlist scroll wrapper */
+.watchlist-scroll-wrapper {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.watchlist-scroll-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.watchlist-scroll-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.watchlist-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+  border: none;
+  background-clip: padding-box;
+}
+
+.watchlist-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+}
+
+/*** Remove button overlay (handled inline in ticker.jsx for precision) ***/
+
+/* ============================================
+   Numeric columns: tabular nums, right align
+   ============================================ */
 .table td.numeric,
 .table th.numeric {
   text-align: right;
