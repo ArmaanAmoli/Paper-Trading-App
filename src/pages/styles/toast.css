@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+/* ============================================
+   CUSTOM TOAST NOTIFICATION SYSTEM
+   ============================================ */
+
+.toast-container {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  min-width: 0;
+  animation: toast-slide-in 200ms ease;
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-exit {
+  animation: toast-slide-out 200ms ease forwards;
+}
+
+@keyframes toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.toast-description {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.toast-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 0 0 8px 8px;
+  opacity: 0.3;
+  background: var(--color-border-strong);
+}
+
+.toast-success .toast-progress {
+  background: var(--color-up);
+}
+
+.toast-error .toast-progress {
+  background: var(--color-red-text);
+}
+
+.toast-info .toast-progress {
+  background: var(--color-blue-text);
+}
+
+.toast-warning .toast-progress {
+  background: #FFB800;
+}
+
+/* Remove thick left borders - keep minimal */
+.toast-success,
+.toast-error,
+.toast-info,
+.toast-warning {
+  border-left: none;
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: auto;
+  }
+  
+  .toast {
+    border-radius: 8px;
+  }
+}
