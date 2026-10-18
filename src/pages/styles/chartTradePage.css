@@ -1,0 +1,637 @@
+@import "tailwindcss";
+
+/* ============================================
+   CHART/TRADE PAGE - TWO CARD LAYOUT
+   ============================================ */
+
+.chart-trade-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: calc(100vh - 64px); /* navbar height */
+  padding: 16px;
+  gap: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.chart-trade-cards {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/*** Chart Card (left, flexible) ***/
+.chart-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/*** Side Panel Card (right, fixed) ***/
+.side-panel-card {
+  flex: 0 0 360px;
+  min-width: 320px;
+  max-width: 360px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/*** Responsive: stack vertically below 1024px ***/
+@media (max-width: 1024px) {
+  .chart-trade-cards {
+    flex-direction: column;
+  }
+  
+  .chart-card {
+    min-height: 420px;
+    flex: 1 1 auto;
+  }
+  
+  .side-panel-card {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: none;
+    min-height: 400px;
+  }
+}
+
+/*** ==========================================
+     CHART CARD TOOLBAR
+     ========================================== ***/
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+/*** Interval Button Group ***/
+.interval-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 4px; /* space for hidden scrollbar */
+  margin-bottom: -4px;
+}
+
+.interval-group::-webkit-scrollbar {
+  display: none;
+}
+
+.interval-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.interval-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+}
+
+.interval-btn.active {
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+}
+
+.interval-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Toolbar Divider ***/
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--color-border);
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+/*** ==========================================
+     INDICATORS DROPDOWN
+     ========================================== ***/
+.indicators-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.indicators-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.indicators-dropdown-btn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.indicators-dropdown-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+.indicators-dropdown-btn[aria-expanded="true"] {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.indicators-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 220px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fade-in 150ms ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.indicator-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.indicator-menu-item:hover {
+  background: var(--color-surface);
+}
+
+.indicator-menu-item:focus-visible {
+  outline: none;
+  background: var(--color-surface);
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+.indicator-menu-item-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.indicator-menu-item-name {
+  color: var(--color-text-primary);
+}
+
+.indicator-menu-item-desc {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.indicator-menu-item-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--color-up);
+  flex-shrink: 0;
+}
+
+.indicator-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-up);
+  background: var(--color-up-bg);
+  border-radius: 9999px;
+}
+
+/*** ==========================================
+     CHART AREA
+     ========================================== ***/
+.chart-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+}
+
+.chart-area > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/*** ==========================================
+     SIDE PANEL TABS
+     ========================================== ***/
+.side-panel-tabs {
+  display: flex;
+  height: 48px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.side-panel-tab {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; /* overlap the panel border */
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.side-panel-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.side-panel-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+.side-panel-tab[aria-selected="true"] {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-text-primary);
+}
+
+/*** ==========================================
+     SIDE PANEL CONTENT
+     ========================================== ***/
+.side-panel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+/*** ==========================================
+     ORDER TAB CONTENT
+     ========================================== ***/
+.order-form-new {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/*** Symbol Header ***/
+.order-symbol-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.order-symbol-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-symbol-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.order-current-price {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-current-price.positive { color: var(--color-blue-text); }
+.order-current-price.negative { color: var(--color-red-text); }
+.order-current-price.neutral { color: var(--color-text-muted); }
+
+.order-price-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.order-price-change.positive { color: var(--color-blue-text); }
+.order-price-change.negative { color: var(--color-red-text); }
+.order-price-change.neutral { color: var(--color-text-muted); }
+
+/*** Buy/Sell Toggle ***/
+.buy-sell-toggle {
+  display: flex;
+  width: 100%;
+  height: 40px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 3px;
+  box-sizing: border-box;
+}
+
+.buy-sell-btn {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.buy-sell-btn.buy {
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.buy-sell-btn.buy.active {
+  color: #ffffff;
+  background: var(--color-up);
+}
+
+.buy-sell-btn.sell {
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.buy-sell-btn.sell.active {
+  color: #ffffff;
+  background: var(--color-down);
+}
+
+.buy-sell-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Form Fields ***/
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-input {
+  height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: all var(--transition-fast);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Hide number input spinners ***/
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/*** Read-only Rows ***/
+.readonly-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.readonly-row-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.readonly-row-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.readonly-row-value.total {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/*** Section Divider ***/
+.section-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 8px 0;
+}
+
+/*** Stop Loss Section ***/
+.stop-loss-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stop-loss-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stop-loss-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.stop-loss-optional {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+/*** Place Order Button ***/
+.place-order-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.place-order-btn.buy {
+  background: var(--color-up);
+}
+
+.place-order-btn.buy:hover:not(:disabled) {
+  background: #3291FF;
+}
+
+.place-order-btn.sell {
+  background: var(--color-down);
+}
+
+.place-order-btn.sell:hover:not(:disabled) {
+  background: #FF6369;
+}
+
+.place-order-btn:disabled {
+  background: var(--color-surface-raised) !important;
+  color: var(--color-text-muted) !important;
+  cursor: not-allowed;
+}
+
+.place-order-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Footer Text ***/
+.order-footer {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/*** Validation Error ***/
+.field-error {
+  font-size: 12px;
+  color: var(--color-red-text);
+  margin-top: -4px;
+}
+
+/*** ==========================================
+     WATCHLIST TAB ADJUSTMENTS
+     ========================================== ***/
+.side-panel-content .panel {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+}
+
+.side-panel-content .stock-list {
+  height: 100%;
+  min-height: 0;
+}
+
+.side-panel-content .watchlist-table {
+  font-size: 12px;
+}
+
+.side-panel-content .watchlist-table thead th {
+  padding: 10px 12px;
+  font-size: 10px;
+}
+
+.side-panel-content .watchlist-table tbody td {
+  padding: 10px 12px;
+}
