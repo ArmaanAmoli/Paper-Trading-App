@@ -7,6 +7,9 @@ export async function getQuote(ticker) {
                 ticker:ticker
             }
         });
-        return(fastAPIRes.data);
-    }catch(err){return err};
+        return fastAPIRes.data;
+    } catch (err) {
+        console.error(`getQuote failed for ${ticker}:`, err.message);
+        throw new Error(`Failed to fetch quote for ${ticker}: ${err.message}`);
+    }
 }

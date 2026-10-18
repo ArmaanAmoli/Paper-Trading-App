@@ -4,7 +4,7 @@ import { User, Portfolio, Trade, Watchlist, StopLoss } from "./Schemas/mongoSche
 import bcrypt from "bcrypt";
 import { ObjectId } from "mongodb";
 import { v4 as uuidv4 } from 'uuid';
-import { error } from "node:console";
+// import { error } from "node:console"; // Not needed, using built-in Error
 
 mongoose.connect(String(process.env.MONGO_URL)).then(() => {
     console.log("CONNECTED");
@@ -181,7 +181,7 @@ export async function executeTrade(positionDetails, userId) {
 
         if(user.balance < 0){
             session.abortTransaction();
-            throw new error("Not Enough balance");
+            throw new Error("Not Enough balance");
         }
         // ================================
         //          MARGIN LOGIC

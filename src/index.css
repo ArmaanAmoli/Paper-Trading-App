@@ -551,3 +551,121 @@ body {
 .panel-strong {
   animation: fade-in 0.3s var(--transition-normal) forwards;
 }
+
+/* ============================================
+   TOAST NOTIFICATIONS - THEMED (Global)
+   ============================================ */
+/* ToastContainer */
+.Toastify__toast-container {
+  z-index: 9999;
+  top: 16px;
+  right: 16px;
+  width: 360px;
+}
+
+/* Toast base */
+.Toastify__toast {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  padding: 14px 16px;
+  min-height: auto;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+  animation: toast-slide-in 200ms ease;
+}
+
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Toast body */
+.Toastify__toast-body {
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+}
+
+/* Toast type colors - left border accent */
+.Toastify__toast--success {
+  border-left: 4px solid var(--color-up);
+}
+
+.Toastify__toast--error {
+  border-left: 4px solid var(--color-red-text);
+}
+
+.Toastify__toast--info {
+  border-left: 4px solid var(--color-blue-text);
+}
+
+.Toastify__toast--warning {
+  border-left: 4px solid #FFB800;
+}
+
+/* Progress bar */
+.Toastify__progress-bar {
+  height: 3px;
+  border-radius: 0 0 12px 12px;
+  opacity: 0.8;
+}
+
+.Toastify__toast--success .Toastify__progress-bar {
+  background: var(--color-up);
+}
+
+.Toastify__toast--error .Toastify__progress-bar {
+  background: var(--color-red-text);
+}
+
+.Toastify__toast--info .Toastify__progress-bar {
+  background: var(--color-blue-text);
+}
+
+/* Close button */
+.Toastify__close-button {
+  color: var(--color-text-secondary);
+  opacity: 1;
+  padding: 4px;
+  transition: color var(--transition-fast);
+}
+
+.Toastify__close-button:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border-radius: 4px;
+}
+
+.Toastify__close-button > svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Remove default toastify animations */
+.Toastify__toast--exit {
+  animation: toast-slide-out 200ms ease forwards;
+}
+
+@keyframes toast-slide-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .Toastify__toast-container {
+    width: calc(100vw - 32px);
+    left: 16px;
+    right: 16px;
+    top: auto;
+    bottom: 16px;
+  }
+  
+  .Toastify__toast {
+    border-radius: 12px;
+  }
+}

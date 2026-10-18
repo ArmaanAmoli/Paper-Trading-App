@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { placeOrder } from "../services/placeOrder.js";
 import { useTicker } from "../hooks/useTicker.js";
 import { ToastContainer, toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
 import "../pages/styles/orderFormNew.css";
 
 export default function OrderForm() {
@@ -25,25 +24,48 @@ export default function OrderForm() {
     setStopLossLvl(event.target.value);
   }
 
-  const notifySuccess = () => toast.success('Trade Execution Successful');
-  const notifyFail = () => toast.error('Trade Execution Failed');
-
   async function placeTrade() {
-    if (!(stopLossLvl || stopLossQty)) {
-      await placeOrder(ticker, qty, orderType, null);
-    } else {
-      const stopLossObj = {
-        symbol: ticker,
-        type: orderType === 'buy' ? 'sell' : 'buy',
-        qty: qty,
-        price: stopLossLvl
-      }
-      const response = await placeOrder(ticker, qty, orderType, stopLossObj);
-      if (response.trade.success) {
-        notifySuccess();
+    try {
+      let response;
+      if (!(stopLossLvl || stopLossQty)) {
+        // Regular order without stop loss
+        response = await placeOrder(ticker, qty, orderType, null);
       } else {
-        notifyFail();
+        // Order with stop loss
+        const stopLossObj = {
+          symbol: ticker,
+          type: orderType === 'buy' ? 'sell' : 'buy',
+          qty: qty,
+          price: stopLossLvl
+        };
+        response = await placeOrder(ticker, qty, orderType, stopLossObj);
       }
+      
+      // Handle trade response
+      if (response?.trade?.success && response.trade.data) {
+        const trade = response.trade.data;
+        toast.success(
+          `${orderType.toUpperCase()} order executed: ${trade?.qty || qty} ${ticker} @ ${trade?.price || data?.currentPrice?.toFixed(2)}`,
+          { autoClose: 3000 }
+        );
+        // Clear quantity input after successful trade
+        setQty('');
+      } else {
+        const errorMsg = response?.trade?.error || response?.trade?.data?.message || 'Trade execution failed';
+        toast.error(errorMsg, { autoClose: 4000 });
+      }
+      
+      // Handle stop loss response if applicable
+      if (stopLossLvl || stopLossQty) {
+        if (response?.stopLoss?.success) {
+          toast.info('Stop loss order placed', { autoClose: 3000 });
+        } else if (response?.stopLoss) {
+          toast.error('Failed to place stop loss: ' + (response.stopLoss.error || 'Unknown error'), { autoClose: 4000 });
+        }
+      }
+    } catch (err) {
+      console.error('Place trade error:', err);
+      toast.error(err?.response?.data?.message || err.message || 'Network error - please try again', { autoClose: 5000 });
     }
   }
 
@@ -62,7 +84,18 @@ export default function OrderForm() {
 
   return (
     <div className="order-form-new">
-      <ToastContainer />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        closeButton={true}
+      />
 
       {/* Symbol Header */}
       <div className="order-symbol-header">
