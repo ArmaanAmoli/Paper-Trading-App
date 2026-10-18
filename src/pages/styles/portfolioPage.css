@@ -5,9 +5,12 @@
    Uses global CSS variables from index.css
    ============================================ */
 
-/* Remove any page-scoped background override - let global graphite background show */
+/* Page fills available space (navbar is in shared layout) */
 .Portfolio-page {
-  min-height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   /* No background override - uses global --color-background from html */
 }
 
@@ -16,6 +19,9 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 32px 24px 48px;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
 }
 
 /* Page header */

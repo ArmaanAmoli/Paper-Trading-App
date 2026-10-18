@@ -5,9 +5,12 @@
    Uses global CSS variables from index.css
    ============================================ */
 
-/* Page shell - no background override, uses global graphite */
+/* Page fills available space (navbar is in shared layout) */
 .profile-page {
-  min-height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   /* No background - inherits from html (--color-background) */
 }
 
@@ -16,6 +19,9 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 32px 24px 48px;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
 }
 
 /* Page header */
@@ -43,6 +49,8 @@
   grid-template-columns: 320px 1fr;
   gap: 16px;
   align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 @media (max-width: 900px) {
@@ -55,13 +63,13 @@
    PROFILE CARD (left column, sticky on desktop)
    ============================================ */
 .profile-card-wrapper {
-  /* Sticky on desktop */
+  /* Sticky on desktop - accounts for navbar height */
 }
 
 @media (min-width: 901px) {
   .profile-card-wrapper {
     position: sticky;
-    top: 80px; /* below navbar (64px) + small gap */
+    top: var(--navbar-height); /* flush with navbar bottom - eliminates visual gap */
   }
 }
 
@@ -147,7 +155,7 @@
   color: var(--color-text-primary);
 }
 
-/* Actions */
+/*** Actions ***/
 .profile-actions {
   display: flex;
   flex-direction: column;
@@ -155,7 +163,7 @@
   margin-top: 20px;
 }
 
-/* Danger zone */
+/*** Danger zone ***/
 .profile-danger-zone {
   margin-top: 20px;
 }
@@ -305,6 +313,10 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .history-header {
@@ -313,6 +325,7 @@
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .history-title {
@@ -332,9 +345,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Table wrapper - no nested scroll on desktop */
+/*** Table wrapper - no nested scroll on desktop ***/
 .history-table-wrapper {
-  /* Desktop: let page scroll */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 @media (max-width: 900px) {
@@ -346,7 +361,7 @@
   }
 }
 
-/* Table */
+/*** Table ***/
 .history-table {
   width: 100%;
   border-collapse: collapse;

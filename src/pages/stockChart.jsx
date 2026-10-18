@@ -3,7 +3,7 @@ import CandleStickChartComponent from '../Components/Charts/candlestick.jsx';
 import Watchlist from '../Components/watchlist.jsx';
 import OrderForm from '../Components/orderForm.jsx';
 import IndicatorsDropdown from '../Components/IndicatorsDropdown.jsx';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { IndicatorsList } from '../Context/context.js';
 import IndicatorModal from '../Components/IndicatorPopUps/IndicatorModal.jsx';
 import { indicatorConfigs } from '../Components/IndicatorPopUps/indicatorConfigs.js';
