@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
 import 'dotenv/config';
-import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist, saveSubscription } from './queryManager.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist, saveSubscription, getUserStopLosses, deleteStopLoss } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -484,6 +484,44 @@ server.post('/stopLoss', verifyToken, async (req, res, next) => {
         return res.status(200).json({ message: "Stop loss order placed." })
     }
     catch (err) {
+        next(err);
+    }
+});
+
+server.get('/stopLoss', verifyToken, async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const stopLosses = await getUserStopLosses(userId);
+        return res.status(200).json(stopLosses);
+    } catch (err) {
+        next(err);
+    }
+});
+
+server.delete('/stopLoss/:id', verifyToken, async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const stopLossId = req.params.id;
+        const deleted = await deleteStopLoss(stopLossId, userId);
+        if (!deleted) {
+            return res.status(404).json({ message: "Stop loss not found" });
+        }
+        // Also remove from in-memory tickerToSL map
+        const ticker = deleted.symbol;
+        if (tickerToSL.has(ticker)) {
+            const arr = tickerToSL.get(ticker);
+            const filtered = arr.filter(sl => sl._id.toString() !== stopLossId);
+            if (filtered.length === 0) {
+                tickerToSL.delete(ticker);
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ action: "unsubscribe", ticker }));
+                }
+            } else {
+                tickerToSL.set(ticker, filtered);
+            }
+        }
+        return res.status(200).json({ message: "Stop loss cancelled" });
+    } catch (err) {
         next(err);
     }
 });

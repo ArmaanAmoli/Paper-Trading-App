@@ -5,7 +5,7 @@ import { useTicker } from "../hooks/useTicker.js";
 import { toast, ToastProvider } from "../Components/Toast/Toast.jsx";
 import "../pages/styles/orderFormNew.css";
 
-export default function OrderForm() {
+export default function OrderForm({ onOrderPlaced }) {
   const [stopLossQty, setStopLossQty] = useState('');
   const [stopLossLvl, setStopLossLvl] = useState('');
 
@@ -32,11 +32,25 @@ export default function OrderForm() {
         response = await placeOrder(ticker, qty, orderType, null);
       } else {
         // Order with stop loss
+        const stopLossQtyNum = Number(stopLossQty);
+        const stopLossLvlNum = Number(stopLossLvl);
+        
+        // Validate stop loss fields
+        if (!Number.isFinite(stopLossQtyNum) || stopLossQtyNum <= 0) {
+          toast.error('Stop loss quantity must be a positive number', { autoClose: 4000 });
+          return;
+        }
+        if (!Number.isFinite(stopLossLvlNum) || stopLossLvlNum <= 0) {
+          toast.error('Stop loss trigger price must be a positive number', { autoClose: 4000 });
+          return;
+        }
+        
+        // Order with stop loss - use stopLossQty for stop loss quantity
         const stopLossObj = {
           symbol: ticker,
           type: orderType === 'buy' ? 'sell' : 'buy',
-          qty: qty,
-          price: stopLossLvl
+          qty: stopLossQtyNum,
+          price: stopLossLvlNum
         };
         response = await placeOrder(ticker, qty, orderType, stopLossObj);
       }
@@ -50,6 +64,8 @@ export default function OrderForm() {
         );
         // Clear quantity input after successful trade
         setQty('');
+        // Refresh data after successful trade
+        if (onOrderPlaced) onOrderPlaced();
       } else {
         const errorMsg = response?.trade?.error || response?.trade?.data?.message || 'Trade execution failed';
         toast.error(errorMsg, { autoClose: 4000 });
@@ -59,6 +75,8 @@ export default function OrderForm() {
       if (stopLossLvl || stopLossQty) {
         if (response?.stopLoss?.success) {
           toast.info('Stop loss order placed', { autoClose: 3000 });
+          // Refresh data after successful stop loss placement
+          if (onOrderPlaced) onOrderPlaced();
         } else if (response?.stopLoss) {
           toast.error('Failed to place stop loss: ' + (response.stopLoss.error || 'Unknown error'), { autoClose: 4000 });
         }

@@ -7,6 +7,7 @@ import { IndicatorsList } from "../../Context/context.js";
 import { useTicker } from "../../hooks/useTicker.js";
 import { PaneManager } from "../../lib/paneManager.js";
 import { wsManager } from "../../lib/wsManager.js";
+import ChartPriceMarkers from "./ChartPriceMarkers.jsx";
 
 // Helper to batch rapid series updates onto the next animation frame.
 const makeBufferedSeriesUpdater = (series) => {
@@ -73,7 +74,7 @@ const CHART_COLORS = {
     }
 };
 
-export default function CandleStickChartComponent({ ticker, interval, period }) {
+export default function CandleStickChartComponent({ ticker, interval, period, stopLosses, onStopLossChange }) {
     const currentData = useTicker("quote", ticker);
     const [indicatorList, setIndicatorList] = useContext(IndicatorsList);
 
@@ -639,7 +640,132 @@ export default function CandleStickChartComponent({ ticker, interval, period }) 
         };
     }, [ticker, interval]);
 
+    // Plot area rect state
+    const [plotAreaRect, setPlotAreaRect] = useState(null);
+
+    // Overlay container ref for React-managed overlay sibling
+    const overlayContainerRef = useRef(null);
+
+    // Price to coordinate function for ChartPriceMarkers
+    const priceToCoordinate = useCallback((price) => {
+      if (!chartRef.current || !seriesRef.current) return null;
+      // In lightweight-charts v5, priceToCoordinate is on the series, not the price scale
+      return seriesRef.current.priceToCoordinate(price);
+    }, []);
+
+    // Get visible price range for ChartPriceMarkers
+    const getVisiblePriceRange = useCallback(() => {
+      if (!chartRef.current) return null;
+      const priceScale = chartRef.current.priceScale('right');
+      // Try multiple possible method names for lightweight-charts v5
+      const visibleRange = priceScale.getVisiblePriceRange?.() 
+        ?? priceScale.visiblePriceRange?.() 
+        ?? priceScale.getVisibleRange?.() 
+        ?? priceScale.visibleRange;
+      return visibleRange;
+    }, []);
+
+    // Compute plot area rect and update overlay container size
+    const updatePlotAreaRect = useCallback(() => {
+      if (!chartRef.current || !overlayContainerRef.current) return;
+      const chart = chartRef.current;
+      const priceScale = chart.priceScale('right');
+      const timeScale = chart.timeScale();
+      
+      const priceAxisWidth = priceScale.width();
+      const timeAxisHeight = timeScale.height();
+      
+      const chartElement = chart.chartElement();
+      const rect = chartElement.getBoundingClientRect();
+      
+      // Plot area is the chart element minus price axis and time axis
+      const plotLeft = 0;
+      const plotTop = 0;
+      const plotWidth = rect.width - priceAxisWidth;
+      const plotHeight = rect.height - timeAxisHeight;
+      
+      setPlotAreaRect({
+        left: plotLeft,
+        top: plotTop,
+        width: plotWidth,
+        height: plotHeight,
+        priceAxisWidth,
+        timeAxisHeight,
+      });
+      
+      // Update overlay container to cover plot area exactly
+      if (overlayContainerRef.current) {
+        overlayContainerRef.current.style.left = `${plotLeft}px`;
+        overlayContainerRef.current.style.top = `${plotTop}px`;
+        overlayContainerRef.current.style.width = `${plotWidth}px`;
+        overlayContainerRef.current.style.height = `${plotHeight}px`;
+      }
+    }, []);
+
+    // Subscribe to chart events for plot area updates
+    useEffect(() => {
+      if (!chartRef.current) return;
+      const chart = chartRef.current;
+      
+      updatePlotAreaRect();
+      
+      const handleResize = () => updatePlotAreaRect();
+      window.addEventListener('resize', handleResize);
+      
+      // Subscribe to chart events that affect plot area
+      // In lightweight-charts v5:
+      // - timeScale.subscribeVisibleLogicalRangeChange() for time scale visible logical range changes
+      // - priceScale.subscribeVisibleChange() for price scale visible range changes
+      // - chart.subscribeVisiblePriceScaleChange() for price scale visible changes (if available)
+      const priceScale = chart.priceScale('right');
+      const timeScale = chart.timeScale();
+      priceScale.subscribeVisibleChange?.(handleResize);
+      timeScale.subscribeVisibleLogicalRangeChange?.(handleResize);
+      chart.subscribeVisiblePriceScaleChange?.(handleResize);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        priceScale.unsubscribeVisibleChange?.(handleResize);
+        timeScale.unsubscribeVisibleLogicalRangeChange?.(handleResize);
+        chart.unsubscribeVisiblePriceScaleChange?.(handleResize);
+      };
+    }, [updatePlotAreaRect]);
+
     return (
-        <div ref={chartContainerRef} style={{ width: "100%", height: "100%", backgroundColor: CHART_COLORS.background }}></div>
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          backgroundColor: CHART_COLORS.background,
+        }}
+      >
+        <div ref={chartContainerRef} style={{ width: "100%", height: "100%" }}></div>
+        <div
+          ref={overlayContainerRef}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: 0,
+            height: 0,
+            pointerEvents: 'none',
+            zIndex: 5,
+            overflow: 'visible',
+          }}
+        />
+        <ChartPriceMarkers
+          chartRef={chartRef}
+          seriesRef={seriesRef}
+          ticker={ticker}
+          interval={interval}
+          priceToCoordinate={priceToCoordinate}
+          getVisiblePriceRange={getVisiblePriceRange}
+          plotAreaRect={plotAreaRect}
+          setPlotAreaRect={setPlotAreaRect}
+          stopLosses={stopLosses}
+          onStopLossChange={onStopLossChange}
+        />
+      </div>
     );
 }

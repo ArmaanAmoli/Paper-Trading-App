@@ -313,3 +313,215 @@
     min-width: 720px;
   }
 }
+
+/* ============================================
+   ACTIVE STOP LOSSES CARD
+   Reuses positions-card styling
+   ============================================ */
+
+.stop-losses-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  margin-top: 24px;
+}
+
+.stop-losses-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.stop-losses-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.stop-losses-count-badge {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stop-losses-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+}
+
+.stop-losses-table thead th {
+  padding: 12px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Column widths and alignment for stop losses table */
+.stop-losses-table th:nth-child(1),
+.stop-losses-table td:nth-child(1) { /* SYMBOL */
+  width: calc(100% - 100px - 100px - 180px - 60px);
+  min-width: 160px;
+  text-align: left;
+}
+
+.stop-losses-table th:nth-child(2),
+.stop-losses-table td:nth-child(2) { /* SIDE */
+  width: 100px;
+  text-align: left;
+}
+
+.stop-losses-table th:nth-child(3),
+.stop-losses-table td:nth-child(3) { /* QTY */
+  width: 100px;
+  text-align: right;
+}
+
+.stop-losses-table th:nth-child(4),
+.stop-losses-table td:nth-child(4) { /* TRIGGER PRICE */
+  width: 180px;
+  text-align: right;
+}
+
+.stop-losses-table th:nth-child(5),
+.stop-losses-table td:nth-child(5) { /* ACTIONS */
+  width: 60px;
+  text-align: center;
+}
+
+.stop-losses-table tbody tr {
+  height: 48px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.stop-losses-table tbody tr:hover {
+  background: var(--color-surface-raised);
+}
+
+.stop-losses-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.stop-losses-table tbody td {
+  padding: 12px 20px;
+  vertical-align: middle;
+  color: var(--color-text-primary);
+}
+
+.stop-losses-table tbody td:nth-child(1) { /* SYMBOL */
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Trigger price in red */
+.trigger-price {
+  color: var(--color-red-text);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+}
+
+/* QTY */
+.stop-losses-table tbody td:nth-child(3) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+  color: var(--color-text-primary);
+}
+
+/* Actions cell */
+.actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel-stoploss-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.cancel-stoploss-btn:hover {
+  color: var(--color-red-text);
+  background: var(--color-red-subtle);
+}
+
+.cancel-stoploss-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/* Loading state */
+.stop-losses-loading {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* Error state */
+.stop-losses-error {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--color-red-text);
+  font-size: 14px;
+}
+
+/* Empty state */
+.stop-losses-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.stop-losses-empty-title {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.stop-losses-empty-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Responsive: horizontal scroll under 900px */
+@media (max-width: 900px) {
+  .stop-losses-table-wrapper {
+    overflow-x: auto;
+  }
+  .stop-losses-table {
+    min-width: 600px;
+  }
+}

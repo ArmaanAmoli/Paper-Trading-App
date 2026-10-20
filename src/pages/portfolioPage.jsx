@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import './styles/portfolioPage.css';
 import { UserAccountContext, UserEquityContext } from "../Context/context.js";
 import {
@@ -9,6 +9,7 @@ import {
   getSideBadgeClass,
   getSideLabel
 } from "../lib/formatters.js";
+import { fetchActiveStopLosses, cancelStopLoss } from "../services/api.js";
 
 export default function PortfolioPage() {
   const [userAccountInformation] = useContext(UserAccountContext);
@@ -23,6 +24,42 @@ export default function PortfolioPage() {
   const balance = userAccountInformation?.balance ?? 0;
   const equity = Equity ?? 0;
   const totalEquityValue = balance + equity;
+
+  // Stop losses state
+  const [stopLosses, setStopLosses] = useState([]);
+  const [stopLossesLoading, setStopLossesLoading] = useState(true);
+  const [stopLossesError, setStopLossesError] = useState(null);
+
+  // Fetch active stop losses
+  useEffect(() => {
+    let mounted = true;
+    async function loadStopLosses() {
+      setStopLossesLoading(true);
+      setStopLossesError(null);
+      try {
+        const data = await fetchActiveStopLosses();
+        if (mounted) setStopLosses(data || []);
+      } catch (err) {
+        if (mounted) setStopLossesError(err.message || 'Failed to load stop losses');
+      } finally {
+        if (mounted) setStopLossesLoading(false);
+      }
+    }
+    loadStopLosses();
+    return () => { mounted = false; };
+  }, []);
+
+  // Cancel stop loss handler
+  const handleCancelStopLoss = async (stopLossId, symbol, price) => {
+    const confirmed = window.confirm(`Cancel this stop loss for ${symbol} at ${price}?`);
+    if (!confirmed) return;
+    try {
+      await cancelStopLoss(stopLossId);
+      setStopLosses(prev => prev.filter(sl => sl._id !== stopLossId));
+    } catch (err) {
+      alert('Failed to cancel stop loss: ' + (err.message || 'Unknown error'));
+    }
+  };
 
   return (
     <div className="Portfolio-page">
@@ -120,6 +157,73 @@ export default function PortfolioPage() {
                 <p className="positions-empty-title">No open positions yet</p>
                 <p className="positions-empty-subtitle">
                   Place a trade from the Chart page to see it here.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Active Stop Losses Card */}
+        <section className="stop-losses-card">
+          <div className="stop-losses-card-header">
+            <h2 className="stop-losses-card-title">Active stop losses</h2>
+            <span className="stop-losses-count-badge">{stopLosses.length}</span>
+          </div>
+
+          <div className="stop-losses-table-wrapper">
+            {stopLossesLoading ? (
+              <div className="stop-losses-loading">Loading...</div>
+            ) : stopLossesError ? (
+              <div className="stop-losses-error">{stopLossesError}</div>
+            ) : stopLosses.length > 0 ? (
+              <div className="stop-losses-table-wrapper">
+                <table className="stop-losses-table">
+                  <colgroup>
+                    <col style={{ width: 'auto' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '72px' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>SYMBOL</th>
+                      <th>SIDE</th>
+                      <th>QTY</th>
+                      <th>TRIGGER PRICE</th>
+                      <th>ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stopLosses.map((sl) => (
+                      <tr key={sl._id} className="row">
+                        <td title={sl.symbol}>{sl.symbol}</td>
+                        <td>
+                          <span className={`side-badge ${sl.type === 'buy' ? 'side-long' : 'side-short'}`}>
+                            {sl.type === 'buy' ? 'LONG' : 'SHORT'}
+                          </span>
+                        </td>
+                        <td className="tabular-nums">{formatNumber(sl.qty)}</td>
+                        <td className="tabular-nums trigger-price">{formatNumber(sl.price)}</td>
+                        <td className="actions-cell">
+                          <button
+                            className="cancel-stoploss-btn"
+                            onClick={() => handleCancelStopLoss(sl._id, sl.symbol, formatNumber(sl.price))}
+                            aria-label={`Cancel stop loss for ${sl.symbol} at ${formatNumber(sl.price)}`}
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="stop-losses-empty">
+                <p className="stop-losses-empty-title">No active stop losses</p>
+                <p className="stop-losses-empty-subtitle">
+                  Add one from the Order panel on the Chart page.
                 </p>
               </div>
             )}

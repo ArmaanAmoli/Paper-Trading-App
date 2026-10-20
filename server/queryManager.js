@@ -352,6 +352,16 @@ export async function getAllSL(){
     return stopLosses;
 }
 
+export async function getUserStopLosses(userId) {
+    const stopLosses = await StopLoss.find({ userId });
+    return stopLosses;
+}
+
+export async function deleteStopLoss(stopLossId, userId) {
+    const result = await StopLoss.findOneAndDelete({ _id: stopLossId, userId });
+    return result;
+}
+
 export async function saveSubscription(userId , subscriptionObject){
     const user = await User.findById(userId);
     if(user){

@@ -30,3 +30,14 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+export async function fetchActiveStopLosses(symbol) {
+    const params = symbol ? { symbol } : {};
+    const response = await api.get('/stopLoss', { params });
+    return response.data;
+}
+
+export async function cancelStopLoss(stopLossId) {
+    const response = await api.delete(`/stopLoss/${stopLossId}`);
+    return response.data;
+}

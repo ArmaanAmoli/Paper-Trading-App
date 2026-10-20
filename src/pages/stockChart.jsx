@@ -3,10 +3,12 @@ import CandleStickChartComponent from '../Components/Charts/candlestick.jsx';
 import Watchlist from '../Components/watchlist.jsx';
 import OrderForm from '../Components/orderForm.jsx';
 import IndicatorsDropdown from '../Components/IndicatorsDropdown.jsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { IndicatorsList } from '../Context/context.js';
 import IndicatorModal from '../Components/IndicatorPopUps/IndicatorModal.jsx';
 import { indicatorConfigs } from '../Components/IndicatorPopUps/indicatorConfigs.js';
+import ChartErrorBoundary from '../Components/ChartErrorBoundary.jsx';
+import { fetchActiveStopLosses } from '../services/api.js';
 import "./styles/chartTradePage.css";
 
 export default function StockMainChart() {
@@ -17,6 +19,9 @@ export default function StockMainChart() {
 
   // Single modal state
   const [modalConfig, setModalConfig] = useState(null);
+
+  // Stop losses state (lifted from ChartPriceMarkers)
+  const [stopLosses, setStopLosses] = useState([]);
 
   // Listen for indicator popup open events from the dropdown
   useEffect(() => {
@@ -46,8 +51,40 @@ export default function StockMainChart() {
 
   const closeModal = () => setModalConfig(null);
 
-  // Reset active tab when ticker changes - use key on the component instead
-  // This is handled by the key prop on the component in the parent route
+  // Refresh stop losses for current symbol
+  const refreshStopLosses = useCallback(async () => {
+    try {
+      const data = await fetchActiveStopLosses(ticker);
+      setStopLosses(data || []);
+    } catch (err) {
+      console.warn('Failed to refresh stop losses:', err);
+    }
+  }, [ticker]);
+
+  // Refresh all data (positions + stop losses) - called after successful mutations
+  const refreshAllData = useCallback(async () => {
+    // Refresh stop losses immediately
+    await refreshStopLosses();
+    // Note: positions are refreshed via UserEquityContext's 10s interval.
+    // We could also trigger an immediate refresh by calling the context setter,
+    // but the interval is frequent enough (10s) and the backend updates are instant.
+    // If needed, we could expose a refresh function from UserEquityContext.
+  }, [refreshStopLosses]);
+
+  // Fetch stop losses on symbol change
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const data = await fetchActiveStopLosses(ticker);
+        if (mounted) setStopLosses(data || []);
+      } catch (err) {
+        console.warn('Failed to refresh stop losses:', err);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, [ticker]);
 
   const intervals = [
     '1m', '2m', '5m', '15m', '30m', '1h', '90m', '1d', '5d', '1wk', '1mo', '3mo'
@@ -79,7 +116,16 @@ export default function StockMainChart() {
 
           {/* Chart Area */}
           <div className="chart-area">
-            <CandleStickChartComponent ticker={ticker} interval={interval} period='max' key={interval} />
+            <ChartErrorBoundary>
+              <CandleStickChartComponent 
+                ticker={ticker} 
+                interval={interval} 
+                period='max' 
+                key={`${ticker}-${interval}`}
+                stopLosses={stopLosses}
+                onStopLossChange={refreshAllData}
+              />
+            </ChartErrorBoundary>
           </div>
 
           {/* Indicator Modal - rendered inside chart card for centering */}
@@ -144,7 +190,7 @@ export default function StockMainChart() {
               hidden={activeTab !== 'order'}
               className={activeTab === 'order' ? '' : 'hidden'}
             >
-              <OrderForm />
+              <OrderForm onOrderPlaced={refreshAllData} />
             </div>
             <div
               role="tabpanel"
