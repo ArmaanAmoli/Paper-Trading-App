@@ -1,68 +1,235 @@
-import { useContext} from "react";
-import Navbar from "../Components/navbar.jsx";
-import './styles/portfolioPage.css'
+import { useContext, useState, useEffect } from "react";
+import './styles/portfolioPage.css';
 import { UserAccountContext, UserEquityContext } from "../Context/context.js";
+import {
+  formatNumber,
+  formatSignedNumber,
+  formatPercent,
+  getValueColorClass,
+  getSideBadgeClass,
+  getSideLabel
+} from "../lib/formatters.js";
+import { fetchActiveStopLosses, cancelStopLoss } from "../services/api.js";
 
 export default function PortfolioPage() {
-    const [userAccountInformation, setUserAccountInformation] = useContext(UserAccountContext);
-    // const data = useContext(UserEquityContext);
-    const [assetList, setAssetList] = useContext(UserEquityContext).portfolio || [];
-    const [prices, setPrices] = useContext(UserEquityContext).pnl;
-    const [totalPnl, setTotalPnl] = useContext(UserEquityContext).totalPnl;
-    const [Equity , setEquity] = useContext(UserEquityContext).totalEquity;
-    return (
-        <>
-            <div className="Portfolio-page">
-                <div className="w-99/100 sticky top-0 border-2 border-white/25 mt-1 rounded-3xl px-8 py-1"><Navbar/></div>
-                <div className="Portfolio-of-user">
-                    <div className="Account-status">
+  const [userAccountInformation] = useContext(UserAccountContext);
+  
+  // Properly destructure the context value (object with tuple properties)
+  const { portfolio, pnl, totalPnl, totalEquity } = useContext(UserEquityContext);
+  const [assetList] = portfolio || [];
+  const [prices] = pnl;
+  const [totalPnlValue] = totalPnl;
+  const [Equity] = totalEquity;
 
-                        <div className="Account-status-component">
-                            <h4>Unrealized P&L</h4>
-                            <h4 className={Number(totalPnl) >= 0 ? 'positive' : 'negative'} >{Number(totalPnl).toFixed(2)}</h4>
-                        </div>
-                        <div className="Account-status-component">
-                            <h4>Account Balance</h4>
-                            <h4>{(userAccountInformation.balance) ? Number(userAccountInformation.balance.toFixed(2)): 0}</h4>
-                        </div>
-                        <div className="Account-status-component">
-                            <h4>Equity</h4>
-                            <h4>{((userAccountInformation.balance) ? Number(Equity + userAccountInformation.balance): 0 ).toFixed(2)}</h4>
-                        </div>
+  const balance = userAccountInformation?.balance ?? 0;
+  const equity = Equity ?? 0;
+  const totalEquityValue = balance + equity;
 
-                    </div>
-                    <table className="Asset-Table">
-                        <thead className="headings">
-                            <tr >
-                                <th>S.No</th>
-                                <th>Symbol</th>
-                                <th>Side</th>
-                                <th>#</th>
-                                <th>Daily PnL</th>
-                                <th>%Return</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {assetList && assetList.length >0 && assetList.map((item, index) => (
-                                <tr key={item.symbol} className="row">
-                                    <td>{index + 1}</td>
-                                    <td>{item.symbol}</td>
-                                    <td className={item.shares > 0 ? 'long-badge' : 'short-badge'}>
-                                        {item.shares > 0 ? 'long' : 'short'}
-                                    </td>
-                                    <td>{Math.abs(item.shares)}</td>
-                                    <td className={Number(prices[item.symbol]?.Pnl) >= 0 ? 'positive' : 'negative'}>
-                                        {prices[item.symbol]?.Pnl ?? <span className="loading-dot">...</span>}
-                                    </td>
-                                    <td className={Number(prices[item.symbol]?.pChange) >= 0 ? 'positive' : 'negative'}>
-                                        {prices[item.symbol]?.pChange ?? <span className="loading-dot">...</span>}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </>
-    );
+  // Stop losses state
+  const [stopLosses, setStopLosses] = useState([]);
+  const [stopLossesLoading, setStopLossesLoading] = useState(true);
+  const [stopLossesError, setStopLossesError] = useState(null);
+
+  // Fetch active stop losses
+  useEffect(() => {
+    let mounted = true;
+    async function loadStopLosses() {
+      setStopLossesLoading(true);
+      setStopLossesError(null);
+      try {
+        const data = await fetchActiveStopLosses();
+        if (mounted) setStopLosses(data || []);
+      } catch (err) {
+        if (mounted) setStopLossesError(err.message || 'Failed to load stop losses');
+      } finally {
+        if (mounted) setStopLossesLoading(false);
+      }
+    }
+    loadStopLosses();
+    return () => { mounted = false; };
+  }, []);
+
+  // Cancel stop loss handler
+  const handleCancelStopLoss = async (stopLossId, symbol, price) => {
+    const confirmed = window.confirm(`Cancel this stop loss for ${symbol} at ${price}?`);
+    if (!confirmed) return;
+    try {
+      await cancelStopLoss(stopLossId);
+      setStopLosses(prev => prev.filter(sl => sl._id !== stopLossId));
+    } catch (err) {
+      alert('Failed to cancel stop loss: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  return (
+    <div className="Portfolio-page">
+      <div className="portfolio-container">
+        {/* Page Header */}
+        <header className="portfolio-header">
+          <h1 className="portfolio-title">Portfolio</h1>
+          <p className="portfolio-subtitle">Your open positions and account summary</p>
+        </header>
+
+        {/* Summary Cards Grid */}
+        <div className="summary-grid">
+          <article className="summary-card">
+            <p className="summary-label">Unrealized P&L</p>
+            <p className={`summary-value ${getValueColorClass(totalPnlValue)}`}>
+              {formatSignedNumber(totalPnlValue)}
+            </p>
+          </article>
+
+          <article className="summary-card">
+            <p className="summary-label">Account Balance</p>
+            <p className="summary-value">{formatNumber(balance)}</p>
+          </article>
+
+          <article className="summary-card">
+            <p className="summary-label">Equity</p>
+            <p className="summary-value">{formatNumber(totalEquityValue)}</p>
+          </article>
+        </div>
+
+        {/* Positions Table Card */}
+        <section className="positions-card">
+          <div className="positions-card-header">
+            <h2 className="positions-card-title">Open positions</h2>
+            <span className="positions-count-badge">
+              {assetList?.length ?? 0}
+            </span>
+          </div>
+
+          <div className="positions-table-wrapper">
+            {assetList && assetList.length > 0 ? (
+              <table className="positions-table">
+                <thead>
+                  <tr>
+                    <th>S.NO</th>
+                    <th>SYMBOL</th>
+                    <th>SIDE</th>
+                    <th>QTY</th>
+                    <th>DAILY PNL</th>
+                    <th>%RETURN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assetList.map((item, index) => {
+                    const symbol = item.symbol;
+                    const pnlValue = prices?.[symbol]?.Pnl;
+                    const pChange = prices?.[symbol]?.pChange;
+                    const isLoading = pnlValue === undefined || pChange === undefined;
+                    const pnlColor = getValueColorClass(pnlValue);
+                    const pChangeColor = getValueColorClass(pChange);
+                    const sideBadgeClass = getSideBadgeClass(item.shares);
+                    const sideLabel = getSideLabel(item.shares);
+
+                    return (
+                      <tr key={symbol} className="row">
+                        <td>{index + 1}</td>
+                        <td>{symbol}</td>
+                        <td>
+                          <span className={`side-badge ${sideBadgeClass}`}>
+                            {sideLabel}
+                          </span>
+                        </td>
+                        <td className="tabular-nums">{Math.abs(item.shares)}</td>
+                        <td className={`tabular-nums ${pnlColor}`}>
+                          {isLoading ? (
+                            <span className="loading-dot">...</span>
+                          ) : (
+                            formatSignedNumber(pnlValue)
+                          )}
+                        </td>
+                        <td className={`tabular-nums ${pChangeColor}`}>
+                          {isLoading ? (
+                            <span className="loading-dot">...</span>
+                          ) : (
+                            formatPercent(pChange)
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="positions-empty">
+                <p className="positions-empty-title">No open positions yet</p>
+                <p className="positions-empty-subtitle">
+                  Place a trade from the Chart page to see it here.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Active Stop Losses Card */}
+        <section className="stop-losses-card">
+          <div className="stop-losses-card-header">
+            <h2 className="stop-losses-card-title">Active stop losses</h2>
+            <span className="stop-losses-count-badge">{stopLosses.length}</span>
+          </div>
+
+          <div className="stop-losses-table-wrapper">
+            {stopLossesLoading ? (
+              <div className="stop-losses-loading">Loading...</div>
+            ) : stopLossesError ? (
+              <div className="stop-losses-error">{stopLossesError}</div>
+            ) : stopLosses.length > 0 ? (
+              <div className="stop-losses-table-wrapper">
+                <table className="stop-losses-table">
+                  <colgroup>
+                    <col style={{ width: 'auto' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '72px' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>SYMBOL</th>
+                      <th>SIDE</th>
+                      <th>QTY</th>
+                      <th>TRIGGER PRICE</th>
+                      <th>ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stopLosses.map((sl) => (
+                      <tr key={sl._id} className="row">
+                        <td title={sl.symbol}>{sl.symbol}</td>
+                        <td>
+                          <span className={`side-badge ${sl.type === 'buy' ? 'side-long' : 'side-short'}`}>
+                            {sl.type === 'buy' ? 'LONG' : 'SHORT'}
+                          </span>
+                        </td>
+                        <td className="tabular-nums">{formatNumber(sl.qty)}</td>
+                        <td className="tabular-nums trigger-price">{formatNumber(sl.price)}</td>
+                        <td className="actions-cell">
+                          <button
+                            className="cancel-stoploss-btn"
+                            onClick={() => handleCancelStopLoss(sl._id, sl.symbol, formatNumber(sl.price))}
+                            aria-label={`Cancel stop loss for ${sl.symbol} at ${formatNumber(sl.price)}`}
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="stop-losses-empty">
+                <p className="stop-losses-empty-title">No active stop losses</p>
+                <p className="stop-losses-empty-subtitle">
+                  Add one from the Order panel on the Chart page.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }

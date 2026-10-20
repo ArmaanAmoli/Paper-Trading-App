@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+/* ============================================
+   LANDING PAGE - MARKETS & WATCHLIST
+   ============================================ */
+
+/* Market table scrolling */
+.market-table-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.market-table-container table {
+  width: 100%;
+  min-width: 600px;
+}
+
+/* Ensure table cells don't wrap */
+.market-table td,
+.market-table th {
+  white-space: nowrap;
+}
+
+/* Custom scrollbar for market table */
+.market-table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.market-table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.market-table-container::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.market-table-container::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+}
+
+* {
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+/* Ensure table headers stay visible during scroll */
+.market-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface-raised);
+}
+
+/* Panel adjustments for landing page */
+.landing-page .panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.landing-page .panel > .flex-1 {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* Market table specific */
+.landing-page .market-table {
+  width: 100%;
+  min-width: 600px;
+}
+
+/* ============================================
+   LANDING PAGE GRID - Flex-based for fixed watchlist width
+   ============================================ */
+.landing-page-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+}
+
+@media (min-width: 1100px) {
+  .landing-page-grid {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  
+  .market-panel {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  
+  .watchlist-panel {
+    width: 420px;
+    min-width: 400px;
+    flex: 0 0 420px;
+  }
+}
+
+@media (max-width: 1099px) {
+  .landing-page-grid {
+    flex-direction: column;
+  }
+  
+  .market-panel,
+  .watchlist-panel {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+}
+
+/* Ensure proper scrolling on mobile */
+@media (max-width: 1024px) {
+  .landing-page .market-table-container {
+    overflow-x: auto;
+  }
+}

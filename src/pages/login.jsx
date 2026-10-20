@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import './styles/login.css';
 import isTokenExpired from "../routes/checkTokenExpiry.js";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function Login() {
     const navigate = useNavigate();
 
@@ -30,7 +32,7 @@ export default function Login() {
     }
     const LoginUser = async () => {
         try {
-            const res = await fetch('http://localhost:3000/login', {
+            const res = await fetch(`${API_BASE_URL}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

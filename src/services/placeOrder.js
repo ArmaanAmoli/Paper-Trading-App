@@ -1,30 +1,50 @@
 import axios from "axios";
 import clickSound from '../assets/sound/position-sound.mp3'
-export async function placeOrder(ticker, Qty, side , stopLossOrder) {
-    // const {currentPrice} = await fetchQuote(ticker);
-    const jwtToken = localStorage.getItem("token")
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+export async function placeOrder(ticker, Qty, side, stopLossOrder) {
+    const jwtToken = localStorage.getItem("token");
     const config = {
         headers: {
             'Authorization': `Bearer ${jwtToken}`,
-            'Content-Type': 'application/json' // Often set by default, but good practice to include
+            'Content-Type': 'application/json'
         }
     };
-    const data =
-    {
-        // price:currentPrice,
+    const data = {
         symbol: ticker,
         qty: Qty,
         side: side
+    };
+    const url = `${API_BASE_URL}/${side}`;
+
+    // Execute trade
+    let tradeResult = { success: false, data: null, error: null };
+    try {
+        const responseOfTradeExecution = await axios.post(url, data, config);
+        tradeResult = { success: true, data: responseOfTradeExecution.data };
+    } catch (err) {
+        tradeResult = { success: false, error: err.response?.data?.message || err.message };
     }
-    const url = `http://localhost:3000/${side}`;
-    const responseOfTradeExecution = await axios.post(url, data , config);
-    let responseOfStopLossPlacement = {}
-    if(stopLossOrder != null && stopLossOrder.qty != 0 && stopLossOrder.price != 0){
-        responseOfStopLossPlacement = await axios.post("http://localhost:3000/stopLoss" , stopLossOrder , config);
+
+    // Execute stop loss if provided
+    let stopLossResult = { success: false, data: null, error: null };
+    if (stopLossOrder != null && stopLossOrder.qty != 0 && stopLossOrder.price != 0) {
+        try {
+            const responseOfStopLossPlacement = await axios.post(`${API_BASE_URL}/stopLoss`, stopLossOrder, config);
+            // Server returns { message: "Stop loss order placed." } on success
+            if (responseOfStopLossPlacement.data?.message) {
+                stopLossResult = { success: true, data: responseOfStopLossPlacement.data };
+            } else {
+                stopLossResult = { success: false, error: 'Unexpected stop loss response' };
+            }
+        } catch (err) {
+            stopLossResult = { success: false, error: err.response?.data?.message || err.message };
+        }
     }
+
     const audio = new Audio(clickSound);
     audio.play();
-    
-    return {trade:responseOfTradeExecution.data ?? null , stopLoss: responseOfStopLossPlacement.data ?? null};
 
+    return { trade: tradeResult, stopLoss: stopLossResult };
 }

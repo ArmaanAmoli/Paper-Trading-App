@@ -1,0 +1,951 @@
+@import "tailwindcss";
+
+/* ============================================
+   CHART/TRADE PAGE - TWO CARD LAYOUT
+   Now has navbar, so use calc(100vh - var(--navbar-height))
+   ============================================ */
+
+/* Page fills viewport minus navbar */
+.chart-trade-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: calc(100vh - var(--navbar-height));
+  box-sizing: border-box;
+  padding: 16px;
+  gap: 12px;
+  overflow: hidden;
+}
+
+/* Cards row fills page height exactly */
+.chart-trade-cards {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+/*** Chart Card (left, flexible) ***/
+.chart-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+/*** Side Panel Card (right, fixed width) - WIDER: 440px ***/
+.side-panel-card {
+  flex: 0 0 440px;
+  min-width: 400px;
+  max-width: 440px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/*** Responsive: stack vertically below 1024px ***/
+@media (max-width: 1024px) {
+  .chart-trade-cards {
+    flex-direction: column;
+  }
+  
+  .chart-card {
+    min-height: 420px;
+    flex: 1 1 auto;
+  }
+  
+  .side-panel-card {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: none;
+    min-height: 400px;
+  }
+}
+
+/*** ==========================================
+     CHART CARD TOOLBAR
+     ========================================== ***/
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+/*** Interval Button Group ***/
+.interval-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 4px;
+  margin-bottom: -4px;
+}
+
+.interval-group::-webkit-scrollbar {
+  display: none;
+}
+
+.interval-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.interval-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+}
+
+.interval-btn.active {
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+}
+
+.interval-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Toolbar Divider ***/
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--color-border);
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+/*** ==========================================
+     INDICATORS DROPDOWN
+     ========================================== ***/
+.indicators-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.indicators-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.indicators-dropdown-btn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.indicators-dropdown-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+.indicators-dropdown-btn[aria-expanded="true"] {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.indicators-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 220px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fade-in 150ms ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/*** ==========================================
+     INDICATORS DROPDOWN MENU
+     ========================================== ***/
+.indicator-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+  gap: 8px;
+}
+
+.indicator-menu-item:hover {
+  background: var(--color-surface);
+}
+
+.indicator-menu-item:focus-visible {
+  outline: none;
+  background: var(--color-surface);
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+.indicator-menu-item-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-start;
+}
+
+.indicator-menu-item-code {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.indicator-menu-item-name {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.indicator-menu-item-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--color-up);
+  flex-shrink: 0;
+}
+
+.indicator-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-up);
+  background: var(--color-up-bg);
+  border-radius: 9999px;
+}
+
+/*** ==========================================
+     CHART AREA
+     ========================================== ***/
+.chart-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+}
+
+.chart-area > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/*** ==========================================
+     SIDE PANEL TABS
+     ========================================== ***/
+.side-panel-tabs {
+  display: flex;
+  height: 48px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.side-panel-tab {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.side-panel-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.side-panel-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+.side-panel-tab[aria-selected="true"] {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-text-primary);
+}
+
+/*** ==========================================
+     SIDE PANEL CONTENT
+     ========================================== ***/
+.side-panel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0; /* Zero horizontal padding so watchlist table spans full card width */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+/*** ==========================================
+     ORDER TAB CONTENT
+     ========================================== ***/
+.order-form-new {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  padding: 16px; /* Order form keeps its padding */
+}
+
+/*** Symbol Header ***/
+.order-symbol-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.order-symbol-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-symbol-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.order-current-price {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-current-price.positive { color: var(--color-blue-text); }
+.order-current-price.negative { color: var(--color-red-text); }
+.order-current-price.neutral { color: var(--color-text-muted); }
+
+.order-price-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.order-price-change.positive { color: var(--color-blue-text); }
+.order-price-change.negative { color: var(--color-red-text); }
+.order-price-change.neutral { color: var(--color-text-muted); }
+
+/*** Buy/Sell Toggle ***/
+.buy-sell-toggle {
+  display: flex;
+  width: 100%;
+  height: 40px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 3px;
+  box-sizing: border-box;
+}
+
+.buy-sell-btn {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.buy-sell-btn.buy {
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.buy-sell-btn.buy.active {
+  color: #ffffff;
+  background: var(--color-up);
+}
+
+.buy-sell-btn.sell {
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.buy-sell-btn.sell.active {
+  color: #ffffff;
+  background: var(--color-down);
+}
+
+.buy-sell-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Form Fields ***/
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-input {
+  height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: all var(--transition-fast);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Hide number input spinners ***/
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/*** Read-only Rows ***/
+.readonly-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.readonly-row-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.readonly-row-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.readonly-row-value.total {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/*** Section Divider ***/
+.section-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 8px 0;
+}
+
+/*** Stop Loss Section ***/
+.stop-loss-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stop-loss-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stop-loss-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.stop-loss-optional {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+/*** Place Order Button ***/
+.place-order-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.place-order-btn.buy {
+  background: var(--color-up);
+}
+
+.place-order-btn.buy:hover:not(:disabled) {
+  background: #3291FF;
+}
+
+.place-order-btn.sell {
+  background: var(--color-down);
+}
+
+.place-order-btn.sell:hover:not(:disabled) {
+  background: #FF6369;
+}
+
+.place-order-btn:disabled {
+  background: var(--color-surface-raised) !important;
+  color: var(--color-text-muted) !important;
+  cursor: not-allowed;
+}
+
+.place-order-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Footer Text ***/
+.order-footer {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/*** Validation Error ***/
+.field-error {
+  font-size: 12px;
+  color: var(--color-red-text);
+  margin-top: -4px;
+}
+
+/*** ==========================================
+     INDICATOR MODAL (centered in chart card)
+     ========================================== ***/
+.indicator-modal-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  animation: modal-fade-in 150ms ease;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.indicator-modal {
+  width: 360px;
+  max-width: calc(100% - 32px);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 32px);
+  animation: modal-slide-in 150ms ease;
+}
+
+@keyframes modal-slide-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.indicator-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.indicator-modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.indicator-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.indicator-modal-close:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+}
+
+.indicator-modal-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+.indicator-modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.indicator-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.indicator-modal-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.indicator-modal-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+}
+
+.indicator-modal-input,
+.indicator-modal-select {
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: all var(--transition-fast);
+  flex: 1;
+}
+
+.indicator-modal-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.indicator-modal-input:focus,
+.indicator-modal-select:focus {
+  outline: none;
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.5);
+}
+
+/*** Hide number input spinners ***/
+.indicator-modal-input[type="number"]::-webkit-outer-spin-button,
+.indicator-modal-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.indicator-modal-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.indicator-modal-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A1A1A1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+/*** Color input with swatch ***/
+.indicator-modal-color-input {
+  padding-left: 40px;
+}
+
+.indicator-modal-color-picker {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.indicator-modal-color-swatch {
+  position: absolute;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.indicator-modal-error {
+  font-size: 12px;
+  color: var(--color-red-text);
+  margin: 0;
+  padding-left: 128px;
+}
+
+.indicator-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.indicator-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.indicator-modal-btn-cancel {
+  color: var(--color-text-primary);
+  background: transparent;
+}
+
+.indicator-modal-btn-cancel:hover {
+  background: var(--color-surface);
+}
+
+.indicator-modal-btn-cancel:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+.indicator-modal-btn-submit {
+  color: #000000;
+  background: #EDEDED;
+  font-weight: 600;
+  border-color: transparent;
+}
+
+.indicator-modal-btn-submit:hover {
+  background: #FFFFFF;
+}
+
+.indicator-modal-btn-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** ==========================================
+     WATCHLIST TAB - Uses global watchlist styles, no overrides
+     ========================================== ***/
+.side-panel-content .panel {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+}
+
+.side-panel-content .stock-list {
+  height: 100%;
+  min-height: 0;
+}
+
+/* The watchlist-table now uses global styles from index.css
+   No page-specific overrides for column widths, padding, or font sizes */
+
+/*** ==========================================
+     CHART ERROR BOUNDARY FALLBACK
+     ========================================== ***/
+.chart-error-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--color-surface);
+  padding: 24px;
+}
+
+.chart-error-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.chart-error-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 12px;
+}
+
+.chart-error-message {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 24px;
+  word-break: break-word;
+}
+
+.chart-error-reload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chart-error-reload:hover {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-strong);
+}
+
+.chart-error-reload:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}

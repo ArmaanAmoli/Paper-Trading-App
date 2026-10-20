@@ -1,0 +1,514 @@
+@import "tailwindcss";
+
+/* ============================================
+   USER PROFILE PAGE - Matches app theme
+   Uses global CSS variables from index.css
+   ============================================ */
+
+/* Page fills available space (navbar is in shared layout) */
+.profile-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* No background - inherits from html (--color-background) */
+}
+
+/* Page container - aligns with navbar-inner */
+.profile-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+}
+
+/* Page header */
+.profile-header {
+  margin-bottom: 24px;
+}
+
+.profile-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.profile-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Main layout grid */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   PROFILE CARD (left column, sticky on desktop)
+   ============================================ */
+.profile-card-wrapper {
+  /* Sticky on desktop - accounts for navbar height */
+}
+
+@media (min-width: 901px) {
+  .profile-card-wrapper {
+    position: sticky;
+    top: var(--navbar-height); /* flush with navbar bottom - eliminates visual gap */
+  }
+}
+
+.profile-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  padding: 24px;
+  /* No fixed height - content determines height */
+}
+
+/* Top section: avatar + identity */
+.profile-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.profile-identity {
+  width: 100%;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
+}
+
+.profile-email {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  word-break: break-all;
+}
+
+/*** Profile page avatar uses global .avatar styles (64px via size prop) ***/
+
+/* Divider */
+.profile-divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 20px 0;
+}
+
+/* Details list */
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.profile-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-detail-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.profile-detail-value {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  margin: 0;
+  user-select: all;
+  word-break: break-all;
+}
+
+.profile-detail-value:not(.monospace) {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+}
+
+/*** Actions ***/
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/*** Danger zone ***/
+.profile-danger-zone {
+  margin-top: 20px;
+}
+
+.danger-text {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
+}
+
+/* ============================================
+   BUTTON STYLES (scoped to profile page)
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.5);
+}
+
+/*** Secondary button - Update Profile, Log out ***/
+.btn-secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-strong);
+}
+
+.btn-secondary:active:not(:disabled) {
+  background: var(--color-border);
+}
+
+/*** Danger button - Delete Account ***/
+.btn-danger {
+  background: transparent;
+  border-color: rgba(229, 72, 77, 0.4);
+  color: var(--color-red-text);
+  width: 100%;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-down-bg);
+  border-color: var(--color-red-text);
+}
+
+.btn-danger:active:not(:disabled) {
+  background: var(--color-down-border);
+}
+
+/*** Disabled state - secondary buttons get opacity, but danger button keeps its red styling ***/
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/*** Override: danger button keeps visible red border/text even when disabled ***/
+.btn-danger:disabled {
+  opacity: 1;
+  background: transparent;
+  border-color: rgba(229, 72, 77, 0.4);
+  color: var(--color-red-text);
+}
+
+.btn-danger:disabled:hover {
+  background: transparent;
+  border-color: rgba(229, 72, 77, 0.4);
+  color: var(--color-red-text);
+}
+
+/*** Ensure buttons don't have glow/pill styles ***/
+.btn {
+  box-shadow: none !important;
+  border-radius: 6px !important;
+}
+
+/*** Override any global .btn-icon etc. that might leak ***/
+.profile-card .btn {
+  width: 100%;
+}
+
+/* ============================================
+   STAT CARDS (right column, top)
+   ============================================ */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  padding: 20px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* Height follows content - no fixed height */
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0 0 8px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+  color: var(--color-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* ============================================
+   TRADE HISTORY CARD (right column, bottom)
+   ============================================ */
+.history-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.history-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.history-count {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/*** Table wrapper - no nested scroll on desktop ***/
+.history-table-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .history-table-wrapper {
+    overflow-x: auto;
+  }
+  .history-table {
+    min-width: 720px;
+  }
+}
+
+/*** Table ***/
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+}
+
+.history-table thead th {
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  vertical-align: middle;
+  height: 40px;
+}
+
+.history-table thead th.align-left {
+  text-align: left;
+}
+
+.history-table thead th.align-right {
+  text-align: right;
+}
+
+.history-table tbody tr {
+  height: 44px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.history-table tbody tr:hover {
+  background: var(--color-surface-raised);
+}
+
+.history-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.history-table tbody td {
+  padding: 12px 20px;
+  vertical-align: middle;
+  color: var(--color-text-primary);
+}
+
+.history-table tbody td.align-left {
+  text-align: left;
+}
+
+.history-table tbody td.align-right {
+  text-align: right;
+}
+
+.history-table tbody td:first-child { /* S.NO */
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.history-table tbody td:nth-child(2) { /* SYMBOL */
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*** Side badge ***/
+.side-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.side-buy {
+  color: var(--color-blue-text);
+  background: var(--color-blue-subtle);
+  border: 1px solid rgba(0, 112, 243, 0.3);
+}
+
+.side-sell {
+  color: var(--color-red-text);
+  background: var(--color-red-subtle);
+  border: 1px solid rgba(229, 72, 77, 0.3);
+}
+
+/*** QTY ***/
+.history-table tbody td.tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+}
+
+/*** REALIZED PNL colors (reuse positive/negative/neutral) ***/
+.history-table tbody td.positive {
+  color: var(--color-blue-text);
+}
+
+.history-table tbody td.negative {
+  color: var(--color-red-text);
+}
+
+.history-table tbody td.neutral {
+  color: var(--color-text-muted);
+}
+
+/*** TIMESTAMP ***/
+.history-table tbody td:last-child {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/*** Empty state ***/
+.history-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.history-empty-title {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.history-empty-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/*** Loading state (if needed) ***/
+.history-loading {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}

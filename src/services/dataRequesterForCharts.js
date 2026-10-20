@@ -1,12 +1,14 @@
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 async function getAuthHeaders() {
     const token = localStorage.getItem('token');
     return token ? { authorization: `Bearer ${token}` } : {};
 }
 
 export async function fetchData(ticker, interval, period) {
-    const url = 'http://localhost:3000/data';
+    const url = `${API_BASE_URL}/data`;
     try {
         const headers = await getAuthHeaders();
         const response = await axios.get(url, {
@@ -23,7 +25,7 @@ export async function fetchData(ticker, interval, period) {
 }
 
 export async function fetchQuote(ticker) {
-    const url = 'http://localhost:3000/quote';
+    const url = `${API_BASE_URL}/quote`;
     try {
         const headers = await getAuthHeaders();
         const response = await axios.get(url, {
@@ -40,7 +42,7 @@ export async function fetchQuote(ticker) {
 }
 
 export async function fetchIndicatorData(properties) {
-    const url = 'http://localhost:3000/data/indicator';
+    const url = `${API_BASE_URL}/data/indicator`;
     try {
         const headers = await getAuthHeaders();
         const response = await axios.get(url, {

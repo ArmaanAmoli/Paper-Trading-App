@@ -1,7 +1,8 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
-import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist, saveSubscription } from './queryManager.js';
+import 'dotenv/config';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist, saveSubscription, getUserStopLosses, deleteStopLoss } from './queryManager.js';
 import jwt from 'jsonwebtoken';
 import cors from "cors";
 import axios from 'axios';
@@ -15,7 +16,7 @@ import { stopLossWS } from './StopLoss/stoploss.js';
 const FAST_API_SERVER_DOMAIN = process.env.FAST_API_SERVER_DOMAIN;
 const JWT_SECRET = process.env.JWT_SECRET
 const server = express();
-const port = 3000;
+const port = process.env.EXPRESS_SERVER_PORT || 3001;
 
 
 try {
@@ -403,15 +404,32 @@ server.post('/buy', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
-        const { currentPrice } = await getQuote(positionDetails.symbol);
-        positionDetails.price = currentPrice;
+        
+        // Validate required fields
+        if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
+            return res.status(400).json({ success: false, message: "Missing required fields: symbol, qty, side" });
+        }
+        
+        const quote = await getQuote(positionDetails.symbol);
+        if (!quote || !quote.currentPrice) {
+            return res.status(400).json({ success: false, message: `Failed to fetch current price for ${positionDetails.symbol}` });
+        }
+        
+        positionDetails.price = quote.currentPrice;
         positionDetails.orderId = uuidv4();
-        const b = await executeTrade(positionDetails, userId)
-        if (b.success && b.duplicate) return;
-        if (b.success) return res.status(200).json(b);
+        const result = await executeTrade(positionDetails, userId);
+        
+        if (result.success && result.duplicate) {
+            return res.status(200).json({ success: true, duplicate: true, message: "Duplicate order ignored" });
+        }
+        if (result.success) {
+            return res.status(200).json({ success: true, trade: result.newTrade, message: "Buy order executed successfully" });
+        }
+        return res.status(422).json({ success: false, message: "Trade execution failed" });
     } catch (err) {
-        res.status(422).json({ success: false, problem: err })
-        next(err);
+        console.error("Buy order error:", err.message);
+        const statusCode = err.message.includes("Insufficient") || err.message.includes("balance") || err.message.includes("margin") ? 422 : 500;
+        return res.status(statusCode).json({ success: false, message: err.message || "Failed to place buy order" });
     }
 });
 
@@ -419,16 +437,29 @@ server.post('/sell', verifyToken, async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const positionDetails = req.body;
-        const { currentPrice } = await getQuote(positionDetails.symbol);
-        positionDetails.price = currentPrice;
-        positionDetails.orderId = uuidv4();
-        const b = await executeTrade(positionDetails, userId)
-        if (b.success) return res.status(200).json({ message: "Order Successfull" });
-        else {
-            return res.status(422).json({ message: "Something went wrong" });
+        
+        // Validate required fields
+        if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
+            return res.status(400).json({ success: false, message: "Missing required fields: symbol, qty, side" });
         }
+        
+        const quote = await getQuote(positionDetails.symbol);
+        if (!quote || !quote.currentPrice) {
+            return res.status(400).json({ success: false, message: `Failed to fetch current price for ${positionDetails.symbol}` });
+        }
+        
+        positionDetails.price = quote.currentPrice;
+        positionDetails.orderId = uuidv4();
+        const result = await executeTrade(positionDetails, userId);
+        
+        if (result.success) {
+            return res.status(200).json({ success: true, trade: result.newTrade, message: "Sell order executed successfully" });
+        }
+        return res.status(422).json({ success: false, message: "Trade execution failed" });
     } catch (err) {
-        next(err);
+        console.error("Sell order error:", err.message);
+        const statusCode = err.message.includes("Insufficient") || err.message.includes("balance") || err.message.includes("margin") ? 422 : 500;
+        return res.status(statusCode).json({ success: false, message: err.message || "Failed to place sell order" });
     }
 });
 
@@ -457,6 +488,44 @@ server.post('/stopLoss', verifyToken, async (req, res, next) => {
     }
 });
 
+server.get('/stopLoss', verifyToken, async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const stopLosses = await getUserStopLosses(userId);
+        return res.status(200).json(stopLosses);
+    } catch (err) {
+        next(err);
+    }
+});
+
+server.delete('/stopLoss/:id', verifyToken, async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const stopLossId = req.params.id;
+        const deleted = await deleteStopLoss(stopLossId, userId);
+        if (!deleted) {
+            return res.status(404).json({ message: "Stop loss not found" });
+        }
+        // Also remove from in-memory tickerToSL map
+        const ticker = deleted.symbol;
+        if (tickerToSL.has(ticker)) {
+            const arr = tickerToSL.get(ticker);
+            const filtered = arr.filter(sl => sl._id.toString() !== stopLossId);
+            if (filtered.length === 0) {
+                tickerToSL.delete(ticker);
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ action: "unsubscribe", ticker }));
+                }
+            } else {
+                tickerToSL.set(ticker, filtered);
+            }
+        }
+        return res.status(200).json({ message: "Stop loss cancelled" });
+    } catch (err) {
+        next(err);
+    }
+});
+
 
 // Global Error Handler Middleware
 server.use((err, req, res, next) => {
@@ -465,19 +534,19 @@ server.use((err, req, res, next) => {
     res.status(statusCode).json({ message: err.message || "server Error" })
 });
 
-server.listen(port, (error) => {
+const httpServer = server.listen(port, (error) => {
     stopLossWS();
     if (!error) {
-        console.log(`Server running on port {port}`)
+        console.log(`Server running on port ${port}`)
     } else {
-        console.log("An error occured, unable to start server.")
+        console.log("An error occured, unable to start server." , error)
     }
 
     process.on('SIGTERM', () => {
         console.log("Stop Loss Web Socket connection closed.");
         socket.close();
 
-        server.close(() => {
+        httpServer.close(() => {
             console.log("HTTP server closed. Exiting process.");
             process.exit(0); // Cleanly exit
         });

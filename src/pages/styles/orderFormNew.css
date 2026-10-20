@@ -1,0 +1,273 @@
+@import "tailwindcss";
+
+/* ============================================
+   ORDER FORM - NEW DESIGN
+   ============================================ */
+
+.order-form-new {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/*** Symbol Header ***/
+.order-symbol-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.order-symbol-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-symbol-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.order-current-price {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-current-price.positive { color: var(--color-blue-text); }
+.order-current-price.negative { color: var(--color-red-text); }
+.order-current-price.neutral { color: var(--color-text-muted); }
+
+.order-price-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.order-price-change.positive { color: var(--color-blue-text); }
+.order-price-change.negative { color: var(--color-red-text); }
+.order-price-change.neutral { color: var(--color-text-muted); }
+
+/*** Buy/Sell Toggle ***/
+.buy-sell-toggle {
+  display: flex;
+  width: 100%;
+  height: 40px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 3px;
+  box-sizing: border-box;
+}
+
+.buy-sell-btn {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.buy-sell-btn.buy {
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.buy-sell-btn.buy.active {
+  color: #ffffff;
+  background: var(--color-up);
+}
+
+.buy-sell-btn.sell {
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.buy-sell-btn.sell.active {
+  color: #ffffff;
+  background: var(--color-down);
+}
+
+.buy-sell-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Form Fields ***/
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-input {
+  height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: all var(--transition-fast);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Hide number input spinners ***/
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/*** Read-only Rows ***/
+.readonly-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.readonly-row-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.readonly-row-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.readonly-row-value.total {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/*** Section Divider ***/
+.section-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 8px 0;
+}
+
+/*** Stop Loss Section ***/
+.stop-loss-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stop-loss-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stop-loss-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.stop-loss-optional {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+/*** Place Order Button ***/
+.place-order-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.place-order-btn.buy {
+  background: var(--color-up);
+}
+
+.place-order-btn.buy:hover:not(:disabled) {
+  background: #3291FF;
+}
+
+.place-order-btn.sell {
+  background: var(--color-down);
+}
+
+.place-order-btn.sell:hover:not(:disabled) {
+  background: #FF6369;
+}
+
+.place-order-btn:disabled {
+  background: var(--color-surface-raised) !important;
+  color: var(--color-text-muted) !important;
+  cursor: not-allowed;
+}
+
+.place-order-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-up-glow);
+}
+
+/*** Footer Text ***/
+.order-footer {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/*** Validation Error ***/
+.field-error {
+  font-size: 12px;
+  color: var(--color-red-text);
+  margin-top: -4px;
+}
