@@ -183,7 +183,15 @@ The production assets will optimize into a static `/dist` directory, ready to be
 * Create feature branches and submit pull requests with focused, testable changes.
 
 
+<img width="1627" height="975" alt="Screenshot 2026-10-20 160605" src="https://github.com/user-attachments/assets/3fad8e63-8748-4d6e-b474-3e7f218995ba" />
 
-https://github.com/user-attachments/assets/89af33dc-971e-4b24-9ae1-a9e26596a0c3
+<img width="1333" height="971" alt="Screenshot 2026-10-20 160616" src="https://github.com/user-attachments/assets/e764f196-375a-4d82-a880-d92a9301ffbe" />
 
+<img width="1348" height="956" alt="Screenshot 2026-10-20 160628" src="https://github.com/user-attachments/assets/6a92de49-cb2c-4fe0-9d1b-8a0a215cee79" />
+
+<img width="1333" height="934" alt="Screenshot 2026-10-20 160637" src="https://github.com/user-attachments/assets/72323eda-7995-46a4-8f2d-bc8a3544ba49" />
+
+<img width="1914" height="956" alt="Screenshot 2026-10-20 160753" src="https://github.com/user-attachments/assets/c9d693fd-4034-4e11-ad1c-60c476b567cb" />
+
+<img width="1919" height="941" alt="Screenshot 2026-10-20 160808" src="https://github.com/user-attachments/assets/3498207a-b276-42fa-9520-70f813a38c66" />
 
