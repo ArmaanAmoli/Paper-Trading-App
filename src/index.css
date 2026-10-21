@@ -1,36 +1,36 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   /* ============================================
      GRAPHITE BACKGROUND (dark graphite grey)
      ============================================ */
-  --color-background: #0E0F11;
+  --color-background: #0e0f11;
   --color-surface: #141517;
-  --color-surface-raised: #1A1B1E;
-  --color-border: #26272B;
-  --color-border-strong: #3D3D3D;
+  --color-surface-raised: #1a1b1e;
+  --color-border: #26272b;
+  --color-border-strong: #3d3d3d;
 
   /* ============================================
      SEMANTIC COLOR CODING (Up/Down)
      ============================================ */
   /* Button/badge backgrounds - keep original values */
-  --color-up: #0070F3;
+  --color-up: #0070f3;
   --color-up-bg: rgba(0, 112, 243, 0.12);
-  --color-up-border: rgba(0, 112, 243, 0.20);
+  --color-up-border: rgba(0, 112, 243, 0.2);
   --color-up-glow: rgba(0, 112, 243, 0.25);
 
-  --color-down: #E5484D;
+  --color-down: #e5484d;
   --color-down-bg: rgba(229, 72, 77, 0.12);
-  --color-down-border: rgba(229, 72, 77, 0.20);
+  --color-down-border: rgba(229, 72, 77, 0.2);
   --color-down-glow: rgba(229, 72, 77, 0.25);
 
   /* Text colors for dark backgrounds - lighter shades for readability */
-  --color-blue-text: #3291FF;
-  --color-red-text: #FF6369;
+  --color-blue-text: #3291ff;
+  --color-red-text: #ff6369;
   --color-neutral-text: #707070;
 
   --color-neutral: #707070;
-  --color-neutral-bg: rgba(112, 112, 112, 0.10);
+  --color-neutral-bg: rgba(112, 112, 112, 0.1);
 
   /* ============================================
      SUBTLE BACKGROUND COLORS (for badges, etc.)
@@ -41,8 +41,8 @@
   /* ============================================
      TEXT COLORS
      ============================================ */
-  --color-text-primary: #EDEDED;
-  --color-text-secondary: #A1A1A1;
+  --color-text-primary: #ededed;
+  --color-text-secondary: #a1a1a1;
   --color-text-muted: #707070;
   --color-text-dim: #555555;
 
@@ -74,8 +74,9 @@
   /* ============================================
      TYPOGRAPHY
      ============================================ */
-  --font-sans: "Geist", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
+  --font-sans:
+    'Geist', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, monospace;
 
   /* ============================================
      SPACING
@@ -111,7 +112,7 @@ html {
 
 /* Soft top-of-page highlight */
 html::before {
-  content: "";
+  content: '';
   position: fixed;
   top: 0;
   left: 50%;
@@ -119,14 +120,14 @@ html::before {
   width: 100vw;
   max-width: 1400px;
   height: 600px;
-  background: radial-gradient(ellipse at center top, rgba(255,255,255,0.05) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center top, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
 
 /* Full-page noise overlay */
 html::after {
-  content: "";
+  content: '';
   position: fixed;
   top: 0;
   left: 0;
@@ -206,18 +207,18 @@ body {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
-  box-shadow: 
+  box-shadow:
     var(--glass-shadow),
-    inset 0 1px 0 rgba(255,255,255,0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .panel-strong {
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-panel);
-  box-shadow: 
+  box-shadow:
     var(--glass-shadow),
-    inset 0 1px 0 rgba(255,255,255,0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* ============================================
@@ -423,7 +424,9 @@ body {
 
 .navbar-profile-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.5), 0 0 0 4px var(--color-background);
+  box-shadow:
+    0 0 0 2px rgba(0, 112, 243, 0.5),
+    0 0 0 4px var(--color-background);
 }
 
 /*** Remove old navbar-avatar styles (was for img) ***/
@@ -473,7 +476,9 @@ body {
 .tabular-nums {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
 }
 
 /* Market table - explicit column widths */
@@ -482,22 +487,40 @@ body {
 }
 
 .market-table th:nth-child(1),
-.market-table td:nth-child(1) { width: 64px; text-align: left; }
+.market-table td:nth-child(1) {
+  width: 64px;
+  text-align: left;
+}
 
 .market-table th:nth-child(2),
-.market-table td:nth-child(2) { width: calc(100% - 64px - 120px - 140px - 130px - 120px); text-align: left; }
+.market-table td:nth-child(2) {
+  width: calc(100% - 64px - 120px - 140px - 130px - 120px);
+  text-align: left;
+}
 
 .market-table th:nth-child(3),
-.market-table td:nth-child(3) { width: 120px; text-align: left; }
+.market-table td:nth-child(3) {
+  width: 120px;
+  text-align: left;
+}
 
 .market-table th:nth-child(4),
-.market-table td:nth-child(4) { width: 140px; text-align: right; }
+.market-table td:nth-child(4) {
+  width: 140px;
+  text-align: right;
+}
 
 .market-table th:nth-child(5),
-.market-table td:nth-child(5) { width: 130px; text-align: right; }
+.market-table td:nth-child(5) {
+  width: 130px;
+  text-align: right;
+}
 
 .market-table th:nth-child(6),
-.market-table td:nth-child(6) { width: 120px; text-align: right; }
+.market-table td:nth-child(6) {
+  width: 120px;
+  text-align: right;
+}
 
 /* Index column: single line with ellipsis */
 .market-table td:nth-child(2) {
@@ -601,7 +624,9 @@ body {
 .watchlist-table tbody td.numeric {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
   font-size: 12px;
 }
 
@@ -644,7 +669,9 @@ body {
 .table td.numeric {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
 }
 
 /* ============================================
@@ -664,7 +691,9 @@ body {
 .tabular-nums {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
 }
 
 /* ============================================
@@ -780,8 +809,14 @@ body {
 }
 
 @keyframes toast-slide-in {
-  from { opacity: 0; transform: translateX(100%); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Toast body */
@@ -805,7 +840,7 @@ body {
 }
 
 .Toastify__toast--warning {
-  border-left: 4px solid #FFB800;
+  border-left: 4px solid #ffb800;
 }
 
 /*** Progress bar ***/
@@ -852,8 +887,14 @@ body {
 }
 
 @keyframes toast-slide-out {
-  from { opacity: 1; transform: translateX(0); }
-  to { opacity: 0; transform: translateX(100%); }
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
 }
 
 /* Mobile responsive */
@@ -865,7 +906,7 @@ body {
     top: auto;
     bottom: 16px;
   }
-  
+
   .Toastify__toast {
     border-radius: 12px;
   }

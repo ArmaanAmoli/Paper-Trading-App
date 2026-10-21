@@ -1,6 +1,6 @@
 export default function Avatar({ name, size = 32 }) {
   const getInitial = (name) => {
-    if (!name || !name.trim()) return "?";
+    if (!name || !name.trim()) return '?';
     return name.trim().charAt(0).toUpperCase();
   };
 
@@ -11,13 +11,11 @@ export default function Avatar({ name, size = 32 }) {
   return (
     <div
       className="avatar"
-      style={
-        {
-          width: size,
-          height: size,
-          fontSize: fontSize,
-        }
-        }
+      style={{
+        width: size,
+        height: size,
+        fontSize: fontSize,
+      }}
       aria-hidden="true"
     >
       {showLetter ? initial : null}

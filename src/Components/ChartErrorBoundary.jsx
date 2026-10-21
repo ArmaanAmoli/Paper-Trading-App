@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component } from 'react';
 
 class ChartErrorBoundary extends Component {
   constructor(props) {
@@ -11,11 +11,11 @@ class ChartErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("[ChartErrorBoundary] Caught error:", error);
-    console.error("[ChartErrorBoundary] Component stack:", errorInfo.componentStack);
+    console.error('[ChartErrorBoundary] Caught error:', error);
+    console.error('[ChartErrorBoundary] Component stack:', errorInfo.componentStack);
     this.setState({
       error: error,
-      errorInfo: errorInfo
+      errorInfo: errorInfo,
     });
   }
 

@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useContext } from "react";
-import { IndicatorsList } from "../Context/context.js";
+import { useState, useRef, useEffect, useContext } from 'react';
+import { IndicatorsList } from '../Context/context.js';
 
 const INDICATORS = [
   { id: 'SMA', code: 'MA', fullName: 'Moving Average' },
@@ -16,8 +16,8 @@ export default function IndicatorsDropdown({ interval }) {
   const [indicatorList] = useContext(IndicatorsList);
 
   // Count active indicators that match our list
-  const activeCount = INDICATORS.filter(ind =>
-    indicatorList.some(item => item.indicator === ind.id)
+  const activeCount = INDICATORS.filter((ind) =>
+    indicatorList.some((item) => item.indicator === ind.id),
   ).length;
 
   const handleKeyDown = (e) => {
@@ -29,8 +29,12 @@ export default function IndicatorsDropdown({ interval }) {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target) &&
-          buttonRef.current && !buttonRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -46,25 +50,29 @@ export default function IndicatorsDropdown({ interval }) {
   }, [isOpen]);
 
   const handleIndicatorClick = (indicator) => {
-    const isActive = indicatorList.some(item => item.indicator === indicator.id);
-    
+    const isActive = indicatorList.some((item) => item.indicator === indicator.id);
+
     if (!isActive) {
       // Inactive: close menu and open popup
       setIsOpen(false);
-      window.dispatchEvent(new CustomEvent('open-indicator-popup', {
-        detail: { indicator: indicator.id, interval }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('open-indicator-popup', {
+          detail: { indicator: indicator.id, interval },
+        }),
+      );
     } else {
       // Active: keep existing behavior (toggle off or open settings)
       // For now, we'll open the settings popup for active indicators too
-      window.dispatchEvent(new CustomEvent('open-indicator-popup', {
-        detail: { indicator: indicator.id, interval }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('open-indicator-popup', {
+          detail: { indicator: indicator.id, interval },
+        }),
+      );
     }
   };
 
   const renderIndicatorItem = (indicator) => {
-    const isActive = indicatorList.some(item => item.indicator === indicator.id);
+    const isActive = indicatorList.some((item) => item.indicator === indicator.id);
     return (
       <button
         key={indicator.id}
@@ -81,7 +89,16 @@ export default function IndicatorsDropdown({ interval }) {
         </div>
         <div className="indicator-menu-item-check" aria-hidden="true">
           {isActive && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="20 6 9 17 4 12" />
             </svg>
           )}
@@ -102,12 +119,20 @@ export default function IndicatorsDropdown({ interval }) {
         onClick={() => setIsOpen(!isOpen)}
       >
         <span>Indicators</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
           <path d="M6 9l6 6 6-6" />
         </svg>
-        {activeCount > 0 && (
-          <span className="indicator-count-badge">{activeCount}</span>
-        )}
+        {activeCount > 0 && <span className="indicator-count-badge">{activeCount}</span>}
       </button>
 
       {isOpen && (

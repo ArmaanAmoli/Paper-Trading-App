@@ -13,7 +13,7 @@ export const indicatorConfigs = {
         max: 200,
         step: 1,
         required: true,
-        placeholder: '14'
+        placeholder: '14',
       },
       {
         name: 'lineColor',
@@ -21,7 +21,7 @@ export const indicatorConfigs = {
         type: 'color',
         defaultValue: '#2196F3',
         required: true,
-        placeholder: '#2196F3'
+        placeholder: '#2196F3',
       },
       {
         name: 'typeOfMA',
@@ -30,16 +30,16 @@ export const indicatorConfigs = {
         defaultValue: 'SMA',
         options: [
           { value: 'SMA', label: 'SMA' },
-          { value: 'EMA', label: 'EMA' }
+          { value: 'EMA', label: 'EMA' },
         ],
-        required: true
-      }
+        required: true,
+      },
     ],
     transform: (values) => ({
       indicator: values.typeOfMA,
       timeperiod: Number(values.timeperiod),
-      lineColor: values.lineColor
-    })
+      lineColor: values.lineColor,
+    }),
   },
 
   BBAND: {
@@ -56,7 +56,7 @@ export const indicatorConfigs = {
         max: 200,
         step: 1,
         required: true,
-        placeholder: '20'
+        placeholder: '20',
       },
       {
         name: 'stdUp',
@@ -67,7 +67,7 @@ export const indicatorConfigs = {
         max: 10,
         step: 0.1,
         required: true,
-        placeholder: '2'
+        placeholder: '2',
       },
       {
         name: 'stdDown',
@@ -78,7 +78,7 @@ export const indicatorConfigs = {
         max: 10,
         step: 0.1,
         required: true,
-        placeholder: '2'
+        placeholder: '2',
       },
       {
         name: 'lineColor',
@@ -86,7 +86,7 @@ export const indicatorConfigs = {
         type: 'color',
         defaultValue: '#2196F3',
         required: true,
-        placeholder: '#2196F3'
+        placeholder: '#2196F3',
       },
       {
         name: 'upLineColor',
@@ -94,7 +94,7 @@ export const indicatorConfigs = {
         type: 'color',
         defaultValue: '#2196F3',
         required: true,
-        placeholder: '#2196F3'
+        placeholder: '#2196F3',
       },
       {
         name: 'downLineColor',
@@ -102,7 +102,7 @@ export const indicatorConfigs = {
         type: 'color',
         defaultValue: '#2196F3',
         required: true,
-        placeholder: '#2196F3'
+        placeholder: '#2196F3',
       },
       {
         name: 'typeOfMA',
@@ -111,10 +111,10 @@ export const indicatorConfigs = {
         defaultValue: 'SMA',
         options: [
           { value: 'SMA', label: 'SMA' },
-          { value: 'EMA', label: 'EMA' }
+          { value: 'EMA', label: 'EMA' },
         ],
-        required: true
-      }
+        required: true,
+      },
     ],
     transform: (values) => ({
       stdUp: Number(values.stdUp),
@@ -123,8 +123,8 @@ export const indicatorConfigs = {
       timeperiod: Number(values.timeperiod),
       lineColor: values.lineColor,
       upLineColor: values.upLineColor,
-      downLineColor: values.downLineColor
-    })
+      downLineColor: values.downLineColor,
+    }),
   },
 
   RSI: {
@@ -141,7 +141,7 @@ export const indicatorConfigs = {
         max: 100,
         step: 1,
         required: true,
-        placeholder: '14'
+        placeholder: '14',
       },
       {
         name: 'lineColor',
@@ -149,7 +149,7 @@ export const indicatorConfigs = {
         type: 'color',
         defaultValue: '#FFEB3B',
         required: true,
-        placeholder: '#FFEB3B'
+        placeholder: '#FFEB3B',
       },
       {
         name: 'overBroughtLevel',
@@ -160,7 +160,7 @@ export const indicatorConfigs = {
         max: 100,
         step: 1,
         required: true,
-        placeholder: '70'
+        placeholder: '70',
       },
       {
         name: 'overSoldLevel',
@@ -171,15 +171,15 @@ export const indicatorConfigs = {
         max: 100,
         step: 1,
         required: true,
-        placeholder: '30'
-      }
+        placeholder: '30',
+      },
     ],
     transform: (values) => ({
       timeperiod: Number(values.timeperiod),
       lineColor: values.lineColor,
       overBroughtLevel: Number(values.overBroughtLevel),
-      overSoldLevel: Number(values.overSoldLevel)
-    })
+      overSoldLevel: Number(values.overSoldLevel),
+    }),
   },
 
   STOCH: {
@@ -196,7 +196,7 @@ export const indicatorConfigs = {
         max: 200,
         step: 1,
         required: true,
-        placeholder: '14'
+        placeholder: '14',
       },
       {
         name: 'fastPeriod',
@@ -207,7 +207,7 @@ export const indicatorConfigs = {
         max: 200,
         step: 1,
         required: true,
-        placeholder: '5'
+        placeholder: '5',
       },
       {
         name: 'slowkPeriod',
@@ -218,7 +218,7 @@ export const indicatorConfigs = {
         max: 200,
         step: 1,
         required: true,
-        placeholder: '3'
+        placeholder: '3',
       },
       {
         name: 'slowkMaType',
@@ -227,9 +227,9 @@ export const indicatorConfigs = {
         defaultValue: 'SMA',
         options: [
           { value: 'SMA', label: 'SMA' },
-          { value: 'EMA', label: 'EMA' }
+          { value: 'EMA', label: 'EMA' },
         ],
-        required: true
+        required: true,
       },
       {
         name: 'slowdPeriod',
@@ -240,7 +240,7 @@ export const indicatorConfigs = {
         max: 200,
         step: 1,
         required: true,
-        placeholder: '3'
+        placeholder: '3',
       },
       {
         name: 'slowdMaType',
@@ -249,9 +249,9 @@ export const indicatorConfigs = {
         defaultValue: 'SMA',
         options: [
           { value: 'SMA', label: 'SMA' },
-          { value: 'EMA', label: 'EMA' }
+          { value: 'EMA', label: 'EMA' },
         ],
-        required: true
+        required: true,
       },
       {
         name: 'slowLineColor',
@@ -259,7 +259,7 @@ export const indicatorConfigs = {
         type: 'color',
         defaultValue: '#FF9D23',
         required: true,
-        placeholder: '#FF9D23'
+        placeholder: '#FF9D23',
       },
       {
         name: 'fastLineColor',
@@ -267,8 +267,8 @@ export const indicatorConfigs = {
         type: 'color',
         defaultValue: '#EA5252',
         required: true,
-        placeholder: '#EA5252'
-      }
+        placeholder: '#EA5252',
+      },
     ],
     transform: (values) => ({
       fastPeriod: Number(values.fastPeriod),
@@ -278,8 +278,8 @@ export const indicatorConfigs = {
       slowdMatype: values.slowdMaType === 'SMA' ? 0 : 1,
       timeperiod: Number(values.timeperiod),
       slowLineColor: values.slowLineColor,
-      fastLineColor: values.fastLineColor
-    })
+      fastLineColor: values.fastLineColor,
+    }),
   },
 
   VOL: {
@@ -294,9 +294,9 @@ export const indicatorConfigs = {
         defaultValue: 'VOL',
         options: [
           { value: 'VOL', label: 'Volume (VOL)' },
-          { value: 'OBV', label: 'On Balance Volume (OBV)' }
+          { value: 'OBV', label: 'On Balance Volume (OBV)' },
         ],
-        required: true
+        required: true,
       },
       {
         name: 'lineColor',
@@ -305,12 +305,12 @@ export const indicatorConfigs = {
         defaultValue: '#2196F3',
         required: true,
         placeholder: '#2196F3',
-        conditional: (values) => values.typeOfVol === 'OBV'
-      }
+        conditional: (values) => values.typeOfVol === 'OBV',
+      },
     ],
     transform: (values) => ({
       indicator: values.typeOfVol,
-      lineColor: values.lineColor
-    })
-  }
+      lineColor: values.lineColor,
+    }),
+  },
 };

@@ -1,4 +1,4 @@
-import React,{createContext} from "react";
+import React, { createContext } from 'react';
 
 //Provide central watchlist array to all the elements.
 const WatchlistContext = createContext();
@@ -13,4 +13,4 @@ const IndicatorsList = createContext();
 
 const MarketData = createContext();
 
-export {WatchlistContext , UserAccountContext , UserEquityContext , IndicatorsList , MarketData};
+export { WatchlistContext, UserAccountContext, UserEquityContext, IndicatorsList, MarketData };

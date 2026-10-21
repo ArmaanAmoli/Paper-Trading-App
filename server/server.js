@@ -2,9 +2,22 @@ import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
 import 'dotenv/config';
-import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist, saveSubscription, getUserStopLosses, deleteStopLoss } from './queryManager.js';
+import {
+  SignUp,
+  login,
+  portfolio,
+  executeTrade,
+  GetUserData,
+  GetTradeHistory,
+  GetUserWatchlist,
+  AddToWatchlist,
+  RemoveFromWatchlist,
+  saveSubscription,
+  getUserStopLosses,
+  deleteStopLoss,
+} from './queryManager.js';
 import jwt from 'jsonwebtoken';
-import cors from "cors";
+import cors from 'cors';
 import axios from 'axios';
 import { getQuote } from './GetData/getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,541 +27,555 @@ import { StopLoss } from './Schemas/mongoSchema.js';
 import { stopLossWS } from './StopLoss/stoploss.js';
 
 const FAST_API_SERVER_DOMAIN = process.env.FAST_API_SERVER_DOMAIN;
-const JWT_SECRET = process.env.JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET;
 const server = express();
 const port = process.env.EXPRESS_SERVER_PORT || 3001;
 
-
 try {
-    await mongoose.connect(process.env.MONGO_URL);
-    console.log("MongoDB connected");
+  await mongoose.connect(process.env.MONGO_URL);
+  console.log('MongoDB connected');
 } catch (err) {
-    console.error("MongoDB FAILED", err);
-    process.exit(1);
+  console.error('MongoDB FAILED', err);
+  process.exit(1);
 }
-
 
 //MIDDLEWARES
 server.use(express.json());
 server.use(cors());
 
 const validateEmail = (req, res, next) => {
-    const { email } = req.body;
-    if (!email) {
-        return res.status(400).json({ message: "Email is Required" })
-    }
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (pattern.test(email)) {
-        return next();
-    }
-    else {
-        res.status(400).json({ message: "Invalid email" });
-        return;
-    }
-
-}
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: 'Email is Required' });
+  }
+  const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (pattern.test(email)) {
+    return next();
+  } else {
+    res.status(400).json({ message: 'Invalid email' });
+    return;
+  }
+};
 
 const verifyToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-        return res.status(401).json({ message: "No token provided" });
-    }
-    if (!authHeader.startsWith("Bearer ")) return res.status(401).json({ message: "No token provided" });
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Invalid token format" });
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (err) {
-        return res.status(401).json({ message: "Token is invalid or expired", error: String(err) });
-    }
-}
-
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  if (!authHeader.startsWith('Bearer '))
+    return res.status(401).json({ message: 'No token provided' });
+  const token = authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'Invalid token format' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: 'Token is invalid or expired', error: String(err) });
+  }
+};
 
 //Request Handlers
 
 //-----------------------------------------------------------------------ACCOUNT-------------------------------------------------------------------------------------------
 server.post('/sign-up', validateEmail, async (req, res, next) => {
-    try {
-        await SignUp(req.body);
-        res.status(200).json({ message: "User Registered" });
-    } catch (err) {
-        next(err);
-    }
+  try {
+    await SignUp(req.body);
+    res.status(200).json({ message: 'User Registered' });
+  } catch (err) {
+    next(err);
+  }
 });
 
 server.post('/login', validateEmail, async (req, res, next) => {
-    try {
-        const user = await login(req.body);
-        if (!user) {
-            res.status(401).json({ message: "Incorrect Password" });
-            return;
-        }
-        const token = jwt.sign(
-            {
-                userId: user._id,
-                email: user.email
-            },
-            JWT_SECRET,
-            { expiresIn: "1h" }
-        );
-        res.status(200).json({
-            message: "Login Success",
-            token
-        });
-    } catch (err) {
-        next(err);
+  try {
+    const user = await login(req.body);
+    if (!user) {
+      res.status(401).json({ message: 'Incorrect Password' });
+      return;
     }
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: '1h' },
+    );
+    res.status(200).json({
+      message: 'Login Success',
+      token,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 server.get('/user-data', verifyToken, async (req, res, next) => {
-    try {
-        const userID = req.user.userId;
-        //console.log(userID);
-        const user = await GetUserData(userID);
-        // console.log(userID);
-        // console.log(user);
-        res.status(200).json(user);
-    } catch (err) {
-        next(err);
-    }
-})
+  try {
+    const userID = req.user.userId;
+    //console.log(userID);
+    const user = await GetUserData(userID);
+    // console.log(userID);
+    // console.log(user);
+    res.status(200).json(user);
+  } catch (err) {
+    next(err);
+  }
+});
 
 server.post('/save-subscription', verifyToken, async (req, res, next) => {
-    const subscriptionObject = req.body.data;
+  const subscriptionObject = req.body.data;
 
-    if (!subscriptionObject) {
-        return res.status(400).json({ message: 'Subscription payload is required' });
-    }
+  if (!subscriptionObject) {
+    return res.status(400).json({ message: 'Subscription payload is required' });
+  }
 
-    console.log('subscription object: ', subscriptionObject);
-    const userId = req.user.userId;
-    try {
-        const status = await saveSubscription(userId, subscriptionObject);
-        if (status.success) {
-            console.log(status);
-            res.status(200).json(status);
-        }
-    } catch (error) {
-        res.status(404).send(`error while subscribing for notificaton: ${error}`)
-        next(error);
+  console.log('subscription object: ', subscriptionObject);
+  const userId = req.user.userId;
+  try {
+    const status = await saveSubscription(userId, subscriptionObject);
+    if (status.success) {
+      console.log(status);
+      res.status(200).json(status);
     }
-})
+  } catch (error) {
+    res.status(404).send(`error while subscribing for notificaton: ${error}`);
+    next(error);
+  }
+});
 
 //-------------------------------------------------------------------STOCK-DATA-------------------------------------------------------------------------------------------
 
 server.get('/quote', verifyToken, async (req, res, next) => {
-    try {
-        const query = req.query;
-        const ticker = query.ticker;
-        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/quote', {
-            params: {
-                ticker: ticker
-            }
-        });
-        res.json(fastAPIRes.data);
-    } catch (err) { next(err) }
-})
+  try {
+    const query = req.query;
+    const ticker = query.ticker;
+    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/quote', {
+      params: {
+        ticker: ticker,
+      },
+    });
+    res.json(fastAPIRes.data);
+  } catch (err) {
+    next(err);
+  }
+});
 server.get('/data', verifyToken, async (req, res, next) => {
-    try {
-        const query = req.query;
-        const ticker = query.ticker;
-        const interval = query.interval;
-        const period = query.period;
-        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/data', {
-            params: {
-                ticker: ticker,
-                period: period,
-                interval: interval
-            }
-        });
-        // console.log(fastAPIRes.data);
-        res.json(fastAPIRes.data);
-    } catch (err) {
-        next(err);
-    }
+  try {
+    const query = req.query;
+    const ticker = query.ticker;
+    const interval = query.interval;
+    const period = query.period;
+    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/data', {
+      params: {
+        ticker: ticker,
+        period: period,
+        interval: interval,
+      },
+    });
+    // console.log(fastAPIRes.data);
+    res.json(fastAPIRes.data);
+  } catch (err) {
+    next(err);
+  }
 });
 
 server.get('/portfolio', verifyToken, async (req, res, next) => {
-    try {
-        const userID = req.user.userId;
-        const positions = await portfolio(userID);
-        res.status(200).json(positions)
-    } catch (err) {
-        next(err);
-    }
-})
+  try {
+    const userID = req.user.userId;
+    const positions = await portfolio(userID);
+    res.status(200).json(positions);
+  } catch (err) {
+    next(err);
+  }
+});
 
 server.get('/user-watchlist', verifyToken, async (req, res, next) => {
-    try {
-        const userID = req.user.userId;
-        const userWatchlist = await GetUserWatchlist(userID);
-        // console.log(userWatchlist)
-        res.status(200).json(userWatchlist);
-    } catch (err) {
-        next(err);
-    }
-})
-
-
+  try {
+    const userID = req.user.userId;
+    const userWatchlist = await GetUserWatchlist(userID);
+    // console.log(userWatchlist)
+    res.status(200).json(userWatchlist);
+  } catch (err) {
+    next(err);
+  }
+});
 
 server.get('/trade-history', verifyToken, async (req, res, next) => {
-    try {
-        const userID = req.user.userId;
-        // console.log(userID);
-        const tradeHistory = await GetTradeHistory(userID);
-        //console.log(tradeHistory);
-        res.status(200).json(tradeHistory.reverse());
-    } catch (err) { next(err); }
-})
+  try {
+    const userID = req.user.userId;
+    // console.log(userID);
+    const tradeHistory = await GetTradeHistory(userID);
+    //console.log(tradeHistory);
+    res.status(200).json(tradeHistory.reverse());
+  } catch (err) {
+    next(err);
+  }
+});
 
 server.get('/search', verifyToken, async (req, res, next) => {
-    const query = req.query.query;
-    // console.log(query)
-    try {
-        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/search', {
-            params: {
-                query: query,
-            }
-
-        });
-        // console.log(fastAPIRes.data)
-        res.json(fastAPIRes.data);
-    } catch (err) {
-        next(err);
-    }
-
-})
+  const query = req.query.query;
+  // console.log(query)
+  try {
+    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/search', {
+      params: {
+        query: query,
+      },
+    });
+    // console.log(fastAPIRes.data)
+    res.json(fastAPIRes.data);
+  } catch (err) {
+    next(err);
+  }
+});
 
 server.post('/user-watchlist/add', verifyToken, async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const newWatchlistItem = req.body.symbol;
-        const response = await AddToWatchlist(userId, newWatchlistItem);
-        if (response) {
-            res.status(200).json({ success: true });
-        }
-        else {
-            res.status(400).json({ success: false });
-        }
-    } catch (err) {
-
-        next(err);
+  try {
+    const userId = req.user.userId;
+    const newWatchlistItem = req.body.symbol;
+    const response = await AddToWatchlist(userId, newWatchlistItem);
+    if (response) {
+      res.status(200).json({ success: true });
+    } else {
+      res.status(400).json({ success: false });
     }
-})
+  } catch (err) {
+    next(err);
+  }
+});
 
 server.delete('/user-watchlist/delete', verifyToken, async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const symbol = req.body.symbol;
-        // console.log(req.body)
-        // console.log(symbol);
-        const response = await RemoveFromWatchlist(userId, symbol);
-        if (response) {
-            res.status(200).json({ success: true });
-        }
-        else {
-            res.status(400).json({ success: false });
-        }
-
-    } catch (err) {
-        next(err);
+  try {
+    const userId = req.user.userId;
+    const symbol = req.body.symbol;
+    // console.log(req.body)
+    // console.log(symbol);
+    const response = await RemoveFromWatchlist(userId, symbol);
+    if (response) {
+      res.status(200).json({ success: true });
+    } else {
+      res.status(400).json({ success: false });
     }
-})
+  } catch (err) {
+    next(err);
+  }
+});
 
 server.get('/data/indicator', verifyToken, async (req, res, next) => {
-    try {
-        const query = req.query;
-        const ticker = query.ticker;
-        const indicator = query.indicator;
-        const interval = query.interval;
-        const period = query.period;
-        const timeperiod = query.timeperiod || null;
-        const matype = query.matype || null;
-        const stdUp = query.stdUp || null;
-        const stdDown = query.stdDown || null;
+  try {
+    const query = req.query;
+    const ticker = query.ticker;
+    const indicator = query.indicator;
+    const interval = query.interval;
+    const period = query.period;
+    const timeperiod = query.timeperiod || null;
+    const matype = query.matype || null;
+    const stdUp = query.stdUp || null;
+    const stdDown = query.stdDown || null;
 
-        const fastPeriod = query.fastPeriod || 5;
-        const slowkPeriod = query.slowkPeriod || 3;
-        const slowkMatype = query.slowkMatype || 0;
-        const slowdPeriod = query.slowdPeriod || 3;
-        const slowdMatype = query.slowdMatype || 0;
+    const fastPeriod = query.fastPeriod || 5;
+    const slowkPeriod = query.slowkPeriod || 3;
+    const slowkMatype = query.slowkMatype || 0;
+    const slowdPeriod = query.slowdPeriod || 3;
+    const slowdMatype = query.slowdMatype || 0;
 
-        switch (indicator) {
-            case "SMA":
-                {
-                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/SMA',
-                        {
-                            params:
-                            {
-                                ticker: ticker,
-                                period: period,
-                                interval: interval,
-                                timeperiod: timeperiod
-                            }
-                        })
-                    // console.log("SMA:", fastAPIRes.data);
-                    res.json(fastAPIRes.data);
-                    break;
-                }
-            case "EMA":
-                {
-                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/EMA',
-                        {
-                            params:
-                            {
-                                ticker: ticker,
-                                period: period,
-                                interval: interval,
-                                timeperiod: timeperiod
-                            }
-                        });
-                    // console.log("EMA:", fastAPIRes.data);
-                    res.json(fastAPIRes.data);
-                    break;
-                }
-            case "RSI":
-                {
-                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/RSI',
-                        {
-                            params:
-                            {
-                                ticker: ticker,
-                                period: period,
-                                interval: interval,
-                                timeperiod: timeperiod
-                            }
-                        });
-                    // console.log("RSI:", fastAPIRes.data);
-                    res.json(fastAPIRes.data);
-                    break;
-                }
-            case "VOL":
-                {
-                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/VOL',
-                        {
-                            params:
-                            {
-                                ticker: ticker,
-                                period: period,
-                                interval: interval,
-                            }
-                        });
-                    // console.log("VOL:", fastAPIRes.data);
-                    res.json(fastAPIRes.data);
-                    break;
-                }
-            case "OBV":
-                {
-                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/OBV',
-                        {
-                            params:
-                            {
-                                ticker: ticker,
-                                period: period,
-                                interval: interval,
-                            }
-                        });
-                    // console.log("OBV:", fastAPIRes.data);
-                    res.json(fastAPIRes.data);
-                    break;
-                }
-            case "BBAND":
-                {
-                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/BBAND', {
-                        params: {
-                            ticker: ticker,
-                            period: period,
-                            interval: interval,
-                            timeperiod: timeperiod,
-                            matype: matype,
-                            stdUp: stdUp,
-                            stdDown: stdDown
-                        }
-                    });
-                    // console.log("BBAND: ", fastAPIRes.data);
-                    res.json(fastAPIRes.data);
-                    break;
-                }
-            case "STOCH":
-                {
-                    const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN+'/indicators/STOCH', {
-                        params: {
-                            ticker: ticker,
-                            period: period,
-                            interval: interval,
-                            fastk_period: fastPeriod,
-                            slowk_period: slowkPeriod,
-                            slowk_matype: slowkMatype,
-                            slowd_period: slowdPeriod,
-                            slowd_matype: slowdMatype,
-                        }
-                    });
-                    res.json(fastAPIRes.data);
-                    break;
-                }
-            default:
-                console.log("Indicator not exist");
-                res.status(400).json({ message: "Indicator not exist" });
-        }
+    switch (indicator) {
+      case 'SMA': {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/indicators/SMA', {
+          params: {
+            ticker: ticker,
+            period: period,
+            interval: interval,
+            timeperiod: timeperiod,
+          },
+        });
+        // console.log("SMA:", fastAPIRes.data);
+        res.json(fastAPIRes.data);
+        break;
+      }
+      case 'EMA': {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/indicators/EMA', {
+          params: {
+            ticker: ticker,
+            period: period,
+            interval: interval,
+            timeperiod: timeperiod,
+          },
+        });
+        // console.log("EMA:", fastAPIRes.data);
+        res.json(fastAPIRes.data);
+        break;
+      }
+      case 'RSI': {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/indicators/RSI', {
+          params: {
+            ticker: ticker,
+            period: period,
+            interval: interval,
+            timeperiod: timeperiod,
+          },
+        });
+        // console.log("RSI:", fastAPIRes.data);
+        res.json(fastAPIRes.data);
+        break;
+      }
+      case 'VOL': {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/indicators/VOL', {
+          params: {
+            ticker: ticker,
+            period: period,
+            interval: interval,
+          },
+        });
+        // console.log("VOL:", fastAPIRes.data);
+        res.json(fastAPIRes.data);
+        break;
+      }
+      case 'OBV': {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/indicators/OBV', {
+          params: {
+            ticker: ticker,
+            period: period,
+            interval: interval,
+          },
+        });
+        // console.log("OBV:", fastAPIRes.data);
+        res.json(fastAPIRes.data);
+        break;
+      }
+      case 'BBAND': {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/indicators/BBAND', {
+          params: {
+            ticker: ticker,
+            period: period,
+            interval: interval,
+            timeperiod: timeperiod,
+            matype: matype,
+            stdUp: stdUp,
+            stdDown: stdDown,
+          },
+        });
+        // console.log("BBAND: ", fastAPIRes.data);
+        res.json(fastAPIRes.data);
+        break;
+      }
+      case 'STOCH': {
+        const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/indicators/STOCH', {
+          params: {
+            ticker: ticker,
+            period: period,
+            interval: interval,
+            fastk_period: fastPeriod,
+            slowk_period: slowkPeriod,
+            slowk_matype: slowkMatype,
+            slowd_period: slowdPeriod,
+            slowd_matype: slowdMatype,
+          },
+        });
+        res.json(fastAPIRes.data);
+        break;
+      }
+      default:
+        console.log('Indicator not exist');
+        res.status(400).json({ message: 'Indicator not exist' });
     }
-    catch (err) {
-        next(err);
-    }
+  } catch (err) {
+    next(err);
+  }
 });
 
 //-----------------------------------------------------------------------TRADE-------------------------------------------------------------------------------------------
 
 server.post('/buy', verifyToken, async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const positionDetails = req.body;
-        
-        // Validate required fields
-        if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
-            return res.status(400).json({ success: false, message: "Missing required fields: symbol, qty, side" });
-        }
-        
-        const quote = await getQuote(positionDetails.symbol);
-        if (!quote || !quote.currentPrice) {
-            return res.status(400).json({ success: false, message: `Failed to fetch current price for ${positionDetails.symbol}` });
-        }
-        
-        positionDetails.price = quote.currentPrice;
-        positionDetails.orderId = uuidv4();
-        const result = await executeTrade(positionDetails, userId);
-        
-        if (result.success && result.duplicate) {
-            return res.status(200).json({ success: true, duplicate: true, message: "Duplicate order ignored" });
-        }
-        if (result.success) {
-            return res.status(200).json({ success: true, trade: result.newTrade, message: "Buy order executed successfully" });
-        }
-        return res.status(422).json({ success: false, message: "Trade execution failed" });
-    } catch (err) {
-        console.error("Buy order error:", err.message);
-        const statusCode = err.message.includes("Insufficient") || err.message.includes("balance") || err.message.includes("margin") ? 422 : 500;
-        return res.status(statusCode).json({ success: false, message: err.message || "Failed to place buy order" });
+  try {
+    const userId = req.user.userId;
+    const positionDetails = req.body;
+
+    // Validate required fields
+    if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Missing required fields: symbol, qty, side' });
     }
+
+    const quote = await getQuote(positionDetails.symbol);
+    if (!quote || !quote.currentPrice) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: `Failed to fetch current price for ${positionDetails.symbol}`,
+        });
+    }
+
+    positionDetails.price = quote.currentPrice;
+    positionDetails.orderId = uuidv4();
+    const result = await executeTrade(positionDetails, userId);
+
+    if (result.success && result.duplicate) {
+      return res
+        .status(200)
+        .json({ success: true, duplicate: true, message: 'Duplicate order ignored' });
+    }
+    if (result.success) {
+      return res
+        .status(200)
+        .json({
+          success: true,
+          trade: result.newTrade,
+          message: 'Buy order executed successfully',
+        });
+    }
+    return res.status(422).json({ success: false, message: 'Trade execution failed' });
+  } catch (err) {
+    console.error('Buy order error:', err.message);
+    const statusCode =
+      err.message.includes('Insufficient') ||
+      err.message.includes('balance') ||
+      err.message.includes('margin')
+        ? 422
+        : 500;
+    return res
+      .status(statusCode)
+      .json({ success: false, message: err.message || 'Failed to place buy order' });
+  }
 });
 
 server.post('/sell', verifyToken, async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const positionDetails = req.body;
-        
-        // Validate required fields
-        if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
-            return res.status(400).json({ success: false, message: "Missing required fields: symbol, qty, side" });
-        }
-        
-        const quote = await getQuote(positionDetails.symbol);
-        if (!quote || !quote.currentPrice) {
-            return res.status(400).json({ success: false, message: `Failed to fetch current price for ${positionDetails.symbol}` });
-        }
-        
-        positionDetails.price = quote.currentPrice;
-        positionDetails.orderId = uuidv4();
-        const result = await executeTrade(positionDetails, userId);
-        
-        if (result.success) {
-            return res.status(200).json({ success: true, trade: result.newTrade, message: "Sell order executed successfully" });
-        }
-        return res.status(422).json({ success: false, message: "Trade execution failed" });
-    } catch (err) {
-        console.error("Sell order error:", err.message);
-        const statusCode = err.message.includes("Insufficient") || err.message.includes("balance") || err.message.includes("margin") ? 422 : 500;
-        return res.status(statusCode).json({ success: false, message: err.message || "Failed to place sell order" });
+  try {
+    const userId = req.user.userId;
+    const positionDetails = req.body;
+
+    // Validate required fields
+    if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Missing required fields: symbol, qty, side' });
     }
+
+    const quote = await getQuote(positionDetails.symbol);
+    if (!quote || !quote.currentPrice) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: `Failed to fetch current price for ${positionDetails.symbol}`,
+        });
+    }
+
+    positionDetails.price = quote.currentPrice;
+    positionDetails.orderId = uuidv4();
+    const result = await executeTrade(positionDetails, userId);
+
+    if (result.success) {
+      return res
+        .status(200)
+        .json({
+          success: true,
+          trade: result.newTrade,
+          message: 'Sell order executed successfully',
+        });
+    }
+    return res.status(422).json({ success: false, message: 'Trade execution failed' });
+  } catch (err) {
+    console.error('Sell order error:', err.message);
+    const statusCode =
+      err.message.includes('Insufficient') ||
+      err.message.includes('balance') ||
+      err.message.includes('margin')
+        ? 422
+        : 500;
+    return res
+      .status(statusCode)
+      .json({ success: false, message: err.message || 'Failed to place sell order' });
+  }
 });
 
 server.post('/stopLoss', verifyToken, async (req, res, next) => {
-    try {
-        const stopLossInfo = req.body;
-        const userId = req.user.userId;
-        stopLossInfo.userId = userId;
-        const stopLossObj = new StopLoss(stopLossInfo);
-        stopLossObj.save();
-        const ticker = stopLossObj.symbol;
-        if (!tickerToSL.has(ticker)) {
-            socket.send({
-                action: "subscribe",
-                ticker: ticker
-            });
-            tickerToSL.set(ticker, []);
-        }
-        const value = tickerToSL.get(ticker)
-        value.push(stopLossObj.toJSON());
+  try {
+    const stopLossInfo = req.body;
+    const userId = req.user.userId;
+    stopLossInfo.userId = userId;
+    const stopLossObj = new StopLoss(stopLossInfo);
+    stopLossObj.save();
+    const ticker = stopLossObj.symbol;
+    if (!tickerToSL.has(ticker)) {
+      socket.send({
+        action: 'subscribe',
+        ticker: ticker,
+      });
+      tickerToSL.set(ticker, []);
+    }
+    const value = tickerToSL.get(ticker);
+    value.push(stopLossObj.toJSON());
 
-        return res.status(200).json({ message: "Stop loss order placed." })
-    }
-    catch (err) {
-        next(err);
-    }
+    return res.status(200).json({ message: 'Stop loss order placed.' });
+  } catch (err) {
+    next(err);
+  }
 });
 
 server.get('/stopLoss', verifyToken, async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const stopLosses = await getUserStopLosses(userId);
-        return res.status(200).json(stopLosses);
-    } catch (err) {
-        next(err);
-    }
+  try {
+    const userId = req.user.userId;
+    const stopLosses = await getUserStopLosses(userId);
+    return res.status(200).json(stopLosses);
+  } catch (err) {
+    next(err);
+  }
 });
 
 server.delete('/stopLoss/:id', verifyToken, async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const stopLossId = req.params.id;
-        const deleted = await deleteStopLoss(stopLossId, userId);
-        if (!deleted) {
-            return res.status(404).json({ message: "Stop loss not found" });
-        }
-        // Also remove from in-memory tickerToSL map
-        const ticker = deleted.symbol;
-        if (tickerToSL.has(ticker)) {
-            const arr = tickerToSL.get(ticker);
-            const filtered = arr.filter(sl => sl._id.toString() !== stopLossId);
-            if (filtered.length === 0) {
-                tickerToSL.delete(ticker);
-                if (socket && socket.readyState === WebSocket.OPEN) {
-                    socket.send(JSON.stringify({ action: "unsubscribe", ticker }));
-                }
-            } else {
-                tickerToSL.set(ticker, filtered);
-            }
-        }
-        return res.status(200).json({ message: "Stop loss cancelled" });
-    } catch (err) {
-        next(err);
+  try {
+    const userId = req.user.userId;
+    const stopLossId = req.params.id;
+    const deleted = await deleteStopLoss(stopLossId, userId);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Stop loss not found' });
     }
+    // Also remove from in-memory tickerToSL map
+    const ticker = deleted.symbol;
+    if (tickerToSL.has(ticker)) {
+      const arr = tickerToSL.get(ticker);
+      const filtered = arr.filter((sl) => sl._id.toString() !== stopLossId);
+      if (filtered.length === 0) {
+        tickerToSL.delete(ticker);
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ action: 'unsubscribe', ticker }));
+        }
+      } else {
+        tickerToSL.set(ticker, filtered);
+      }
+    }
+    return res.status(200).json({ message: 'Stop loss cancelled' });
+  } catch (err) {
+    next(err);
+  }
 });
-
 
 // Global Error Handler Middleware
 server.use((err, req, res, next) => {
-    console.error(`Error Stack: ${err.stack}`);
-    const statusCode = err.status || 500; // If error already have a status code if not give it 500(Server Error)
-    res.status(statusCode).json({ message: err.message || "server Error" })
+  console.error(`Error Stack: ${err.stack}`);
+  const statusCode = err.status || 500; // If error already have a status code if not give it 500(Server Error)
+  res.status(statusCode).json({ message: err.message || 'server Error' });
 });
 
 const httpServer = server.listen(port, (error) => {
-    stopLossWS();
-    if (!error) {
-        console.log(`Server running on port ${port}`)
-    } else {
-        console.log("An error occured, unable to start server." , error)
-    }
+  stopLossWS();
+  if (!error) {
+    console.log(`Server running on port ${port}`);
+  } else {
+    console.log('An error occured, unable to start server.', error);
+  }
 
-    process.on('SIGTERM', () => {
-        console.log("Stop Loss Web Socket connection closed.");
-        socket.close();
+  process.on('SIGTERM', () => {
+    console.log('Stop Loss Web Socket connection closed.');
+    socket.close();
 
-        httpServer.close(() => {
-            console.log("HTTP server closed. Exiting process.");
-            process.exit(0); // Cleanly exit
-        });
+    httpServer.close(() => {
+      console.log('HTTP server closed. Exiting process.');
+      process.exit(0); // Cleanly exit
     });
+  });
 });

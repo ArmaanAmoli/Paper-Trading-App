@@ -9,7 +9,7 @@ import IndicatorModal from '../Components/IndicatorPopUps/IndicatorModal.jsx';
 import { indicatorConfigs } from '../Components/IndicatorPopUps/indicatorConfigs.js';
 import ChartErrorBoundary from '../Components/ChartErrorBoundary.jsx';
 import { fetchActiveStopLosses } from '../services/api.js';
-import "./styles/chartTradePage.css";
+import './styles/chartTradePage.css';
 
 export default function StockMainChart() {
   const [activeTab, setActiveTab] = useState('order'); // 'order' | 'watchlist'
@@ -28,7 +28,7 @@ export default function StockMainChart() {
     const handleOpenPopup = (e) => {
       const { indicator, interval: eventInterval } = e.detail;
       if (eventInterval !== interval) return;
-      
+
       // Map indicator IDs to config keys
       const configMap = {
         SMA: 'SMA',
@@ -36,9 +36,9 @@ export default function StockMainChart() {
         RSI: 'RSI',
         BBAND: 'BBAND',
         VOL: 'VOL',
-        STOCH: 'STOCH'
+        STOCH: 'STOCH',
       };
-      
+
       const configKey = configMap[indicator];
       if (configKey && indicatorConfigs[configKey]) {
         setModalConfig(indicatorConfigs[configKey]);
@@ -83,12 +83,12 @@ export default function StockMainChart() {
       }
     }
     load();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [ticker]);
 
-  const intervals = [
-    '1m', '2m', '5m', '15m', '30m', '1h', '90m', '1d', '5d', '1wk', '1mo', '3mo'
-  ];
+  const intervals = ['1m', '2m', '5m', '15m', '30m', '1h', '90m', '1d', '5d', '1wk', '1mo', '3mo'];
 
   return (
     <div className="chart-trade-page">
@@ -117,10 +117,10 @@ export default function StockMainChart() {
           {/* Chart Area */}
           <div className="chart-area">
             <ChartErrorBoundary>
-              <CandleStickChartComponent 
-                ticker={ticker} 
-                interval={interval} 
-                period='max' 
+              <CandleStickChartComponent
+                ticker={ticker}
+                interval={interval}
+                period="max"
                 key={`${ticker}-${interval}`}
                 stopLosses={stopLosses}
                 onStopLossChange={refreshAllData}

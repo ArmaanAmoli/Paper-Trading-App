@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================
    ORDER FORM - NEW DESIGN
@@ -41,9 +41,15 @@
   color: var(--color-text-primary);
 }
 
-.order-current-price.positive { color: var(--color-blue-text); }
-.order-current-price.negative { color: var(--color-red-text); }
-.order-current-price.neutral { color: var(--color-text-muted); }
+.order-current-price.positive {
+  color: var(--color-blue-text);
+}
+.order-current-price.negative {
+  color: var(--color-red-text);
+}
+.order-current-price.neutral {
+  color: var(--color-text-muted);
+}
 
 .order-price-change {
   display: flex;
@@ -53,9 +59,15 @@
   font-weight: 500;
 }
 
-.order-price-change.positive { color: var(--color-blue-text); }
-.order-price-change.negative { color: var(--color-red-text); }
-.order-price-change.neutral { color: var(--color-text-muted); }
+.order-price-change.positive {
+  color: var(--color-blue-text);
+}
+.order-price-change.negative {
+  color: var(--color-red-text);
+}
+.order-price-change.neutral {
+  color: var(--color-text-muted);
+}
 
 /*** Buy/Sell Toggle ***/
 .buy-sell-toggle {
@@ -145,13 +157,13 @@
 }
 
 /*** Hide number input spinners ***/
-.form-input[type="number"]::-webkit-outer-spin-button,
-.form-input[type="number"]::-webkit-inner-spin-button {
+.form-input[type='number']::-webkit-outer-spin-button,
+.form-input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.form-input[type="number"] {
+.form-input[type='number'] {
   -moz-appearance: textfield;
 }
 
@@ -236,7 +248,7 @@
 }
 
 .place-order-btn.buy:hover:not(:disabled) {
-  background: #3291FF;
+  background: #3291ff;
 }
 
 .place-order-btn.sell {
@@ -244,7 +256,7 @@
 }
 
 .place-order-btn.sell:hover:not(:disabled) {
-  background: #FF6369;
+  background: #ff6369;
 }
 
 .place-order-btn:disabled {

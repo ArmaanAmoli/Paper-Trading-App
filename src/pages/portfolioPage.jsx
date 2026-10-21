@@ -1,19 +1,19 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect } from 'react';
 import './styles/portfolioPage.css';
-import { UserAccountContext, UserEquityContext } from "../Context/context.js";
+import { UserAccountContext, UserEquityContext } from '../Context/context.js';
 import {
   formatNumber,
   formatSignedNumber,
   formatPercent,
   getValueColorClass,
   getSideBadgeClass,
-  getSideLabel
-} from "../lib/formatters.js";
-import { fetchActiveStopLosses, cancelStopLoss } from "../services/api.js";
+  getSideLabel,
+} from '../lib/formatters.js';
+import { fetchActiveStopLosses, cancelStopLoss } from '../services/api.js';
 
 export default function PortfolioPage() {
   const [userAccountInformation] = useContext(UserAccountContext);
-  
+
   // Properly destructure the context value (object with tuple properties)
   const { portfolio, pnl, totalPnl, totalEquity } = useContext(UserEquityContext);
   const [assetList] = portfolio || [];
@@ -46,7 +46,9 @@ export default function PortfolioPage() {
       }
     }
     loadStopLosses();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Cancel stop loss handler
@@ -55,7 +57,7 @@ export default function PortfolioPage() {
     if (!confirmed) return;
     try {
       await cancelStopLoss(stopLossId);
-      setStopLosses(prev => prev.filter(sl => sl._id !== stopLossId));
+      setStopLosses((prev) => prev.filter((sl) => sl._id !== stopLossId));
     } catch (err) {
       alert('Failed to cancel stop loss: ' + (err.message || 'Unknown error'));
     }
@@ -94,9 +96,7 @@ export default function PortfolioPage() {
         <section className="positions-card">
           <div className="positions-card-header">
             <h2 className="positions-card-title">Open positions</h2>
-            <span className="positions-count-badge">
-              {assetList?.length ?? 0}
-            </span>
+            <span className="positions-count-badge">{assetList?.length ?? 0}</span>
           </div>
 
           <div className="positions-table-wrapper">
@@ -128,9 +128,7 @@ export default function PortfolioPage() {
                         <td>{index + 1}</td>
                         <td>{symbol}</td>
                         <td>
-                          <span className={`side-badge ${sideBadgeClass}`}>
-                            {sideLabel}
-                          </span>
+                          <span className={`side-badge ${sideBadgeClass}`}>{sideLabel}</span>
                         </td>
                         <td className="tabular-nums">{Math.abs(item.shares)}</td>
                         <td className={`tabular-nums ${pnlColor}`}>
@@ -199,7 +197,9 @@ export default function PortfolioPage() {
                       <tr key={sl._id} className="row">
                         <td title={sl.symbol}>{sl.symbol}</td>
                         <td>
-                          <span className={`side-badge ${sl.type === 'buy' ? 'side-long' : 'side-short'}`}>
+                          <span
+                            className={`side-badge ${sl.type === 'buy' ? 'side-long' : 'side-short'}`}
+                          >
                             {sl.type === 'buy' ? 'LONG' : 'SHORT'}
                           </span>
                         </td>
@@ -208,7 +208,9 @@ export default function PortfolioPage() {
                         <td className="actions-cell">
                           <button
                             className="cancel-stoploss-btn"
-                            onClick={() => handleCancelStopLoss(sl._id, sl.symbol, formatNumber(sl.price))}
+                            onClick={() =>
+                              handleCancelStopLoss(sl._id, sl.symbol, formatNumber(sl.price))
+                            }
                             aria-label={`Cancel stop loss for ${sl.symbol} at ${formatNumber(sl.price)}`}
                           >
                             ✕

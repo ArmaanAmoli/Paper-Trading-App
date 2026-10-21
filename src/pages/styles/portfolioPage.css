@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================
    PORTFOLIO PAGE - NEW DESIGN
@@ -77,7 +77,9 @@
   font-weight: 600;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
   margin: 0;
   line-height: 1.2;
 }
@@ -150,38 +152,44 @@
 
 /* Column widths and alignment */
 .positions-table th:nth-child(1),
-.positions-table td:nth-child(1) { /* S.NO */
+.positions-table td:nth-child(1) {
+  /* S.NO */
   width: 72px;
   text-align: left;
 }
 
 .positions-table th:nth-child(2),
-.positions-table td:nth-child(2) { /* SYMBOL */
+.positions-table td:nth-child(2) {
+  /* SYMBOL */
   width: calc(100% - 72px - 100px - 100px - 160px - 140px);
   min-width: 160px;
   text-align: left;
 }
 
 .positions-table th:nth-child(3),
-.positions-table td:nth-child(3) { /* SIDE */
+.positions-table td:nth-child(3) {
+  /* SIDE */
   width: 100px;
   text-align: left;
 }
 
 .positions-table th:nth-child(4),
-.positions-table td:nth-child(4) { /* QTY */
+.positions-table td:nth-child(4) {
+  /* QTY */
   width: 100px;
   text-align: right;
 }
 
 .positions-table th:nth-child(5),
-.positions-table td:nth-child(5) { /* DAILY PNL */
+.positions-table td:nth-child(5) {
+  /* DAILY PNL */
   width: 160px;
   text-align: right;
 }
 
 .positions-table th:nth-child(6),
-.positions-table td:nth-child(6) { /* %RETURN */
+.positions-table td:nth-child(6) {
+  /* %RETURN */
   width: 140px;
   text-align: right;
 }
@@ -206,12 +214,14 @@
   color: var(--color-text-primary);
 }
 
-.positions-table tbody td:nth-child(1) { /* S.NO */
+.positions-table tbody td:nth-child(1) {
+  /* S.NO */
   font-size: 13px;
   color: var(--color-text-muted);
 }
 
-.positions-table tbody td:nth-child(2) { /* SYMBOL */
+.positions-table tbody td:nth-child(2) {
+  /* SYMBOL */
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -251,7 +261,9 @@
 .positions-table tbody td:nth-child(4) {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
   color: var(--color-text-primary);
 }
 
@@ -260,7 +272,9 @@
 .positions-table tbody td:nth-child(6) {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
 }
 
 .positions-table tbody td.positive {
@@ -300,8 +314,13 @@
 }
 
 @keyframes loading-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Responsive: horizontal scroll under 900px */
@@ -374,32 +393,37 @@
 
 /* Column widths and alignment for stop losses table */
 .stop-losses-table th:nth-child(1),
-.stop-losses-table td:nth-child(1) { /* SYMBOL */
+.stop-losses-table td:nth-child(1) {
+  /* SYMBOL */
   width: calc(100% - 100px - 100px - 180px - 60px);
   min-width: 160px;
   text-align: left;
 }
 
 .stop-losses-table th:nth-child(2),
-.stop-losses-table td:nth-child(2) { /* SIDE */
+.stop-losses-table td:nth-child(2) {
+  /* SIDE */
   width: 100px;
   text-align: left;
 }
 
 .stop-losses-table th:nth-child(3),
-.stop-losses-table td:nth-child(3) { /* QTY */
+.stop-losses-table td:nth-child(3) {
+  /* QTY */
   width: 100px;
   text-align: right;
 }
 
 .stop-losses-table th:nth-child(4),
-.stop-losses-table td:nth-child(4) { /* TRIGGER PRICE */
+.stop-losses-table td:nth-child(4) {
+  /* TRIGGER PRICE */
   width: 180px;
   text-align: right;
 }
 
 .stop-losses-table th:nth-child(5),
-.stop-losses-table td:nth-child(5) { /* ACTIONS */
+.stop-losses-table td:nth-child(5) {
+  /* ACTIONS */
   width: 60px;
   text-align: center;
 }
@@ -424,7 +448,8 @@
   color: var(--color-text-primary);
 }
 
-.stop-losses-table tbody td:nth-child(1) { /* SYMBOL */
+.stop-losses-table tbody td:nth-child(1) {
+  /* SYMBOL */
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -438,14 +463,18 @@
   color: var(--color-red-text);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
 }
 
 /* QTY */
 .stop-losses-table tbody td:nth-child(3) {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
   color: var(--color-text-primary);
 }
 
