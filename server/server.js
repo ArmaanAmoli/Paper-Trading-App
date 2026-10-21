@@ -21,10 +21,9 @@ import cors from 'cors';
 import axios from 'axios';
 import { getQuote } from './GetData/getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
-import { allStopLoss, tickerToSL } from './StopLoss/getAllStopLoss.js';
-import { socket } from './StopLoss/stoploss.js';
+import { allStopLossPromise } from './StopLoss/getAllStopLoss.js';
+import { socket, stopLossWS } from './StopLoss/stoploss.js';
 import { StopLoss } from './Schemas/mongoSchema.js';
-import { stopLossWS } from './StopLoss/stoploss.js';
 
 const FAST_API_SERVER_DOMAIN = process.env.FAST_API_SERVER_DOMAIN;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -38,6 +37,17 @@ try {
   console.error('MongoDB FAILED', err);
   process.exit(1);
 }
+
+// Initialize stop loss map from database
+let tickerToSL = new Map();
+allStopLossPromise
+  .then(({ tickerToSL: tickerToSLMap }) => {
+    tickerToSL = tickerToSLMap;
+    console.log('Stop loss map initialized from database');
+  })
+  .catch((err) => {
+    console.error('Failed to initialize stop loss map:', err);
+  });
 
 //MIDDLEWARES
 server.use(express.json());
@@ -114,10 +124,7 @@ server.post('/login', validateEmail, async (req, res, next) => {
 server.get('/user-data', verifyToken, async (req, res, next) => {
   try {
     const userID = req.user.userId;
-    //console.log(userID);
     const user = await GetUserData(userID);
-    // console.log(userID);
-    // console.log(user);
     res.status(200).json(user);
   } catch (err) {
     next(err);
@@ -174,7 +181,6 @@ server.get('/data', verifyToken, async (req, res, next) => {
         interval: interval,
       },
     });
-    // console.log(fastAPIRes.data);
     res.json(fastAPIRes.data);
   } catch (err) {
     next(err);
@@ -195,7 +201,6 @@ server.get('/user-watchlist', verifyToken, async (req, res, next) => {
   try {
     const userID = req.user.userId;
     const userWatchlist = await GetUserWatchlist(userID);
-    // console.log(userWatchlist)
     res.status(200).json(userWatchlist);
   } catch (err) {
     next(err);
@@ -205,9 +210,7 @@ server.get('/user-watchlist', verifyToken, async (req, res, next) => {
 server.get('/trade-history', verifyToken, async (req, res, next) => {
   try {
     const userID = req.user.userId;
-    // console.log(userID);
     const tradeHistory = await GetTradeHistory(userID);
-    //console.log(tradeHistory);
     res.status(200).json(tradeHistory.reverse());
   } catch (err) {
     next(err);
@@ -216,14 +219,12 @@ server.get('/trade-history', verifyToken, async (req, res, next) => {
 
 server.get('/search', verifyToken, async (req, res, next) => {
   const query = req.query.query;
-  // console.log(query)
   try {
     const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/search', {
       params: {
         query: query,
       },
     });
-    // console.log(fastAPIRes.data)
     res.json(fastAPIRes.data);
   } catch (err) {
     next(err);
@@ -249,8 +250,6 @@ server.delete('/user-watchlist/delete', verifyToken, async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const symbol = req.body.symbol;
-    // console.log(req.body)
-    // console.log(symbol);
     const response = await RemoveFromWatchlist(userId, symbol);
     if (response) {
       res.status(200).json({ success: true });
@@ -290,7 +289,6 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
             timeperiod: timeperiod,
           },
         });
-        // console.log("SMA:", fastAPIRes.data);
         res.json(fastAPIRes.data);
         break;
       }
@@ -303,7 +301,6 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
             timeperiod: timeperiod,
           },
         });
-        // console.log("EMA:", fastAPIRes.data);
         res.json(fastAPIRes.data);
         break;
       }
@@ -316,7 +313,6 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
             timeperiod: timeperiod,
           },
         });
-        // console.log("RSI:", fastAPIRes.data);
         res.json(fastAPIRes.data);
         break;
       }
@@ -328,7 +324,6 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
             interval: interval,
           },
         });
-        // console.log("VOL:", fastAPIRes.data);
         res.json(fastAPIRes.data);
         break;
       }
@@ -340,7 +335,6 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
             interval: interval,
           },
         });
-        // console.log("OBV:", fastAPIRes.data);
         res.json(fastAPIRes.data);
         break;
       }
@@ -356,7 +350,6 @@ server.get('/data/indicator', verifyToken, async (req, res, next) => {
             stdDown: stdDown,
           },
         });
-        // console.log("BBAND: ", fastAPIRes.data);
         res.json(fastAPIRes.data);
         break;
       }
@@ -392,7 +385,6 @@ server.post('/buy', verifyToken, async (req, res, next) => {
     const userId = req.user.userId;
     const positionDetails = req.body;
 
-    // Validate required fields
     if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
       return res
         .status(400)
@@ -401,12 +393,10 @@ server.post('/buy', verifyToken, async (req, res, next) => {
 
     const quote = await getQuote(positionDetails.symbol);
     if (!quote || !quote.currentPrice) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: `Failed to fetch current price for ${positionDetails.symbol}`,
-        });
+      return res.status(400).json({
+        success: false,
+        message: `Failed to fetch current price for ${positionDetails.symbol}`,
+      });
     }
 
     positionDetails.price = quote.currentPrice;
@@ -419,13 +409,11 @@ server.post('/buy', verifyToken, async (req, res, next) => {
         .json({ success: true, duplicate: true, message: 'Duplicate order ignored' });
     }
     if (result.success) {
-      return res
-        .status(200)
-        .json({
-          success: true,
-          trade: result.newTrade,
-          message: 'Buy order executed successfully',
-        });
+      return res.status(200).json({
+        success: true,
+        trade: result.newTrade,
+        message: 'Buy order executed successfully',
+      });
     }
     return res.status(422).json({ success: false, message: 'Trade execution failed' });
   } catch (err) {
@@ -447,7 +435,6 @@ server.post('/sell', verifyToken, async (req, res, next) => {
     const userId = req.user.userId;
     const positionDetails = req.body;
 
-    // Validate required fields
     if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
       return res
         .status(400)
@@ -456,12 +443,10 @@ server.post('/sell', verifyToken, async (req, res, next) => {
 
     const quote = await getQuote(positionDetails.symbol);
     if (!quote || !quote.currentPrice) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: `Failed to fetch current price for ${positionDetails.symbol}`,
-        });
+      return res.status(400).json({
+        success: false,
+        message: `Failed to fetch current price for ${positionDetails.symbol}`,
+      });
     }
 
     positionDetails.price = quote.currentPrice;
@@ -469,13 +454,11 @@ server.post('/sell', verifyToken, async (req, res, next) => {
     const result = await executeTrade(positionDetails, userId);
 
     if (result.success) {
-      return res
-        .status(200)
-        .json({
-          success: true,
-          trade: result.newTrade,
-          message: 'Sell order executed successfully',
-        });
+      return res.status(200).json({
+        success: true,
+        trade: result.newTrade,
+        message: 'Sell order executed successfully',
+      });
     }
     return res.status(422).json({ success: false, message: 'Trade execution failed' });
   } catch (err) {
@@ -498,7 +481,7 @@ server.post('/stopLoss', verifyToken, async (req, res, next) => {
     const userId = req.user.userId;
     stopLossInfo.userId = userId;
     const stopLossObj = new StopLoss(stopLossInfo);
-    stopLossObj.save();
+    await stopLossObj.save();
     const ticker = stopLossObj.symbol;
     if (!tickerToSL.has(ticker)) {
       socket.send({
@@ -534,7 +517,6 @@ server.delete('/stopLoss/:id', verifyToken, async (req, res, next) => {
     if (!deleted) {
       return res.status(404).json({ message: 'Stop loss not found' });
     }
-    // Also remove from in-memory tickerToSL map
     const ticker = deleted.symbol;
     if (tickerToSL.has(ticker)) {
       const arr = tickerToSL.get(ticker);
@@ -555,9 +537,9 @@ server.delete('/stopLoss/:id', verifyToken, async (req, res, next) => {
 });
 
 // Global Error Handler Middleware
-server.use((err, req, res, next) => {
+server.use((err, _req, res, _next) => {
   console.error(`Error Stack: ${err.stack}`);
-  const statusCode = err.status || 500; // If error already have a status code if not give it 500(Server Error)
+  const statusCode = err.status || 500;
   res.status(statusCode).json({ message: err.message || 'server Error' });
 });
 
@@ -575,7 +557,7 @@ const httpServer = server.listen(port, (error) => {
 
     httpServer.close(() => {
       console.log('HTTP server closed. Exiting process.');
-      process.exit(0); // Cleanly exit
+      process.exit(0);
     });
   });
 });

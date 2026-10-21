@@ -274,8 +274,6 @@ export async function executeTrade(positionDetails, userId) {
 export async function GetUserData(userId) {
   let userData = await User.findById(userId).select('-passwordHash');
   if (!userData) return null;
-  // console.log(userData);
-  // delete userData.passwordHash;
   return userData;
 }
 
@@ -325,8 +323,8 @@ export async function StopLossExecuter(StopLossInfo) {
     side: type,
     orderId: uuidv4(),
   };
+  let StopLossObject = {};
   try {
-    let StopLossObject = {};
     const tradeStatus = await executeTrade(positionDetails, userId);
     StopLossObject = {
       userId: userId,
@@ -368,6 +366,6 @@ export async function saveSubscription(userId, subscriptionObject) {
     await user.save();
     return { success: true };
   } else {
-    throw new error('user not found');
+    throw new Error('user not found');
   }
 }
