@@ -53,8 +53,6 @@ const indicatorValueSchema = z.object({
   UP: z.any().optional(),
   MIDDLE: z.any().optional(),
   DOWN: z.any().optional(),
-  SLOWK: z.any().optional(),
-  SLOWD: z.any().optional(),
 }).passthrough();
 
 export type IndicatorValueResponse = z.infer<typeof indicatorValueSchema>;

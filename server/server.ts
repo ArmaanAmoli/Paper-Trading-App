@@ -2,31 +2,17 @@ import express from 'express';
 import mongoose from 'mongoose';
 import process from 'node:process';
 import 'dotenv/config';
-import {
-  SignUp,
-  login,
-  portfolio,
-  executeTrade,
-  GetUserData,
-  GetTradeHistory,
-  GetUserWatchlist,
-  AddToWatchlist,
-  RemoveFromWatchlist,
-  saveSubscription,
-  getUserStopLosses,
-  deleteStopLoss,
-} from './queryManager.js';
-import jwt from 'jsonwebtoken';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import { getQuote } from './GetData/getQuote.js';
 import { v4 as uuidv4 } from 'uuid';
-import { allStopLossPromise, tickerToSL } from './StopLoss/getAllStopLoss.js';
+import { allStopLossPromise } from './StopLoss/getAllStopLoss.js';
 import { socket, stopLossWS } from './StopLoss/stoploss.js';
 import { StopLoss } from './Schemas/mongoSchema.js';
 import { getEnv } from './lib/env.js';
-import { verifyToken } from './lib/auth.js';
 import { route } from './lib/route.js';
+import { SignUp, login, portfolio, executeTrade, GetUserData, GetTradeHistory, GetUserWatchlist, AddToWatchlist, RemoveFromWatchlist, saveSubscription, getUserStopLosses, deleteStopLoss } from './queryManager.js';
 import {
   signUpEndpoint,
   loginEndpoint,
@@ -37,7 +23,6 @@ import {
   buyEndpoint,
   sellEndpoint,
   portfolioEndpoint,
-  userDataEndpoint,
   tradeHistoryEndpoint,
   stopLossEndpoint,
   getStopLossEndpoint,
@@ -85,10 +70,51 @@ server.use(cors());
 
 // Request Handlers using route() wrapper
 //-----------------------------------------------------------------------ACCOUNT-------------------------------------------------------------------------------------------
-server.post('/sign-up', route(signUpEndpoint, SignUp));
-server.post('/login', route(loginEndpoint, login));
-server.get('/user-data', route(userDataEndpoint, GetUserData));
-server.post('/save-subscription', route(saveSubscriptionEndpoint, saveSubscription));
+server.post('/sign-up', route(signUpEndpoint, async ({ body }) => {
+  await SignUp(body);
+  return { message: 'User Registered' as const };
+}));
+server.post('/login', route(loginEndpoint, async ({ body }) => {
+  const user = await login(body);
+  if (!user) {
+    throw new Error('Incorrect Password');
+  }
+  const token = jwt.sign(
+    {
+      userId: user._id.toString(),
+      email: user.email,
+    },
+    env.JWT_SECRET,
+    { expiresIn: '1h' },
+  );
+  return { message: 'Login Success' as const, token };
+}));
+server.get('/user-data', route(userDataEndpoint, async ({ user }) => {
+  const userData = await GetUserData(user.userId);
+  if (!userData) throw new Error('User not found');
+  const ns = userData.notificationSubscription;
+  return {
+    _id: userData._id.toString(),
+    username: userData.username,
+    email: userData.email,
+    balance: userData.balance,
+    blockedMargin: userData.blockedMargin,
+    createdAt: userData.createdAt.toISOString(),
+    lastLogin: userData.lastLogin ? userData.lastLogin.toISOString() : null,
+    notificationSubscription: ns ? {
+      endpoint: ns.endpoint,
+      expirationTime: ns.expirationTime ?? null,
+      keys: ns.keys ? {
+        p256dh: ns.keys.p256dh,
+        auth: ns.keys.auth,
+      } : { p256dh: '', auth: '' },
+    } : null,
+  };
+}));
+server.post('/save-subscription', route(saveSubscriptionEndpoint, async ({ body, user }) => {
+  await saveSubscription(user.userId, body.data);
+  return { success: true as const };
+}));
 
 //-------------------------------------------------------------------STOCK-DATA-------------------------------------------------------------------------------------------
 server.get('/quote', route(quoteEndpoint, async ({ query }) => {
@@ -108,14 +134,44 @@ server.get('/data', route(dataEndpoint, async ({ query }) => {
   return fastAPIRes.data;
 }));
 server.get('/portfolio', route(portfolioEndpoint, async ({ user }) => {
-  return await portfolio(user.userId);
+  const result = await portfolio(user.userId);
+  return {
+    count: result.count,
+    positions: result.positions.map(p => ({
+      _id: p._id.toString(),
+      userId: p.userId.toString(),
+      symbol: p.symbol,
+      shares: p.shares,
+      avgPrice: p.avgPrice,
+      positionType: p.positionType ?? 'long',
+      lastUpdated: p.lastUpdated.toISOString(),
+    })),
+  };
 }));
 server.get('/user-watchlist', route(userWatchlistEndpoint, async ({ user }) => {
-  return await GetUserWatchlist(user.userId);
+  const watchlist = await GetUserWatchlist(user.userId);
+  if (!watchlist) return [];
+  return watchlist.map(w => ({
+    _id: w._id.toString(),
+    userId: w.userId.toString(),
+    symbols: w.symbols,
+  }));
 }));
 server.get('/trade-history', route(tradeHistoryEndpoint, async ({ user }) => {
   const tradeHistory = await GetTradeHistory(user.userId);
-  return tradeHistory.reverse();
+  if (!tradeHistory) return [];
+  return tradeHistory.map(t => ({
+    _id: t._id.toString(),
+    userId: t.userId.toString(),
+    symbol: t.symbol,
+    shares: t.shares,
+    price: t.price,
+    type: t.type,
+    timestamp: t.timestamp.toISOString(),
+    realizedPL: t.realizedPL,
+    orderId: t.orderId,
+    wasStopLoss: t.wasStopLoss,
+  })).reverse();
 }));
 server.get('/search', route(searchEndpoint, async ({ query }) => {
   const fastAPIRes = await axios.get(FAST_API_SERVER_DOMAIN + '/search', {
@@ -124,10 +180,12 @@ server.get('/search', route(searchEndpoint, async ({ query }) => {
   return fastAPIRes.data;
 }));
 server.post('/user-watchlist/add', route(addToWatchlistEndpoint, async ({ body, user }) => {
-  return await AddToWatchlist(user.userId, body.symbol);
+  const success = await AddToWatchlist(user.userId, body.symbol);
+  return { success };
 }));
 server.delete('/user-watchlist/delete', route(deleteFromWatchlistEndpoint, async ({ body, user }) => {
-  return await RemoveFromWatchlist(user.userId, body.symbol);
+  const success = await RemoveFromWatchlist(user.userId, body.symbol);
+  return { success };
 }));
 server.get('/data/indicator', route(indicatorEndpoint, async ({ query }) => {
   return await getIndicatorDataFromPythonClient(query);
@@ -135,7 +193,13 @@ server.get('/data/indicator', route(indicatorEndpoint, async ({ query }) => {
 
 //-----------------------------------------------------------------------TRADE-------------------------------------------------------------------------------------------
 server.post('/buy', route(buyEndpoint, async ({ body, user }) => {
-  const positionDetails = body;
+  const positionDetails = {
+    symbol: body.symbol,
+    qty: body.qty,
+    side: body.side,
+    price: 0, // will be set below
+    orderId: uuidv4(),
+  };
   if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
     throw new Error('Missing required fields: symbol, qty, side');
   }
@@ -144,11 +208,35 @@ server.post('/buy', route(buyEndpoint, async ({ body, user }) => {
     throw new Error(`Failed to fetch current price for ${positionDetails.symbol}`);
   }
   positionDetails.price = quote.currentPrice;
-  positionDetails.orderId = uuidv4();
-  return await executeTrade(positionDetails, user.userId);
+  const result = await executeTrade(positionDetails, user.userId);
+  if (result.duplicate) {
+    return { success: true, duplicate: true, message: 'Duplicate order ignored' };
+  }
+  return {
+    success: true,
+    message: 'Buy order executed successfully',
+    trade: result.newTrade ? {
+      _id: result.newTrade._id.toString(),
+      userId: result.newTrade.userId.toString(),
+      symbol: result.newTrade.symbol,
+      shares: result.newTrade.shares,
+      price: result.newTrade.price,
+      type: result.newTrade.type,
+      timestamp: result.newTrade.timestamp.toISOString(),
+      realizedPL: result.newTrade.realizedPL,
+      orderId: result.newTrade.orderId,
+      wasStopLoss: result.newTrade.wasStopLoss,
+    } : undefined,
+  };
 }));
 server.post('/sell', route(sellEndpoint, async ({ body, user }) => {
-  const positionDetails = body;
+  const positionDetails = {
+    symbol: body.symbol,
+    qty: body.qty,
+    side: body.side,
+    price: 0, // will be set below
+    orderId: uuidv4(),
+  };
   if (!positionDetails.symbol || !positionDetails.qty || !positionDetails.side) {
     throw new Error('Missing required fields: symbol, qty, side');
   }
@@ -157,25 +245,66 @@ server.post('/sell', route(sellEndpoint, async ({ body, user }) => {
     throw new Error(`Failed to fetch current price for ${positionDetails.symbol}`);
   }
   positionDetails.price = quote.currentPrice;
-  positionDetails.orderId = uuidv4();
-  return await executeTrade(positionDetails, user.userId);
+  const result = await executeTrade(positionDetails, user.userId);
+  return {
+    success: true,
+    message: 'Sell order executed successfully',
+    trade: result.newTrade ? {
+      _id: result.newTrade._id.toString(),
+      userId: result.newTrade.userId.toString(),
+      symbol: result.newTrade.symbol,
+      shares: result.newTrade.shares,
+      price: result.newTrade.price,
+      type: result.newTrade.type,
+      timestamp: result.newTrade.timestamp.toISOString(),
+      realizedPL: result.newTrade.realizedPL,
+      orderId: result.newTrade.orderId,
+      wasStopLoss: result.newTrade.wasStopLoss,
+    } : undefined,
+  };
 }));
 server.post('/stopLoss', route(stopLossEndpoint, async ({ body, user }) => {
-  const stopLossInfo = body;
-  stopLossInfo.userId = user.userId;
+  const stopLossInfo = {
+    symbol: body.symbol,
+    price: Number(body.price),
+    startDate: body.startDate,
+    qty: Number(body.qty),
+    type: body.type,
+    userId: user.userId,
+  };
   const stopLossObj = new StopLoss(stopLossInfo);
   await stopLossObj.save();
   
   // Update in-memory map and subscribe to WebSocket if needed
   const ticker = stopLossObj.symbol;
-  if (!stopLossMap.has(ticker)) {\n    if (socket?.readyState === WebSocket.OPEN) {\n      socket.send(JSON.stringify({ action: 'subscribe', ticker }));\n    }\n    stopLossMap.set(ticker, []);\n  }\n  const value = stopLossMap.get(ticker);\n  if (value) {\n    value.push(stopLossObj.toJSON());\n  }\n  
-  return { message: 'Stop loss order placed.' };
+  if (!stopLossMap.has(ticker)) {
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ action: 'subscribe', ticker }));
+    }
+    stopLossMap.set(ticker, []);
+  }
+  const value = stopLossMap.get(ticker);
+  if (value) {
+    value.push(stopLossObj.toJSON());
+  }
+  
+  return { message: 'Stop loss order placed.' as const };
 }));
 server.get('/stopLoss', route(getStopLossEndpoint, async ({ user }) => {
-  return await getUserStopLosses(user.userId);
+  const stopLosses = await getUserStopLosses(user.userId);
+  return stopLosses.map(sl => ({
+    _id: sl._id.toString(),
+    userId: sl.userId.toString(),
+    symbol: sl.symbol,
+    price: sl.price,
+    startDate: sl.startDate.toISOString(),
+    type: sl.type,
+    qty: sl.qty,
+  }));
 }));
 server.delete('/stopLoss/:id', route(deleteStopLossEndpoint, async ({ params, user }) => {
-  const deleted = await deleteStopLoss(params.id, user.userId);
+  const { id } = params as { id: string };
+  const deleted = await deleteStopLoss(id, user.userId);
   if (!deleted) {
     throw new Error('Stop loss not found');
   }
@@ -185,7 +314,7 @@ server.delete('/stopLoss/:id', route(deleteStopLossEndpoint, async ({ params, us
   if (stopLossMap.has(ticker)) {
     const arr = stopLossMap.get(ticker);
     if (arr) {
-      const filtered = arr.filter((sl) => sl._id.toString() !== params.id);
+      const filtered = arr.filter((sl) => sl._id.toString() !== id);
       if (filtered.length === 0) {
         stopLossMap.delete(ticker);
         if (socket?.readyState === WebSocket.OPEN) {
@@ -197,13 +326,13 @@ server.delete('/stopLoss/:id', route(deleteStopLossEndpoint, async ({ params, us
     }
   }
   
-  return { message: 'Stop loss cancelled' };
+  return { message: 'Stop loss cancelled' as const };
 }));
 
 // Global Error Handler Middleware
-server.use((err, _req, res, _next) => {
+server.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(`Error Stack: ${err.stack}`);
-  const statusCode = err.statusCode || err.status || 500;
+  const statusCode = (err as any).statusCode || (err as any).status || 500;
   res.status(statusCode).json({ message: err.message || 'server Error' });
 });
 

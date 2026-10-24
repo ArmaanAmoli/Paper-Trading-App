@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, InferSchemaType } from 'mongoose';
+import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
 
 const NotificationSubscriberSchema = new Schema(
   {

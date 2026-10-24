@@ -12,7 +12,7 @@ export type ApiError = z.infer<typeof apiErrorSchema>;
 export class AppError extends Error {
   constructor(
     public readonly statusCode: number,
-    public readonly message: string,
+    public override readonly message: string,
     public readonly issues?: unknown[]
   ) {
     super(message);

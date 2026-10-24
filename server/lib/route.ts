@@ -1,9 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { EndpointDefinition } from '../../../../shared/contract/define.js';
+import type { EndpointDefinition } from '@shared/contract/define.js';
 import { verifyToken } from './auth.js';
-import { AppError, toApiError } from './errors.js';
-import { getEnv } from './env.js';
 
 /**
  * Generic route handler that validates request against Zod schemas
@@ -15,30 +13,30 @@ export function route<
   TBody extends z.ZodTypeAny,
   TResponse extends z.ZodTypeAny
 >(
-  endpoint: EndpointDefinition<z.ZodTypeAny, z.ZodTypeAny, z.ZodTypeAny, z.ZodTypeAny>,
+  endpoint: EndpointDefinition<TParams, TQuery, TBody, TResponse>,
   handler: (input: {
-    params: z.infer<TParams>;
-    query: z.infer<TQuery>;
-    body: z.infer<TBody>;
+    params: z.output<TParams>;
+    query: z.output<TQuery>;
+    body: z.output<TBody>;
     user: { userId: string; email: string };
-  }) => Promise<z.infer<TResponse>>
+  }) => Promise<z.output<TResponse>>
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Parse params
       const params = endpoint.params
         ? endpoint.params.parse(req.params)
-        : ({} as z.infer<TParams>);
+        : ({} as z.output<TParams>);
 
       // Parse query
       const query = endpoint.query
         ? endpoint.query.parse(req.query)
-        : ({} as z.infer<TQuery>);
+        : ({} as z.output<TQuery>);
 
       // Parse body
       const body = endpoint.body
         ? endpoint.body.parse(req.body)
-        : ({} as z.infer<TBody>);
+        : ({} as z.output<TBody>);
 
       // Verify JWT if auth required
       let user: { userId: string; email: string } | undefined;
@@ -68,7 +66,7 @@ export function route<
       if (err instanceof z.ZodError) {
         const error = new Error('Validation failed');
         (error as any).statusCode = 400;
-        (error as any).issues = err.errors;
+        (error as any).issues = err.issues;
         next(error);
       } else {
         next(err);

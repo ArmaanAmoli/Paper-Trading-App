@@ -4,30 +4,33 @@ import bcrypt from 'bcrypt';
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { getEnv } from './lib/env.js';
-import { pythonClient } from './lib/pythonClient.js';
 import { sendPushNotification } from './Services/notificationService.js';
 import { AppError, InsufficientFundsError, InsufficientMarginError } from './lib/errors.js';
-import { getAllSL, deleteStopLoss } from './lib/route.js';
 
-// Initialize MongoDB connection
-mongoose
-  .connect(String(getEnv().MONGO_URL))
-  .then(() => {
-    console.log('CONNECTED');
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+// Initialize MongoDB connection (singleton pattern - only connect once)
+let isConnected = false;
+export async function connectDB(): Promise<void> {
+  if (!isConnected) {
+    try {
+      await mongoose.connect(String(getEnv().MONGO_URL));
+      isConnected = true;
+      console.log('MongoDB connected');
+    } catch (err) {
+      console.error('MongoDB connection failed:', err);
+      throw err;
+    }
+  }
+}
 
-export async function SignUp(details: { email: string; password: string; username: string }) {
+export async function SignUp(details: { email: string; password: string; username: string }): Promise<void> {
   const { email, password, username } = details;
   const passwordHash = await bcrypt.hash(password, 10); // SaltRounds = 10
   const newUser = new User({
     username,
     email,
     passwordHash,
-    createdAt: Date.now(),
-    lastLogin: Date.now(),
+    createdAt: new Date(),
+    lastLogin: new Date(),
   });
   await newUser.save();
 }
@@ -42,7 +45,8 @@ export async function login(details: { email: string; password: string }) {
 }
 
 export async function portfolio(userId: string) {
-  const positions = await Portfolio.find({ userId });
+  const objectIdUserId = new ObjectId(userId);
+  const positions = await Portfolio.find({ userId: objectIdUserId });
   return {
     count: positions.length,
     positions,
@@ -60,12 +64,12 @@ async function newTradeF(
   orderId: string
 ) {
   const newTrade = new Trade({
-    userId,
+    userId: new ObjectId(userId),
     symbol,
     shares,
     price,
     type,
-    timestamp: Date.now(),
+    timestamp: new Date(),
     realizedPL,
     orderId,
   });
@@ -76,8 +80,8 @@ async function newTradeF(
 export async function executeTrade(
   positionDetails: {
     symbol: string;
-    qty: number;
-    price: number;
+    qty: number | string;
+    price: number | string;
     side: 'buy' | 'sell';
     orderId: string;
   },
@@ -87,8 +91,9 @@ export async function executeTrade(
   try {
     session.startTransaction();
 
-    let { symbol, qty, price, side, orderId } = positionDetails;
-    qty = Number(qty);
+    const { symbol, qty: qtyRaw, price: priceRaw, side, orderId } = positionDetails;
+    const qtyNum = Number(qtyRaw);
+    const priceNum = Number(priceRaw);
 
     // Duplicate check
     const existing = await Trade.findOne({ orderId }).session(session);
@@ -97,19 +102,20 @@ export async function executeTrade(
       return { success: true, duplicate: true };
     }
 
-    const filter = { userId, symbol };
+    const objectIdUserId = new ObjectId(userId);
+    const filter = { userId: objectIdUserId, symbol };
 
     const user = await User.findById(userId).session(session);
-    if (!user) throw new AppError('User not found', 404);
+    if (!user) throw new AppError(404, 'User not found');
 
     // 🔧 FIX: Ensure blockedMargin exists
     if (!user.blockedMargin) user.blockedMargin = 0;
 
-    const delta = side === 'buy' ? qty : -qty;
+    const delta: number = side === 'buy' ? qtyNum : -qtyNum;
 
     let realizedPL = 0;
     let newShares = delta;
-    let newAvgPrice = price;
+    let newAvgPrice = priceNum;
 
     const portfolio = await Portfolio.findOne(filter).session(session);
 
@@ -134,12 +140,12 @@ export async function executeTrade(
         // Same direction add
         newShares = oldShares + delta;
         newAvgPrice =
-          (Math.abs(oldShares) * oldAvg + Math.abs(delta) * price) / Math.abs(newShares);
+          (Math.abs(oldShares) * oldAvg + Math.abs(delta) * priceNum) / Math.abs(newShares);
 
         portfolio.shares = newShares;
         portfolio.avgPrice = newAvgPrice;
         portfolio.positionType = newShares > 0 ? 'long' : 'short';
-        portfolio.lastUpdated = Date.now();
+        portfolio.lastUpdated = new Date();
 
         // Tracking all changes and sending a mongo query to update DB
         await portfolio.save({ session });
@@ -154,12 +160,12 @@ export async function executeTrade(
         closedQty = Math.min(Math.abs(oldShares), Math.abs(delta));
 
         // Realized PnL
-        realizedPL = oldShares > 0 ? closedQty * (price - oldAvg) : closedQty * (oldAvg - price);
+        realizedPL = oldShares > 0 ? closedQty * (priceNum - oldAvg) : closedQty * (oldAvg - priceNum);
 
         newShares = oldShares + delta;
 
         if (Math.sign(newShares) !== Math.sign(oldShares) && newShares !== 0) {
-          newAvgPrice = price; // flipped
+          newAvgPrice = priceNum; // flipped
         } else {
           newAvgPrice = oldAvg;
         }
@@ -174,7 +180,7 @@ export async function executeTrade(
                 shares: newShares,
                 avgPrice: newAvgPrice,
                 positionType: newShares > 0 ? 'long' : 'short',
-                lastUpdated: Date.now(),
+                lastUpdated: new Date(),
               },
             },
             { session },
@@ -186,12 +192,12 @@ export async function executeTrade(
       await Portfolio.create(
         [
           {
-            userId,
+            userId: objectIdUserId,
             symbol,
             shares: delta,
-            avgPrice: price,
+            avgPrice: priceNum,
             positionType: delta > 0 ? 'long' : 'short',
-            lastUpdated: Date.now(),
+            lastUpdated: new Date(),
           },
         ],
         { session },
@@ -204,13 +210,13 @@ export async function executeTrade(
     //          CASH FLOW
     // ================================
 
-    const tradeValue = price * qty;
+    const tradeValue = priceNum * qtyNum;
     const cashDelta = side === 'buy' ? -tradeValue : tradeValue;
 
-    const userDoc = await User.findById(userId).session(session);
-    if (!userDoc) throw new AppError('User not found', 404);
+    const userDoc = await User.findById(objectIdUserId).session(session);
+    if (!userDoc) throw new AppError(404, 'User not found');
 
-    userDoc.balance += cashDelta;
+    userDoc.balance = Number(userDoc.balance) + cashDelta;
 
     if (userDoc.balance < 0) {
       await session.abortTransaction();
@@ -230,8 +236,6 @@ export async function executeTrade(
       shortAddedQty = Math.abs(delta);
     } else if (portfolioDoc) {
       const oldShares = portfolioDoc.shares;
-      const oldAvg = portfolioDoc.avgPrice;
-      const newShares = oldShares + (side === 'buy' ? qty : -qty);
 
       // Increasing short
       if (oldShares < 0 && delta < 0) {
@@ -239,8 +243,8 @@ export async function executeTrade(
       }
 
       // Flipping long → short
-      if (oldShares > 0 && (oldShares + (side === 'buy' ? qty : -qty)) < 0) {
-        shortAddedQty = Math.abs(oldShares + (side === 'buy' ? qty : -qty));
+      if (oldShares > 0 && (oldShares + (side === 'buy' ? qtyNum : -qtyNum)) < 0) {
+        shortAddedQty = Math.abs(oldShares + (side === 'buy' ? qtyNum : -qtyNum));
       }
 
       // Reducing short
@@ -251,30 +255,31 @@ export async function executeTrade(
 
     // Apply margin addition AFTER knowing shortAddedQty
     if (shortAddedQty > 0) {
-      const requiredMargin = 1.5 * price * shortAddedQty;
+      const requiredMargin = 1.5 * priceNum * shortAddedQty;
 
-      const userDoc = await User.findById(userId).session(session);
-      if (!userDoc) throw new AppError('User not found', 404);
+      const userDoc = await User.findById(objectIdUserId).session(session);
+      if (!userDoc) throw new AppError(404, 'User not found');
 
-      const available = userDoc.balance - userDoc.blockedMargin; // FIX
+      const available = Number(userDoc.balance) - Number(userDoc.blockedMargin); // FIX
 
       if (available < requiredMargin) {
         throw new InsufficientMarginError();
       }
 
-      const userDoc2 = await User.findById(userId).session(session);
+      const userDoc2 = await User.findById(objectIdUserId).session(session);
       if (userDoc2) userDoc2.blockedMargin += requiredMargin;
     }
 
     // Release margin when reducing short
     if (shortReducedQty > 0) {
-      const marginToRelease = 1.5 * oldAvg * shortReducedQty;
-      const userDoc = await User.findById(userId).session(session);
+      const avgPriceForRelease = portfolioDoc ? portfolioDoc.avgPrice : priceNum;
+      const marginToRelease = 1.5 * avgPriceForRelease * shortReducedQty;
+      const userDoc = await User.findById(objectIdUserId).session(session);
       if (userDoc) userDoc.blockedMargin -= marginToRelease;
     }
 
     // Prevent negative margin
-    const userDoc3 = await User.findById(userId).session(session);
+    const userDoc3 = await User.findById(objectIdUserId).session(session);
     if (userDoc3 && userDoc3.blockedMargin < 0) {
       userDoc3.blockedMargin = 0;
     }
@@ -286,15 +291,15 @@ export async function executeTrade(
     const newTrade = await newTradeF(
       userId,
       symbol,
-      qty,
-      price,
+      qtyNum,
+      priceNum,
       side,
       realizedPL,
       session,
       orderId
     );
 
-    await User.findByIdAndUpdate(userId, { $inc: { balance: cashDelta } }).session(session);
+    await User.findByIdAndUpdate(objectIdUserId, { $inc: { balance: cashDelta } }).session(session);
 
     await session.commitTransaction();
     return { success: true, newTrade };
@@ -307,7 +312,7 @@ export async function executeTrade(
 }
 
 export async function GetUserData(userId: string) {
-  let userData = await User.findById(userId).select('-passwordHash');
+  let userData = await User.findById(new ObjectId(userId)).select('-passwordHash');
   if (!userData) return null;
   return userData;
 }
@@ -372,7 +377,7 @@ export async function StopLossExecuter(StopLossInfo: {
     const tradeStatus = await executeTrade(positionDetails, userId);
     if (tradeStatus.success === true) {
       await StopLoss.deleteOne({
-        userId,
+        userId: new ObjectId(userId),
         symbol,
         price,
         startDate,
@@ -399,22 +404,22 @@ export async function getAllSL() {
 }
 
 export async function getUserStopLosses(userId: string) {
-  const stopLosses = await StopLoss.find({ userId });
+  const stopLosses = await StopLoss.find({ userId: new ObjectId(userId) });
   return stopLosses;
 }
 
 export async function deleteStopLoss(stopLossId: string, userId: string) {
-  const result = await StopLoss.findOneAndDelete({ _id: stopLossId, userId });
+  const result = await StopLoss.findOneAndDelete({ _id: new ObjectId(stopLossId), userId: new ObjectId(userId) });
   return result;
 }
 
 export async function saveSubscription(userId: string, subscriptionObject: any) {
-  const user = await User.findById(userId);
+  const user = await User.findById(new ObjectId(userId));
   if (user) {
     user.notificationSubscription = subscriptionObject;
     await user.save();
     return { success: true };
   } else {
-    throw new Error('user not found');
+    throw new AppError(404, 'user not found');
   }
 }
