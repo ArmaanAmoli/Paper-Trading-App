@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getEnv } from '../lib/env.js';
-import { QuoteResponse } from '../lib/pythonClient.js';
+import type { QuoteResponse } from '../lib/pythonClient.js';
 
 const env = getEnv();
 const quoteLink = env.FAST_API_SERVER_DOMAIN + '/quote';

@@ -1,8 +1,9 @@
 import { getAllSL } from '../queryManager.js';
-import { StopLossDocument } from '../Schemas/mongoSchema.js';
+import type { StopLossDocument } from '../Schemas/mongoSchema.js';
 
-let allStopLossPromise = getAllSL().then((allStopLoss: StopLossDocument[]) => {
-  const tickerToSL = new Map<string, StopLossDocument[]>();
+export const tickerToSL = new Map<string, StopLossDocument[]>();
+
+export const allStopLossPromise = getAllSL().then((allStopLoss: StopLossDocument[]) => {
   // console.log(allStopLoss)
   allStopLoss.forEach((slo) => {
     const ticker = slo.symbol;
@@ -19,6 +20,3 @@ let allStopLossPromise = getAllSL().then((allStopLoss: StopLossDocument[]) => {
   // console.log(tickerToSL)
   return { allStopLoss, tickerToSL };
 });
-
-export { allStopLossPromise };
-export { tickerToSL };

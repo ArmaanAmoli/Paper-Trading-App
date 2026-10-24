@@ -3,6 +3,7 @@ import { StopLossExecuter } from '../queryManager.js';
 import { tickerToSL } from './getAllStopLoss.js';
 import { sendPushNotification } from '../Services/notificationService.js';
 import { getEnv } from '../lib/env.js';
+import type { StopLossDocument } from '../Schemas/mongoSchema.js';
 
 const env = getEnv();
 const url = env.FAST_API_WEB_SOCKET_SERVER_DOMAIN + '/ws/quote';
@@ -39,28 +40,42 @@ function createSocket(): void {
     const StopLossesPlaced = tickerToSL.get(ticker);
     if (StopLossesPlaced === undefined) return;
 
-    const toBeDeleted = [];
+    const toBeDeleted: StopLossDocument[] = [];
 
     for (const sl of StopLossesPlaced) {
       // Execute matching stop-loss orders one by one and wait for each DB action.
       if (sl.type === 'buy') {
         if (receivedData.currentPrice >= sl.price) {
-          await StopLossExecuter(sl);
+          await StopLossExecuter({
+            userId: sl.userId.toString(),
+            symbol: sl.symbol,
+            price: sl.price,
+            startDate: sl.startDate.toISOString(),
+            qty: sl.qty,
+            type: sl.type,
+          });
           toBeDeleted.push(sl);
           console.log('Stop loss executed', sl);
           await sendPushNotification(
-            sl.userId,
+            sl.userId.toString(),
             `Paper Trading App`,
             `Stop Loss executed for ${sl.symbol} at price ${sl.price}`,
           );
         }
       } else if (sl.type === 'sell') {
         if (receivedData.currentPrice <= sl.price) {
-          await StopLossExecuter(sl);
+          await StopLossExecuter({
+            userId: sl.userId.toString(),
+            symbol: sl.symbol,
+            price: sl.price,
+            startDate: sl.startDate.toISOString(),
+            qty: sl.qty,
+            type: sl.type,
+          });
           toBeDeleted.push(sl);
           console.log('Stop loss executed', sl);
           await sendPushNotification(
-            sl.userId,
+            sl.userId.toString(),
             `Paper Trading App`,
             `Stop Loss executed for ${sl.symbol} at price ${sl.price}`,
           );
@@ -72,12 +87,13 @@ function createSocket(): void {
 
     if (toBeDeleted.length !== 0) {
       console.log('Old length:', StopLossesPlaced.length);
-      const filterArray = StopLossesPlaced.filter((item) => !toBeDeleted.includes(item));
+      const filterArray = StopLossesPlaced.filter((item: StopLossDocument) => !toBeDeleted.includes(item));
       tickerToSL.set(ticker, filterArray);
       console.log('New length:', filterArray.length);
     }
 
-    if (tickerToSL.get(ticker).length === 0) {
+    const remaining = tickerToSL.get(ticker);
+    if (remaining && remaining.length === 0) {
       socket!.send(
         JSON.stringify({
           action: 'unsubscribe',
