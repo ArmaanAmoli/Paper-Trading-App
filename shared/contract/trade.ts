@@ -103,6 +103,9 @@ export const deleteStopLossEndpoint = defineEndpoint({
   method: 'DELETE',
   path: '/stopLoss/:id',
   auth: true,
+  params: z.object({
+    id: z.string().min(1),
+  }),
   response: z.object({
     message: z.literal('Stop loss cancelled'),
   }),
