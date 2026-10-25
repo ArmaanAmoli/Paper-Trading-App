@@ -14,7 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build": "npm run typecheck && vite build",
-    "build:server": "tsc -p tsconfig.server.json",
+    "build:server": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
     "preview": "vite preview",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run build"
   },
@@ -36,6 +36,7 @@
     "react-use-websocket": "^4.13.0",
     "uuid": "^14.0.1",
     "web-push": "^3.6.7",
+    "ws": "^8.22.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -60,6 +61,7 @@
     "globals": "^16.5.0",
     "prettier": "^3.9.10",
     "tailwindcss": "^4.2.2",
+    "tsc-alias": "^1.9.9",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0",
