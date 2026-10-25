@@ -13,6 +13,8 @@ export async function getQuote(ticker: string): Promise<QuoteResponse> {
     return fastAPIRes.data;
   } catch (err) {
     console.error(`getQuote failed for ${ticker}:`, err);
-    throw new Error(`Failed to fetch quote for ${ticker}: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(
+      `Failed to fetch quote for ${ticker}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

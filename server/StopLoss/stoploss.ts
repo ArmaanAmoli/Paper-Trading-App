@@ -13,105 +13,120 @@ export let socket: WebSocket | null = null;
 
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-function createSocket(): void {
-  // Reconnect must create a fresh websocket instance instead of reusing a dead one.
-  socket = new WebSocket(url, [token]);
+interface QuoteMessage {
+  ticker: string;
+  currentPrice: number;
+}
 
-  socket.addEventListener('open', () => {
-    console.log(`WS connected successfully - ${url}`);
-    reconnectTimer = null;
+function createSocket(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    socket = new WebSocket(url, [token]);
 
-    // Restore all in-memory subscriptions after reconnect.
-    for (const key of tickerToSL.keys()) {
-      socket!.send(
-        JSON.stringify({
-          action: 'subscribe',
-          ticker: key,
-        }),
-      );
-    }
-  });
+    socket.addEventListener('open', () => {
+      console.log(`WS connected successfully - ${url}`);
+      reconnectTimer = null;
 
-  socket.addEventListener('message', async (event) => {
-    const receivedData = JSON.parse(event.data.toString());
-    const ticker = receivedData.ticker;
-    console.log('Received data: ', receivedData);
+      for (const key of tickerToSL.keys()) {
+        socket?.send(
+          JSON.stringify({
+            action: 'subscribe',
+            ticker: key,
+          }),
+        );
+      }
+      resolve();
+    });
 
-    const StopLossesPlaced = tickerToSL.get(ticker);
-    if (StopLossesPlaced === undefined) return;
+    socket.addEventListener('message', (event: WebSocket.MessageEvent) => {
+      const receivedData = JSON.parse(event.data as string) as QuoteMessage;
+      const ticker = receivedData.ticker;
+      console.log('Received data: ', receivedData);
 
-    const toBeDeleted: StopLossDocument[] = [];
+      const StopLossesPlaced = tickerToSL.get(ticker);
+      if (StopLossesPlaced === undefined) return;
 
-    for (const sl of StopLossesPlaced) {
-      // Execute matching stop-loss orders one by one and wait for each DB action.
-      if (sl.type === 'buy') {
-        if (receivedData.currentPrice >= sl.price) {
-          await StopLossExecuter({
-            userId: sl.userId.toString(),
-            symbol: sl.symbol,
-            price: sl.price,
-            startDate: sl.startDate.toISOString(),
-            qty: sl.qty,
-            type: sl.type,
-          });
-          toBeDeleted.push(sl);
-          console.log('Stop loss executed', sl);
-          await sendPushNotification(
-            sl.userId.toString(),
-            `Paper Trading App`,
-            `Stop Loss executed for ${sl.symbol} at price ${sl.price}`,
-          );
-        }
-      } else if (sl.type === 'sell') {
-        if (receivedData.currentPrice <= sl.price) {
-          await StopLossExecuter({
-            userId: sl.userId.toString(),
-            symbol: sl.symbol,
-            price: sl.price,
-            startDate: sl.startDate.toISOString(),
-            qty: sl.qty,
-            type: sl.type,
-          });
-          toBeDeleted.push(sl);
-          console.log('Stop loss executed', sl);
-          await sendPushNotification(
-            sl.userId.toString(),
-            `Paper Trading App`,
-            `Stop Loss executed for ${sl.symbol} at price ${sl.price}`,
-          );
+      const toBeDeleted: StopLossDocument[] = [];
+
+      for (const sl of StopLossesPlaced) {
+        if (sl.type === 'buy') {
+          if (receivedData.currentPrice >= sl.price) {
+            void StopLossExecuter({
+              userId: String(sl.userId),
+              symbol: sl.symbol,
+              price: sl.price,
+              startDate: sl.startDate.toISOString(),
+              qty: sl.qty,
+              type: sl.type,
+            });
+            toBeDeleted.push(sl);
+            console.log('Stop loss executed', sl);
+            void sendPushNotification(
+              String(sl.userId),
+              `Paper Trading App`,
+              `Stop Loss executed for ${sl.symbol} at price ${sl.price}`,
+            );
+          }
+        } else if (sl.type === 'sell') {
+          if (receivedData.currentPrice <= sl.price) {
+            void StopLossExecuter({
+              userId: String(sl.userId),
+              symbol: sl.symbol,
+              price: sl.price,
+              startDate: sl.startDate.toISOString(),
+              qty: sl.qty,
+              type: sl.type,
+            });
+            toBeDeleted.push(sl);
+            console.log('Stop loss executed', sl);
+            void sendPushNotification(
+              String(sl.userId),
+              `Paper Trading App`,
+              `Stop Loss executed for ${sl.symbol} at price ${sl.price}`,
+            );
+          }
         }
       }
-    }
 
-    console.log(toBeDeleted.length);
+      console.log(toBeDeleted.length);
 
-    if (toBeDeleted.length !== 0) {
-      console.log('Old length:', StopLossesPlaced.length);
-      const filterArray = StopLossesPlaced.filter((item: StopLossDocument) => !toBeDeleted.includes(item));
-      tickerToSL.set(ticker, filterArray);
-      console.log('New length:', filterArray.length);
-    }
+      if (toBeDeleted.length !== 0) {
+        console.log('Old length:', StopLossesPlaced.length);
+        const filterArray = StopLossesPlaced.filter(
+          (item: StopLossDocument) => !toBeDeleted.includes(item),
+        );
+        tickerToSL.set(ticker, filterArray);
+        console.log('New length:', filterArray.length);
+      }
 
-    const remaining = tickerToSL.get(ticker);
-    if (remaining && remaining.length === 0) {
-      socket!.send(
-        JSON.stringify({
-          action: 'unsubscribe',
-          ticker: ticker,
-        }),
-      );
-      tickerToSL.delete(ticker);
-    }
-  });
+      const remaining = tickerToSL.get(ticker);
+      if (remaining && remaining.length === 0) {
+        socket?.send(
+          JSON.stringify({
+            action: 'unsubscribe',
+            ticker: ticker,
+          }),
+        );
+        tickerToSL.delete(ticker);
+      }
+    });
 
-  socket.addEventListener('error', () => {
-    console.log('[WS] error in stopLossWS()');
-    // Let close() handle the retry so reconnect is scheduled only once.
-  });
+    socket.addEventListener('error', () => {
+      console.log('[WS] error in stopLossWS()');
+    });
 
-  socket.addEventListener('close', () => {
-    console.log('Stop loss socket closed.');
-    reconnect();
+    socket.addEventListener('close', () => {
+      console.log('Stop loss socket closed.');
+      reconnect();
+    });
+
+    socket.addEventListener(
+      'open',
+      () => {
+        // Already resolved in the promise constructor
+      },
+      { once: true },
+    );
+    resolve();
   });
 }
 
@@ -123,18 +138,17 @@ export async function stopLossWS(): Promise<void> {
     return;
   }
 
-  createSocket();
+  await createSocket();
 }
 
 function reconnect(): void {
-  // Prevent multiple reconnect timers from stacking after the same disconnect.
   if (reconnectTimer) return;
 
   const delay = 5000;
   console.log(`[WS] Retrying connection in ${delay / 1000} seconds...`);
 
-  reconnectTimer = setTimeout(() => {
+  void setTimeout(() => {
     reconnectTimer = null;
-    createSocket();
+    void createSocket();
   }, delay);
 }
