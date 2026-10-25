@@ -7,8 +7,8 @@
 - [x] 0.3 Inventory all source files
 - [x] 0.4 Record route table, client call table, WebSocket table, env table, data model
 - [x] 0.5 Find where server dependencies are declared
-- [ ] 0.6 Baseline: run npm ci, lint, build
-- [ ] 0.7 Check if MongoDB and Python service can run
+- [x] 0.6 Baseline: run npm ci, lint, build
+- [x] 0.7 Check if MongoDB and Python service can run
 
 ## Phase 1: Formatting, TypeScript, and lint tooling
 
@@ -19,27 +19,29 @@
 - [x] 1.5 Update eslint.config.js with typescript-eslint config
 - [x] 1.6 Add scripts: typecheck, lint, format, format:check, build, check
 - [x] 1.7 Add *.tsbuildinfo to .gitignore
-- [ ] 1.8 Gate: typecheck && lint && format:check && build all pass (with JS code) - Known: lint errors in existing JS files will be resolved during migration phases 3-4
+- [x] 1.8 Gate: typecheck && lint && format:check && build all pass (with JS code) - Known: lint errors in existing JS files will be resolved during migration phases 3-4
 
 ## Phase 2: Shared Zod contract
 
-- [ ] 2.1 Create shared/ directory structure
-- [ ] 2.2 Create defineEndpoint helper and error schema
-- [ ] 2.3 Create contract files per domain (auth, trade, portfolio, watchlist, market, push)
-- [ ] 2.4 Create WebSocket message schemas in shared/ws/
-- [ ] 2.5 Gate: typecheck && lint
+- [x] 2.1 Create shared/ directory structure
+- [x] 2.2 Create defineEndpoint helper and error schema
+- [x] 2.3 Create contract files per domain (auth, trade, portfolio, watchlist, market, push)
+- [x] 2.4 Create WebSocket message schemas in shared/ws/
+- [x] 2.5 Gate: typecheck && lint
 
 ## Phase 3: Server migration
 
-- [ ] 3.1 lib/env.ts - parse process.env with Zod
-- [ ] 3.2 Schemas/mongoSchema.ts - type MongoDB models
-- [ ] 3.3 lib/errors.ts - error handling
-- [ ] 3.4 lib/auth.ts - JWT payload parsing, Express request typing
-- [ ] 3.5 lib/pythonClient.ts - validated FastAPI responses
-- [ ] 3.6 queryManager.ts - convert with typed functions
-- [ ] 3.7 lib/route.ts - route wrapper with contract validation
-- [ ] 3.8 server.ts - register all routes through route()
-- [ ] 3.9 Boot server and smoke test
+- [x] 3.1 lib/env.ts - parse process.env with Zod
+- [x] 3.2 Schemas/mongoSchema.ts - type MongoDB models
+- [x] 3.3 lib/errors.ts - error handling
+- [x] 3.4 lib/auth.ts - JWT payload parsing, Express request typing
+- [x] 3.5 lib/pythonClient.ts - validated FastAPI responses
+- [x] 3.6 queryManager.ts - convert with typed functions
+- [x] 3.7 lib/route.ts - route wrapper with contract validation
+- [x] 3.8 server.ts - register all routes through route()
+- [x] 3.9 Boot server and smoke test
+- [x] 3.10 Remove legacy .js files from server/
+- [x] 3.11 Add build:server, start:server, typecheck:server npm scripts
 
 ## Phase 4: Frontend migration (bottom-up)
 
@@ -357,3 +359,47 @@ TypeScript tooling, ESLint, Prettier configured. Existing JS lint errors are exp
 - `chore(scripts): add typecheck, lint, format and check scripts`
 - `chore: ignore tsbuildinfo files`
 - `fix: resolve server JS lint issues (notificationService, getAllStopLoss, queryManager, server.js)`
+
+## Phase 2 Complete (Shared Zod Contracts)
+
+Created shared Zod contracts for all API endpoints, WebSocket messages, and error schemas. Type-safe API layer established.
+
+**Commits:**
+- `feat(shared): add Zod endpoint contracts and WebSocket message schemas` (e499b66, 2ccc34a, 9068854)
+
+## Phase 3 Complete (Server Migration)
+
+Full server migration to TypeScript complete. All server code compiles and typechecks. Server boots successfully with MongoDB connection and FastAPI WebSocket connectivity.
+
+**Commits:**
+- `chore(server): convert StopLoss, Services, GetData to TypeScript` (1962dae)
+- `chore(server): complete TypeScript migration for server core` (658d847)
+- `refactor(server/lib): fix TypeScript types and error handling` (2f77c6b)
+- `refactor(server): fix MongoDB schemas and notification service types` (ec5cac0)
+- `refactor(server): fix StopLoss WebSocket and GetData TypeScript types` (71369e7)
+- `refactor(server/queryManager): fix floating promises, template literals, subscription types` (5e26d84)
+- `refactor(server): replace axios with pythonClient, fix error handling` (87576b9)
+- `chore(server): remove legacy JavaScript files after TypeScript migration` (92f8000)
+- `chore(server): add build:server script and compiled output configuration` (a4463d3)
+- `chore(server): add ws dependency and tsc-alias for path resolution` (d639daf)
+- `fix(server): allow EXCHANGE_RATE_API as string (not URL)` (15521be)
+- `fix(server): coerce qty/price to number in trade contracts` (496ab43)
+- `fix(server): add params schema to deleteStopLossEndpoint` (c90ac6b)
+- `fix: indicator endpoint parameter mapping to FastAPI` (4fa3219)
+- `fix: indicator python client parameter types` (7dfc48d)
+
+## Phase 4: Frontend migration (bottom-up) - NEXT
+
+Ready to begin frontend migration starting with src/lib → hooks → services → api → Context → Components → pages → routes → main.
+
+**Server Verification Results:**
+- `npm run build:server` passes (TypeScript compilation + tsc-alias)
+- `npm run start:server` starts successfully on port 3001
+- MongoDB connection established
+- FastAPI WebSocket connected (ws://localhost:8001/ws/quote, ws://localhost:8001/ws/indicator)
+- Indicator endpoint 404 errors fixed (parameter name mapping: fastk_period, slowk_period, slowk_matype, slowd_period, slowd_matype)
+
+## Phase 4 Commits (Frontend - In Progress)
+
+- `fix(frontend): add required startDate field to stop loss order payload` (042c6de)
+- `fix: remove useless assertion` (798861d)
