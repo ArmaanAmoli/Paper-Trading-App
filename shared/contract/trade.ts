@@ -4,7 +4,7 @@ import { defineEndpoint } from './define.js';
 // Common schemas
 const tradeCommonSchema = z.object({
   symbol: z.string().min(1),
-  qty: z.number().positive(),
+  qty: z.coerce.number().positive(),
   side: z.enum(['buy', 'sell']),
 });
 
@@ -59,9 +59,9 @@ export type SellResponse = z.infer<typeof sellEndpoint.response>;
 // Stop Loss (protected)
 const stopLossBodySchema = z.object({
   symbol: z.string().min(1),
-  price: z.number().positive(),
+  price: z.coerce.number().positive(),
   startDate: z.string(), // ISO date string
-  qty: z.number().positive(),
+  qty: z.coerce.number().positive(),
   type: z.enum(['buy', 'sell']),
 });
 
