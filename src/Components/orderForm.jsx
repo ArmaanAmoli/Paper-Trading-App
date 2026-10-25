@@ -51,6 +51,7 @@ export default function OrderForm({ onOrderPlaced }) {
           type: orderType === 'buy' ? 'sell' : 'buy',
           qty: stopLossQtyNum,
           price: stopLossLvlNum,
+          startDate: new Date().toISOString(),
         };
         response = await placeOrder(ticker, qty, orderType, stopLossObj);
       }
