@@ -243,11 +243,11 @@ server.get(
       matype: query.matype ? Boolean(query.matype) : undefined,
       stdUp: query.stdUp ? Number(query.stdUp) : undefined,
       stdDown: query.stdDown ? Number(query.stdDown) : undefined,
-      fastPeriod: query.fastPeriod ? Number(query.fastPeriod) : 5,
-      slowkPeriod: query.slowkPeriod ? Number(query.slowkPeriod) : 3,
-      slowkMatype: query.slowkMatype ? Number(query.slowkMatype) : 0,
-      slowdPeriod: query.slowdPeriod ? Number(query.slowdPeriod) : 3,
-      slowdMatype: query.slowdMatype ? Number(query.slowdMatype) : 0,
+      fastk_period: query.fastPeriod ? Number(query.fastPeriod) : 5,
+      slowk_period: query.slowkPeriod ? Number(query.slowkPeriod) : 3,
+      slowk_matype: query.slowkMatype ? Number(query.slowkMatype) : 0,
+      slowd_period: query.slowdPeriod ? Number(query.slowdPeriod) : 3,
+      slowd_matype: query.slowdMatype ? Number(query.slowdMatype) : 0,
     });
   }),
 );

@@ -154,11 +154,11 @@ class PythonClient {
     matype?: boolean;
     stdUp?: number;
     stdDown?: number;
-    fastPeriod?: number;
-    slowkPeriod?: number;
-    slowkMatype?: number;
-    slowdPeriod?: number;
-    slowdMatype?: number;
+    fastk_period?: number;
+    slowk_period?: number;
+    slowk_matype?: number;
+    slowd_period?: number;
+    slowd_matype?: number;
   }): Promise<IndicatorResponse> {
     try {
       const response = await this.axiosInstance.get('/data/indicator', {
