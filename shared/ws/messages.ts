@@ -13,21 +13,20 @@ const quoteUnsubscribeSchema = z.object({
   ticker: z.string().min(1, 'ticker is required'),
 });
 
-export const quoteClientMessageSchema = z.union([
-  quoteSubscribeSchema,
-  quoteUnsubscribeSchema,
-]);
+export const quoteClientMessageSchema = z.union([quoteSubscribeSchema, quoteUnsubscribeSchema]);
 
 export type QuoteClientMessage = z.infer<typeof quoteClientMessageSchema>;
 
 // Quote server message (FastAPI -> Client)
-export const quoteServerMessageSchema = z.object({
-  ticker: z.string(),
-  currentPrice: z.number(),
-  change: z.number(),
-  percentChange: z.number(),
-  // Additional fields may be present
-}).passthrough();
+export const quoteServerMessageSchema = z
+  .object({
+    ticker: z.string(),
+    currentPrice: z.number(),
+    change: z.number(),
+    percentChange: z.number(),
+    // Additional fields may be present
+  })
+  .passthrough();
 
 export type QuoteServerMessage = z.infer<typeof quoteServerMessageSchema>;
 
@@ -56,15 +55,17 @@ export const indicatorClientMessageSchema = z.union([
 export type IndicatorClientMessage = z.infer<typeof indicatorClientMessageSchema>;
 
 // Indicator server message (FastAPI -> Client)
-export const indicatorServerMessageSchema = z.object({
-  indicator_id: z.string(),
-  ticker: z.string(),
-  interval: z.string(),
-  indicator: z.string(),
-  properties: z.record(z.string(), z.unknown()),
-  timestamp: z.string(),
-  // Indicator-specific value fields (value, UP/MIDDLE/DOWN, SLOWK/SLOWD, etc.)
-}).passthrough();
+export const indicatorServerMessageSchema = z
+  .object({
+    indicator_id: z.string(),
+    ticker: z.string(),
+    interval: z.string(),
+    indicator: z.string(),
+    properties: z.record(z.string(), z.unknown()),
+    timestamp: z.string(),
+    // Indicator-specific value fields (value, UP/MIDDLE/DOWN, SLOWK/SLOWD, etc.)
+  })
+  .passthrough();
 
 export type IndicatorServerMessage = z.infer<typeof indicatorServerMessageSchema>;
 

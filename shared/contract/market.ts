@@ -38,7 +38,7 @@ export const dataEndpoint = defineEndpoint({
       Low: z.number(),
       Close: z.number(),
       Volume: z.number(),
-    })
+    }),
   ),
 });
 
@@ -62,15 +62,7 @@ export type SearchResponse = z.infer<typeof searchEndpoint.response>;
 // Indicators (protected)
 const indicatorBaseQuery = z.object({
   ticker: z.string().min(1),
-  indicator: z.enum([
-    'SMA',
-    'EMA',
-    'RSI',
-    'VOL',
-    'OBV',
-    'BBAND',
-    'STOCH',
-  ]),
+  indicator: z.enum(['SMA', 'EMA', 'RSI', 'VOL', 'OBV', 'BBAND', 'STOCH']),
   interval: z.string(),
   period: z.string(),
   timeperiod: z.coerce.number().optional(),

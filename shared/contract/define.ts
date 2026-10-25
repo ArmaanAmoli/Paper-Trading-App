@@ -28,7 +28,9 @@ export function defineEndpoint<
   TQuery extends z.ZodTypeAny = z.ZodTypeAny,
   TBody extends z.ZodTypeAny = z.ZodTypeAny,
   TResponse extends z.ZodTypeAny = z.ZodTypeAny,
->(config: EndpointDefinition<TParams, TQuery, TBody, TResponse>): EndpointDefinition<TParams, TQuery, TBody, TResponse> {
+>(
+  config: EndpointDefinition<TParams, TQuery, TBody, TResponse>,
+): EndpointDefinition<TParams, TQuery, TBody, TResponse> {
   return config;
 }
 

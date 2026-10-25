@@ -11,7 +11,7 @@ export const userWatchlistEndpoint = defineEndpoint({
       _id: z.string(),
       userId: z.string(),
       symbols: z.array(z.string()),
-    })
+    }),
   ),
 });
 

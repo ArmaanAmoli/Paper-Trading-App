@@ -92,7 +92,7 @@ export const getStopLossEndpoint = defineEndpoint({
       startDate: z.string(),
       type: z.enum(['buy', 'sell']),
       qty: z.number(),
-    })
+    }),
   ),
 });
 
@@ -127,7 +127,7 @@ export const tradeHistoryEndpoint = defineEndpoint({
       realizedPL: z.number(),
       orderId: z.string(),
       wasStopLoss: z.boolean(),
-    })
+    }),
   ),
 });
 
@@ -149,7 +149,7 @@ export const portfolioEndpoint = defineEndpoint({
         avgPrice: z.number(),
         positionType: z.enum(['long', 'short']),
         lastUpdated: z.string(),
-      })
+      }),
     ),
   }),
 });
