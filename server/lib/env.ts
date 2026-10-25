@@ -10,7 +10,7 @@ const envSchema = z.object({
   JWT_TOKEN_05_2036: z.string().min(1),
   WEB_PUSH_PUBLIC_KEY: z.string().min(1),
   WEB_PUSH_PRIVATE_KEY: z.string().min(1),
-  EXCHANGE_RATE_API: z.string().url(),
+  EXCHANGE_RATE_API: z.string().min(1),
   VITE_API_BASE_URL: z.string().url(),
   VITE_WEB_PUSH_PUBLIC_KEY: z.string().min(1),
 });
