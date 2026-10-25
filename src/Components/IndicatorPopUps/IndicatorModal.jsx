@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { fetchIndicatorData } from "../../services/dataRequesterForCharts.js";
-import { useParams } from "react-router-dom";
-import { IndicatorsList } from "../../Context/context.js";
-import { useContext } from "react";
+import { useEffect, useRef, useState } from 'react';
+import { fetchIndicatorData } from '../../services/dataRequesterForCharts.js';
+import { useParams } from 'react-router-dom';
+import { IndicatorsList } from '../../Context/context.js';
+import { useContext } from 'react';
 
 const FOCUSABLE_SELECTOR = [
   'input',
@@ -10,15 +10,10 @@ const FOCUSABLE_SELECTOR = [
   'button',
   'textarea',
   '[href]',
-  '[tabindex]:not([tabindex="-1"])'
+  '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export default function IndicatorModal({
-  isOpen,
-  onClose,
-  indicatorConfig,
-  interval
-}) {
+export default function IndicatorModal({ isOpen, onClose, indicatorConfig, interval }) {
   const { ticker } = useParams();
   const [indicatorList, setIndicatorList] = useContext(IndicatorsList);
   const modalRef = useRef(null);
@@ -31,7 +26,7 @@ export default function IndicatorModal({
   const getInitialValues = (config) => {
     const initialValues = {};
     const initialColorValues = {};
-    config.fields.forEach(field => {
+    config.fields.forEach((field) => {
       initialValues[field.name] = field.defaultValue;
       if (field.type === 'color') {
         initialColorValues[field.name] = field.defaultValue;
@@ -41,8 +36,11 @@ export default function IndicatorModal({
   };
 
   // Use configKey to trigger re-initialization when config changes
-  const configKey = isOpen && indicatorConfig ? JSON.stringify(indicatorConfig.fields.map(f => f.name + ':' + f.defaultValue)) : null;
-  
+  const configKey =
+    isOpen && indicatorConfig
+      ? JSON.stringify(indicatorConfig.fields.map((f) => f.name + ':' + f.defaultValue))
+      : null;
+
   useEffect(() => {
     if (isOpen && indicatorConfig) {
       const { initialValues, initialColorValues } = getInitialValues(indicatorConfig);
@@ -113,26 +111,28 @@ export default function IndicatorModal({
     } else {
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   const handleFieldChange = (name, value) => {
-    setFieldValues(prev => ({ ...prev, [name]: value }));
+    setFieldValues((prev) => ({ ...prev, [name]: value }));
     // Clear error on change
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
   const handleColorChange = (name, value) => {
-    setFieldValues(prev => ({ ...prev, [name]: value }));
-    setColorPickerValues(prev => ({ ...prev, [name]: value }));
+    setFieldValues((prev) => ({ ...prev, [name]: value }));
+    setColorPickerValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
     // Validate required fields
     const newErrors = {};
-    indicatorConfig.fields.forEach(field => {
+    indicatorConfig.fields.forEach((field) => {
       if (field.required && (!fieldValues[field.name] || fieldValues[field.name] === '')) {
         newErrors[field.name] = field.errorMessage || 'This field is required';
       }
@@ -159,7 +159,7 @@ export default function IndicatorModal({
       interval,
       period: 'max',
       indicator: indicatorConfig.indicatorId,
-      ...fieldValues
+      ...fieldValues,
     };
 
     // Handle special transformations
@@ -193,18 +193,30 @@ export default function IndicatorModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <header className="indicator-modal-header">
-          <h2 id="modal-title" className="indicator-modal-title">{indicatorConfig.title}</h2>
+          <h2 id="modal-title" className="indicator-modal-title">
+            {indicatorConfig.title}
+          </h2>
           <button
             type="button"
             className="indicator-modal-close"
             onClick={onClose}
             aria-label="Close"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -226,7 +238,7 @@ export default function IndicatorModal({
                       id={`modal-field-${field.name}-picker`}
                       className="indicator-modal-color-picker"
                       value={colorPickerValues[field.name] || field.defaultValue}
-                      onChange={e => handleColorChange(field.name, e.target.value)}
+                      onChange={(e) => handleColorChange(field.name, e.target.value)}
                       aria-label={`${field.label} color picker`}
                     />
                     <input
@@ -234,15 +246,21 @@ export default function IndicatorModal({
                       id={`modal-field-${field.name}`}
                       className="indicator-modal-input indicator-modal-color-input"
                       value={fieldValues[field.name] || field.defaultValue}
-                      onChange={e => handleColorChange(field.name, e.target.value.toUpperCase())}
+                      onChange={(e) => handleColorChange(field.name, e.target.value.toUpperCase())}
                       placeholder={field.placeholder}
                       aria-invalid={!!errors[field.name]}
-                      aria-describedby={errors[field.name] ? `modal-error-${field.name}` : undefined}
+                      aria-describedby={
+                        errors[field.name] ? `modal-error-${field.name}` : undefined
+                      }
                     />
                     <div
                       className="indicator-modal-color-swatch"
-                      style={{ backgroundColor: colorPickerValues[field.name] || field.defaultValue }}
-                      onClick={() => document.getElementById(`modal-field-${field.name}-picker`)?.click()}
+                      style={{
+                        backgroundColor: colorPickerValues[field.name] || field.defaultValue,
+                      }}
+                      onClick={() =>
+                        document.getElementById(`modal-field-${field.name}-picker`)?.click()
+                      }
                       aria-hidden="true"
                     />
                   </>
@@ -251,11 +269,11 @@ export default function IndicatorModal({
                     id={`modal-field-${field.name}`}
                     className="indicator-modal-select"
                     value={fieldValues[field.name] || field.defaultValue}
-                    onChange={e => handleFieldChange(field.name, e.target.value)}
+                    onChange={(e) => handleFieldChange(field.name, e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `modal-error-${field.name}` : undefined}
                   >
-                    {field.options.map(opt => (
+                    {field.options.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
                       </option>
@@ -267,7 +285,12 @@ export default function IndicatorModal({
                     id={`modal-field-${field.name}`}
                     className="indicator-modal-input"
                     value={fieldValues[field.name] ?? field.defaultValue}
-                    onChange={e => handleFieldChange(field.name, field.type === 'number' ? e.target.value : e.target.value)}
+                    onChange={(e) =>
+                      handleFieldChange(
+                        field.name,
+                        field.type === 'number' ? e.target.value : e.target.value,
+                      )
+                    }
                     min={field.min}
                     max={field.max}
                     step={field.step}
@@ -277,7 +300,9 @@ export default function IndicatorModal({
                   />
                 )}
                 {errors[field.name] && (
-                  <p id={`modal-error-${field.name}`} className="indicator-modal-error">{errors[field.name]}</p>
+                  <p id={`modal-error-${field.name}`} className="indicator-modal-error">
+                    {errors[field.name]}
+                  </p>
                 )}
               </div>
             </div>

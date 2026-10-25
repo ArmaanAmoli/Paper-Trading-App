@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import "../../pages/styles/toast.css";
+import { useState, useCallback, useEffect } from 'react';
+import '../../pages/styles/toast.css';
 
 const TOAST_LIMIT = 5;
 const TOAST_REMOVE_DELAY = 3000;
@@ -10,26 +10,24 @@ const addToRemoveQueue = (toastId) => {
   if (toastTimeouts.has(toastId)) return;
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId);
-    dispatch({ type: "REMOVE_TOAST", toastId });
+    dispatch({ type: 'REMOVE_TOAST', toastId });
   }, TOAST_REMOVE_DELAY);
   toastTimeouts.set(toastId, timeout);
 };
 
 export const reducer = (state, action) => {
   switch (action.type) {
-    case "ADD_TOAST":
+    case 'ADD_TOAST':
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       };
-    case "UPDATE_TOAST":
+    case 'UPDATE_TOAST':
       return {
         ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
-        ),
+        toasts: state.toasts.map((t) => (t.id === action.toast.id ? { ...t, ...action.toast } : t)),
       };
-    case "DISMISS_TOAST": {
+    case 'DISMISS_TOAST': {
       const { toastId } = action;
       if (toastId) {
         addToRemoveQueue(toastId);
@@ -39,13 +37,11 @@ export const reducer = (state, action) => {
       return {
         ...state,
         toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? { ...t, open: false }
-            : t
+          t.id === toastId || toastId === undefined ? { ...t, open: false } : t,
         ),
       };
     }
-    case "REMOVE_TOAST":
+    case 'REMOVE_TOAST':
       if (action.toastId === undefined) return { ...state, toasts: [] };
       return {
         ...state,
@@ -83,11 +79,11 @@ export function useToast() {
     ...state,
     toast: useCallback((props) => {
       const id = genId();
-      const update = (props) => dispatch({ type: "UPDATE_TOAST", toast: { ...props, id } });
-      const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
+      const update = (props) => dispatch({ type: 'UPDATE_TOAST', toast: { ...props, id } });
+      const dismiss = () => dispatch({ type: 'DISMISS_TOAST', toastId: id });
 
       dispatch({
-        type: "ADD_TOAST",
+        type: 'ADD_TOAST',
         toast: {
           ...props,
           id,
@@ -102,15 +98,15 @@ export function useToast() {
 
       return { id, dismiss, update };
     }, []),
-    dismiss: useCallback((toastId) => dispatch({ type: "DISMISS_TOAST", toastId }), []),
+    dismiss: useCallback((toastId) => dispatch({ type: 'DISMISS_TOAST', toastId }), []),
   };
 }
 
 const typeStyles = {
-  success: "toast-success",
-  error: "toast-error",
-  info: "toast-info",
-  warning: "toast-warning",
+  success: 'toast-success',
+  error: 'toast-error',
+  info: 'toast-info',
+  warning: 'toast-warning',
 };
 
 export function ToastProvider({ children }) {
@@ -123,7 +119,7 @@ export function ToastProvider({ children }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`toast ${typeStyles[toast.type] || "toast-default"} ${toast.open ? "toast-enter" : "toast-exit"}`}
+            className={`toast ${typeStyles[toast.type] || 'toast-default'} ${toast.open ? 'toast-enter' : 'toast-exit'}`}
             role="alert"
             aria-live="assertive"
           >
@@ -133,17 +129,29 @@ export function ToastProvider({ children }) {
             </div>
             <button
               className="toast-close"
-              onClick={() => dispatch({ type: "DISMISS_TOAST", toastId: toast.id })}
+              onClick={() => dispatch({ type: 'DISMISS_TOAST', toastId: toast.id })}
               aria-label="Dismiss notification"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
             <div
               className="toast-progress"
-              style={{ width: toast.open ? "100%" : "0%", transitionDuration: TOAST_REMOVE_DELAY + "ms" }}
+              style={{
+                width: toast.open ? '100%' : '0%',
+                transitionDuration: TOAST_REMOVE_DELAY + 'ms',
+              }}
             />
           </div>
         ))}
@@ -163,16 +171,16 @@ const createToast = (type, description, options) => {
     open: true,
     ...options,
   };
-  dispatch({ type: "ADD_TOAST", toast: toastObj });
+  dispatch({ type: 'ADD_TOAST', toast: toastObj });
   addToRemoveQueue(id);
-  return { id, dismiss: () => dispatch({ type: "DISMISS_TOAST", toastId: id }) };
+  return { id, dismiss: () => dispatch({ type: 'DISMISS_TOAST', toastId: id }) };
 };
 
 export const toast = {
-  success: (description, options) => createToast("success", description, options),
-  error: (description, options) => createToast("error", description, options),
-  info: (description, options) => createToast("info", description, options),
-  warning: (description, options) => createToast("warning", description, options),
-  dismiss: (toastId) => dispatch({ type: "DISMISS_TOAST", toastId }),
-  remove: (toastId) => dispatch({ type: "REMOVE_TOAST", toastId }),
+  success: (description, options) => createToast('success', description, options),
+  error: (description, options) => createToast('error', description, options),
+  info: (description, options) => createToast('info', description, options),
+  warning: (description, options) => createToast('warning', description, options),
+  dismiss: (toastId) => dispatch({ type: 'DISMISS_TOAST', toastId }),
+  remove: (toastId) => dispatch({ type: 'REMOVE_TOAST', toastId }),
 };

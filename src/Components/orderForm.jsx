@@ -1,16 +1,16 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { placeOrder } from "../services/placeOrder.js";
-import { useTicker } from "../hooks/useTicker.js";
-import { toast, ToastProvider } from "../Components/Toast/Toast.jsx";
-import "../pages/styles/orderFormNew.css";
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { placeOrder } from '../services/placeOrder.js';
+import { useTicker } from '../hooks/useTicker.js';
+import { toast, ToastProvider } from '../Components/Toast/Toast.jsx';
+import '../pages/styles/orderFormNew.css';
 
 export default function OrderForm({ onOrderPlaced }) {
   const [stopLossQty, setStopLossQty] = useState('');
   const [stopLossLvl, setStopLossLvl] = useState('');
 
   const { ticker } = useParams();
-  const data = useTicker("quote", ticker);
+  const data = useTicker('quote', ticker);
   const [orderType, setOrderType] = useState('buy');
   const [qty, setQty] = useState('');
 
@@ -34,7 +34,7 @@ export default function OrderForm({ onOrderPlaced }) {
         // Order with stop loss
         const stopLossQtyNum = Number(stopLossQty);
         const stopLossLvlNum = Number(stopLossLvl);
-        
+
         // Validate stop loss fields
         if (!Number.isFinite(stopLossQtyNum) || stopLossQtyNum <= 0) {
           toast.error('Stop loss quantity must be a positive number', { autoClose: 4000 });
@@ -44,33 +44,35 @@ export default function OrderForm({ onOrderPlaced }) {
           toast.error('Stop loss trigger price must be a positive number', { autoClose: 4000 });
           return;
         }
-        
+
         // Order with stop loss - use stopLossQty for stop loss quantity
         const stopLossObj = {
           symbol: ticker,
           type: orderType === 'buy' ? 'sell' : 'buy',
           qty: stopLossQtyNum,
-          price: stopLossLvlNum
+          price: stopLossLvlNum,
+          startDate: new Date().toISOString(),
         };
         response = await placeOrder(ticker, qty, orderType, stopLossObj);
       }
-      
+
       // Handle trade response
       if (response?.trade?.success && response.trade.data) {
         const trade = response.trade.data;
         toast.success(
           `${orderType.toUpperCase()} order executed: ${trade?.qty || qty} ${ticker} @ $${trade?.price || data?.currentPrice?.toFixed(2)}`,
-          { autoClose: 3000 }
+          { autoClose: 3000 },
         );
         // Clear quantity input after successful trade
         setQty('');
         // Refresh data after successful trade
         if (onOrderPlaced) onOrderPlaced();
       } else {
-        const errorMsg = response?.trade?.error || response?.trade?.data?.message || 'Trade execution failed';
+        const errorMsg =
+          response?.trade?.error || response?.trade?.data?.message || 'Trade execution failed';
         toast.error(errorMsg, { autoClose: 4000 });
       }
-      
+
       // Handle stop loss response if applicable
       if (stopLossLvl || stopLossQty) {
         if (response?.stopLoss?.success) {
@@ -78,12 +80,18 @@ export default function OrderForm({ onOrderPlaced }) {
           // Refresh data after successful stop loss placement
           if (onOrderPlaced) onOrderPlaced();
         } else if (response?.stopLoss) {
-          toast.error('Failed to place stop loss: ' + (response.stopLoss.error || 'Unknown error'), { autoClose: 4000 });
+          toast.error(
+            'Failed to place stop loss: ' + (response.stopLoss.error || 'Unknown error'),
+            { autoClose: 4000 },
+          );
         }
       }
     } catch (err) {
       console.error('Place trade error:', err);
-      toast.error(err?.response?.data?.message || err.message || 'Network error - please try again', { autoClose: 5000 });
+      toast.error(
+        err?.response?.data?.message || err.message || 'Network error - please try again',
+        { autoClose: 5000 },
+      );
     }
   }
 
@@ -97,7 +105,8 @@ export default function OrderForm({ onOrderPlaced }) {
   const isPriceLoaded = data?.currentPrice && data.currentPrice > 0;
   const isFormValid = isQtyValid && isPriceLoaded;
 
-  const estimatedTotal = (qty && data?.currentPrice) ? (Number(qty) * Number(data.currentPrice)).toFixed(2) : '0.00';
+  const estimatedTotal =
+    qty && data?.currentPrice ? (Number(qty) * Number(data.currentPrice)).toFixed(2) : '0.00';
   const marketPrice = data?.currentPrice ? Number(data.currentPrice).toFixed(2) : '0.00';
 
   return (
@@ -107,9 +116,13 @@ export default function OrderForm({ onOrderPlaced }) {
         <div className="order-symbol-header">
           <span className="order-symbol-name">{ticker}</span>
           <div className="order-symbol-price">
-            <span className={`order-current-price tabular-nums ${priceDirection}`}>${marketPrice}</span>
+            <span className={`order-current-price tabular-nums ${priceDirection}`}>
+              ${marketPrice}
+            </span>
             <span className={`order-price-change ${priceDirection} tabular-nums`}>
-              {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)} ({priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%)
+              {priceChange >= 0 ? '+' : ''}
+              {priceChange.toFixed(2)} ({priceChangePercent >= 0 ? '+' : ''}
+              {priceChangePercent.toFixed(2)}%)
             </span>
           </div>
         </div>
@@ -137,12 +150,16 @@ export default function OrderForm({ onOrderPlaced }) {
         {/* Market Price (read-only) */}
         <div className="readonly-row">
           <span className="readonly-row-label">Market price</span>
-          <span className={`readonly-row-value tabular-nums ${priceDirection}`}>${marketPrice}</span>
+          <span className={`readonly-row-value tabular-nums ${priceDirection}`}>
+            ${marketPrice}
+          </span>
         </div>
 
         {/* Quantity Field */}
         <div className="form-field">
-          <label htmlFor="qty-input" className="form-field-label">Quantity</label>
+          <label htmlFor="qty-input" className="form-field-label">
+            Quantity
+          </label>
           <input
             id="qty-input"
             type="number"
@@ -155,7 +172,9 @@ export default function OrderForm({ onOrderPlaced }) {
             aria-describedby={!isQtyValid && qty ? 'qty-error' : undefined}
           />
           {!isQtyValid && qty && (
-            <span id="qty-error" className="field-error">Quantity must be greater than 0</span>
+            <span id="qty-error" className="field-error">
+              Quantity must be greater than 0
+            </span>
           )}
         </div>
 
@@ -174,7 +193,9 @@ export default function OrderForm({ onOrderPlaced }) {
           </div>
 
           <div className="form-field">
-            <label htmlFor="sl-trigger" className="form-field-label">Trigger price</label>
+            <label htmlFor="sl-trigger" className="form-field-label">
+              Trigger price
+            </label>
             <input
               id="sl-trigger"
               type="number"
@@ -189,7 +210,9 @@ export default function OrderForm({ onOrderPlaced }) {
           </div>
 
           <div className="form-field">
-            <label htmlFor="sl-qty" className="form-field-label">Quantity</label>
+            <label htmlFor="sl-qty" className="form-field-label">
+              Quantity
+            </label>
             <input
               id="sl-qty"
               type="number"

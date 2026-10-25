@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================
    USER PROFILE PAGE - Matches app theme
@@ -298,7 +298,9 @@
   font-weight: 600;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
   color: var(--color-text-primary);
   margin: 0;
   white-space: nowrap;
@@ -419,12 +421,14 @@
   text-align: right;
 }
 
-.history-table tbody td:first-child { /* S.NO */
+.history-table tbody td:first-child {
+  /* S.NO */
   font-size: 13px;
   color: var(--color-text-muted);
 }
 
-.history-table tbody td:nth-child(2) { /* SYMBOL */
+.history-table tbody td:nth-child(2) {
+  /* SYMBOL */
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -464,7 +468,9 @@
 .history-table tbody td.tabular-nums {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+  font-feature-settings:
+    'tnum' 1,
+    'cv01' 1;
 }
 
 /*** REALIZED PNL colors (reuse positive/negative/neutral) ***/

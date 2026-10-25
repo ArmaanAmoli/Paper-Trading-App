@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================
    CHART/TRADE PAGE - TWO CARD LAYOUT
@@ -60,12 +60,12 @@
   .chart-trade-cards {
     flex-direction: column;
   }
-  
+
   .chart-card {
     min-height: 420px;
     flex: 1 1 auto;
   }
-  
+
   .side-panel-card {
     flex: 0 0 auto;
     min-width: 0;
@@ -181,7 +181,7 @@
   box-shadow: 0 0 0 2px var(--color-up-glow);
 }
 
-.indicators-dropdown-btn[aria-expanded="true"] {
+.indicators-dropdown-btn[aria-expanded='true'] {
   border-color: var(--color-border-strong);
   color: var(--color-text-primary);
 }
@@ -201,8 +201,14 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /*** ==========================================
@@ -333,7 +339,7 @@
   box-shadow: 0 0 0 2px var(--color-up-glow);
 }
 
-.side-panel-tab[aria-selected="true"] {
+.side-panel-tab[aria-selected='true'] {
   color: var(--color-text-primary);
   border-bottom-color: var(--color-text-primary);
 }
@@ -391,9 +397,15 @@
   color: var(--color-text-primary);
 }
 
-.order-current-price.positive { color: var(--color-blue-text); }
-.order-current-price.negative { color: var(--color-red-text); }
-.order-current-price.neutral { color: var(--color-text-muted); }
+.order-current-price.positive {
+  color: var(--color-blue-text);
+}
+.order-current-price.negative {
+  color: var(--color-red-text);
+}
+.order-current-price.neutral {
+  color: var(--color-text-muted);
+}
 
 .order-price-change {
   display: flex;
@@ -403,9 +415,15 @@
   font-weight: 500;
 }
 
-.order-price-change.positive { color: var(--color-blue-text); }
-.order-price-change.negative { color: var(--color-red-text); }
-.order-price-change.neutral { color: var(--color-text-muted); }
+.order-price-change.positive {
+  color: var(--color-blue-text);
+}
+.order-price-change.negative {
+  color: var(--color-red-text);
+}
+.order-price-change.neutral {
+  color: var(--color-text-muted);
+}
 
 /*** Buy/Sell Toggle ***/
 .buy-sell-toggle {
@@ -495,13 +513,13 @@
 }
 
 /*** Hide number input spinners ***/
-.form-input[type="number"]::-webkit-outer-spin-button,
-.form-input[type="number"]::-webkit-inner-spin-button {
+.form-input[type='number']::-webkit-outer-spin-button,
+.form-input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.form-input[type="number"] {
+.form-input[type='number'] {
   -moz-appearance: textfield;
 }
 
@@ -586,7 +604,7 @@
 }
 
 .place-order-btn.buy:hover:not(:disabled) {
-  background: #3291FF;
+  background: #3291ff;
 }
 
 .place-order-btn.sell {
@@ -594,7 +612,7 @@
 }
 
 .place-order-btn.sell:hover:not(:disabled) {
-  background: #FF6369;
+  background: #ff6369;
 }
 
 .place-order-btn:disabled {
@@ -638,8 +656,12 @@
 }
 
 @keyframes modal-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .indicator-modal {
@@ -656,8 +678,14 @@
 }
 
 @keyframes modal-slide-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .indicator-modal-header {
@@ -761,13 +789,13 @@
 }
 
 /*** Hide number input spinners ***/
-.indicator-modal-input[type="number"]::-webkit-outer-spin-button,
-.indicator-modal-input[type="number"]::-webkit-inner-spin-button {
+.indicator-modal-input[type='number']::-webkit-outer-spin-button,
+.indicator-modal-input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.indicator-modal-input[type="number"] {
+.indicator-modal-input[type='number'] {
   -moz-appearance: textfield;
 }
 
@@ -854,13 +882,13 @@
 
 .indicator-modal-btn-submit {
   color: #000000;
-  background: #EDEDED;
+  background: #ededed;
   font-weight: 600;
   border-color: transparent;
 }
 
 .indicator-modal-btn-submit:hover {
-  background: #FFFFFF;
+  background: #ffffff;
 }
 
 .indicator-modal-btn-submit:focus-visible {

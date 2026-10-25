@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component } from 'react';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -11,11 +11,11 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("[ErrorBoundary] Caught error:", error);
-    console.error("[ErrorBoundary] Component stack:", errorInfo.componentStack);
+    console.error('[ErrorBoundary] Caught error:', error);
+    console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack);
     this.setState({
       error: error,
-      errorInfo: errorInfo
+      errorInfo: errorInfo,
     });
   }
 
@@ -27,13 +27,29 @@ class ErrorBoundary extends Component {
       return (
         <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-red-text)' }}>
           <h2>Something went wrong</h2>
-          <pre style={{ textAlign: 'left', background: 'var(--color-surface-raised)', padding: '16px', borderRadius: '8px', overflow: 'auto' }}>
+          <pre
+            style={{
+              textAlign: 'left',
+              background: 'var(--color-surface-raised)',
+              padding: '16px',
+              borderRadius: '8px',
+              overflow: 'auto',
+            }}
+          >
             {this.state.error && this.state.error.toString()}
             {this.state.errorInfo && this.state.errorInfo.componentStack}
           </pre>
           <button
             onClick={this.resetErrorBoundary.bind(this)}
-            style={{ marginTop: '16px', padding: '8px 16px', background: 'var(--color-up)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+            style={{
+              marginTop: '16px',
+              padding: '8px 16px',
+              background: 'var(--color-up)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
           >
             Try again
           </button>

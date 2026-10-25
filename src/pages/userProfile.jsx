@@ -1,14 +1,10 @@
-import { useEffect, useState, useContext } from "react";
-import { UserAccountContext, UserEquityContext } from "../Context/context.js";
-import { getTradeHistory } from "../services/tradeHistory.js";
-import { useNavigate } from "react-router-dom";
-import {
-  formatNumber,
-  formatSignedNumber,
-  getValueColorClass
-} from "../lib/formatters.js";
-import Avatar from "../Components/Avatar.jsx";
-import "./styles/userProfile.css";
+import { useEffect, useState, useContext } from 'react';
+import { UserAccountContext, UserEquityContext } from '../Context/context.js';
+import { getTradeHistory } from '../services/tradeHistory.js';
+import { useNavigate } from 'react-router-dom';
+import { formatNumber, formatSignedNumber, getValueColorClass } from '../lib/formatters.js';
+import Avatar from '../Components/Avatar.jsx';
+import './styles/userProfile.css';
 
 export default function UserProfile() {
   const [userData] = useContext(UserAccountContext);
@@ -30,8 +26,8 @@ export default function UserProfile() {
   }, []);
 
   function logOut() {
-    localStorage.removeItem("token");
-    navigate("/", { replace: true });
+    localStorage.removeItem('token');
+    navigate('/', { replace: true });
   }
 
   const balance = userData?.balance ?? 0;
@@ -41,25 +37,25 @@ export default function UserProfile() {
   const totalEquityValue = balance + equity;
 
   const formatDate = (dateString) => {
-    if (!dateString) return "--";
+    if (!dateString) return '--';
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
     });
   };
 
   const formatMemberSince = (dateString) => {
-    if (!dateString) return "--";
+    if (!dateString) return '--';
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric"
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
 
@@ -81,8 +77,8 @@ export default function UserProfile() {
               <div className="profile-top">
                 <Avatar name={userData?.username} size={64} />
                 <div className="profile-identity">
-                  <h2 className="profile-name">{userData?.username ?? "--"}</h2>
-                  <p className="profile-email">{userData?.email ?? "--"}</p>
+                  <h2 className="profile-name">{userData?.username ?? '--'}</h2>
+                  <p className="profile-email">{userData?.email ?? '--'}</p>
                 </div>
               </div>
 
@@ -92,7 +88,7 @@ export default function UserProfile() {
               <dl className="profile-details">
                 <div className="profile-detail">
                   <dt className="profile-detail-label">User ID</dt>
-                  <dd className="profile-detail-value">{userData?._id ?? "--"}</dd>
+                  <dd className="profile-detail-value">{userData?._id ?? '--'}</dd>
                 </div>
                 <div className="profile-detail">
                   <dt className="profile-detail-label">Member since</dt>
@@ -111,11 +107,7 @@ export default function UserProfile() {
                 >
                   Update Profile
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={logOut}
-                >
+                <button type="button" className="btn btn-secondary" onClick={logOut}>
                   Log out
                 </button>
               </div>
@@ -141,27 +133,19 @@ export default function UserProfile() {
             <div className="stat-grid">
               <article className="stat-card">
                 <p className="stat-label">Balance</p>
-                <p className="stat-value">
-                  ${formatNumber(balance)}
-                </p>
+                <p className="stat-value">${formatNumber(balance)}</p>
               </article>
               <article className="stat-card">
                 <p className="stat-label">Equity</p>
-                <p className="stat-value">
-                  ${formatNumber(totalEquityValue)}
-                </p>
+                <p className="stat-value">${formatNumber(totalEquityValue)}</p>
               </article>
               <article className="stat-card">
                 <p className="stat-label">Blocked Margin</p>
-                <p className="stat-value">
-                  ${formatNumber(blockedMargin)}
-                </p>
+                <p className="stat-value">${formatNumber(blockedMargin)}</p>
               </article>
               <article className="stat-card">
                 <p className="stat-label">Holdings Value</p>
-                <p className="stat-value">
-                  ${formatNumber(holdingsValue)}
-                </p>
+                <p className="stat-value">${formatNumber(holdingsValue)}</p>
               </article>
             </div>
 
@@ -177,12 +161,12 @@ export default function UserProfile() {
                 {tradeHistory && tradeHistory.length > 0 ? (
                   <table className="history-table" role="grid">
                     <colgroup>
-                      <col style={{ width: "72px" }} />
-                      <col style={{ minWidth: "120px" }} />
-                      <col style={{ width: "90px" }} />
-                      <col style={{ width: "80px" }} />
-                      <col style={{ width: "130px" }} />
-                      <col style={{ width: "190px" }} />
+                      <col style={{ width: '72px' }} />
+                      <col style={{ minWidth: '120px' }} />
+                      <col style={{ width: '90px' }} />
+                      <col style={{ width: '80px' }} />
+                      <col style={{ width: '130px' }} />
+                      <col style={{ width: '190px' }} />
                     </colgroup>
                     <thead>
                       <tr>
@@ -199,9 +183,9 @@ export default function UserProfile() {
                         const pnlValue = Number(item.realizedPL);
                         const pnlColorClass = getValueColorClass(pnlValue);
                         const pnlDisplay = formatSignedNumber(pnlValue);
-                        const side = (item.type || "").toLowerCase();
-                        const sideLabel = side === "buy" ? "BUY" : "SELL";
-                        const sideClass = side === "buy" ? "side-buy" : "side-sell";
+                        const side = (item.type || '').toLowerCase();
+                        const sideLabel = side === 'buy' ? 'BUY' : 'SELL';
+                        const sideClass = side === 'buy' ? 'side-buy' : 'side-sell';
 
                         return (
                           <tr key={item._id || item.symbol + index}>
@@ -211,7 +195,9 @@ export default function UserProfile() {
                               <span className={`side-badge ${sideClass}`}>{sideLabel}</span>
                             </td>
                             <td className="align-right tabular-nums">{item.shares}</td>
-                            <td className={`align-right tabular-nums ${pnlColorClass}`}>{pnlDisplay}</td>
+                            <td className={`align-right tabular-nums ${pnlColorClass}`}>
+                              {pnlDisplay}
+                            </td>
                             <td className="align-right">{formatDate(item.timestamp)}</td>
                           </tr>
                         );

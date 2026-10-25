@@ -165,6 +165,64 @@ async def get_search_results(query: str):
         print(e)
         raise HTTPException(status_code=500 , detail=str(e))
 
+@app.get("/data/indicator")
+async def get_indicator_data(
+    ticker: str,
+    indicator: str,
+    interval: str,
+    period: str,
+    timeperiod: int = 14,
+    matype: bool = False,
+    stdUp: int = 2,
+    stdDown: int = 2,
+    fastk_period: int = 5,
+    slowk_period: int = 3,
+    slowk_matype: int = 0,
+    slowd_period: int = 3,
+    slowd_matype: int = 0,
+):
+    """
+    Unified indicator endpoint that routes to the appropriate indicator function.
+    Matches the Express server's /data/indicator contract.
+    """
+    try:
+        data = await collect_data(ticker=ticker, interval=interval, period=period)
+        data_df = format_data(data)
+        
+        indicator = indicator.upper()
+        
+        if indicator == "SMA":
+            final_data = SMA_(data_df, timeperiod=timeperiod)
+        elif indicator == "EMA":
+            final_data = EMA_(data_df, timeperiod=timeperiod)
+        elif indicator == "RSI":
+            final_data = RSI_(data_df, timeperiod=timeperiod)
+        elif indicator == "VOL":
+            final_data = VOL_(data_df)
+        elif indicator == "OBV":
+            final_data = OBV_(data_df)
+        elif indicator == "BBAND":
+            final_data = BBAND_(df=data_df, timeperiod=timeperiod, matype=matype, stdDown=stdDown, stdUp=stdUp)
+        elif indicator == "STOCH":
+            final_data = STOCH_(
+                df=data_df,
+                fastk_period=fastk_period,
+                slowk_period=slowk_period,
+                slowk_matype=slowk_matype,
+                slowd_period=slowd_period,
+                slowd_matype=slowd_matype
+            )
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown indicator: {indicator}")
+        
+        return final_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in indicator {indicator} for {ticker}: ", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/quote")
 async def get_quote(ticker: str):
     try:
