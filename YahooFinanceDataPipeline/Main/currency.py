@@ -9,7 +9,18 @@ API_KEY = os.environ.get('EXCHANGE_RATE_API')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(BASE_DIR, "exchange_rates.json")
 
+# Try to load cached rates on startup
 rates = {"rates": {"USD": 1}}
+if os.path.exists(FILE_PATH):
+    try:
+        with open(FILE_PATH, "r") as f:
+            cached = json.load(f)
+            if isinstance(cached, dict) and "rates" in cached:
+                rates = cached
+                print(f"Loaded cached exchange rates from {FILE_PATH}")
+    except Exception as e:
+        print(f"Failed to load cached exchange rates: {e}")
+
 async def fetch_rates():
     global rates
     url = f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/USD"
@@ -21,6 +32,8 @@ async def fetch_rates():
             "last_updated":datetime.now(UTC).isoformat(),
             "rates":data["conversion_rates"]
         }
+        # Ensure directory exists
+        os.makedirs(BASE_DIR, exist_ok=True)
         with open(FILE_PATH , "w") as f:
             json.dump(rates,f)
         print("Exchange rate updated")

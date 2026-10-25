@@ -26,7 +26,7 @@ dist-ssr
 *.sw?
 
 YahooFinanceDataPipeline/yahoo/.yahoo
-YahooFinanceDataPipeline/exchange_rates.json
+YahooFinanceDataPipeline/Main/exchange_rates.json
 YahooFinanceDataPipeline/test.ipynb
 YahooFinanceDataPipeline/Main/__pycache__
 
