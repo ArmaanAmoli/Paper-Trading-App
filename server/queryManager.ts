@@ -22,7 +22,11 @@ export async function connectDB(): Promise<void> {
   }
 }
 
-export async function SignUp(details: { email: string; password: string; username: string }): Promise<void> {
+export async function SignUp(details: {
+  email: string;
+  password: string;
+  username: string;
+}): Promise<void> {
   const { email, password, username } = details;
   const passwordHash = await bcrypt.hash(password, 10); // SaltRounds = 10
   const newUser = new User({
@@ -61,7 +65,7 @@ async function newTradeF(
   type: 'buy' | 'sell',
   realizedPL: number,
   session: mongoose.ClientSession,
-  orderId: string
+  orderId: string,
 ) {
   const newTrade = new Trade({
     userId: new ObjectId(userId),
@@ -85,7 +89,7 @@ export async function executeTrade(
     side: 'buy' | 'sell';
     orderId: string;
   },
-  userId: string
+  userId: string,
 ) {
   const session = await mongoose.startSession();
   try {
@@ -105,7 +109,7 @@ export async function executeTrade(
     const objectIdUserId = new ObjectId(userId);
     const filter = { userId: objectIdUserId, symbol };
 
-    const user = await User.findById(userId).session(session);
+    const user = await User.findById(objectIdUserId).session(session);
     if (!user) throw new AppError(404, 'User not found');
 
     // 🔧 FIX: Ensure blockedMargin exists
@@ -160,7 +164,8 @@ export async function executeTrade(
         closedQty = Math.min(Math.abs(oldShares), Math.abs(delta));
 
         // Realized PnL
-        realizedPL = oldShares > 0 ? closedQty * (priceNum - oldAvg) : closedQty * (oldAvg - priceNum);
+        realizedPL =
+          oldShares > 0 ? closedQty * (priceNum - oldAvg) : closedQty * (oldAvg - priceNum);
 
         newShares = oldShares + delta;
 
@@ -243,7 +248,7 @@ export async function executeTrade(
       }
 
       // Flipping long → short
-      if (oldShares > 0 && (oldShares + (side === 'buy' ? qtyNum : -qtyNum)) < 0) {
+      if (oldShares > 0 && oldShares + (side === 'buy' ? qtyNum : -qtyNum) < 0) {
         shortAddedQty = Math.abs(oldShares + (side === 'buy' ? qtyNum : -qtyNum));
       }
 
@@ -296,10 +301,10 @@ export async function executeTrade(
       side,
       realizedPL,
       session,
-      orderId
+      orderId,
     );
 
-    await User.findByIdAndUpdate(objectIdUserId, { $inc: { balance: cashDelta } }).session(session);
+    void User.findByIdAndUpdate(objectIdUserId, { $inc: { balance: cashDelta } }).session(session);
 
     await session.commitTransaction();
     return { success: true, newTrade };
@@ -307,12 +312,12 @@ export async function executeTrade(
     await session.abortTransaction();
     throw err;
   } finally {
-    session.endSession();
+    void session.endSession();
   }
 }
 
 export async function GetUserData(userId: string) {
-  let userData = await User.findById(new ObjectId(userId)).select('-passwordHash');
+  const userData = await User.findById(new ObjectId(userId)).select('-passwordHash');
   if (!userData) return null;
   return userData;
 }
@@ -339,20 +344,17 @@ export async function AddToWatchlist(userID: string, symbol: string) {
     );
     return true;
   } catch (err) {
-    console.log(`Error while posting new symbol to watchlist: ${err}`);
+    console.log(`Error while posting new symbol to watchlist: ${String(err)}`);
     return false;
   }
 }
 
 export async function RemoveFromWatchlist(userID: string, symbol: string) {
   try {
-    await Watchlist.updateOne(
-      { userId: new ObjectId(userID) },
-      { $pull: { symbols: symbol } }
-    );
+    await Watchlist.updateOne({ userId: new ObjectId(userID) }, { $pull: { symbols: symbol } });
     return true;
   } catch (err) {
-    console.log(`Error while deleting from watchlist: ${err}`);
+    console.log(`Error while deleting from watchlist: ${String(err)}`);
     return false;
   }
 }
@@ -384,16 +386,16 @@ export async function StopLossExecuter(StopLossInfo: {
         type,
         qty,
       });
-      await sendPushNotification(
+      void sendPushNotification(
         userId,
         'Paper Trading App',
-        `Stop Loss executed for ${symbol} at price ${price}`
+        `Stop Loss executed for ${symbol} at price ${price}`,
       );
       return { success: true };
     }
     return { success: false };
   } catch (e) {
-    console.log(`An error occured while executing stoploss \n Error: ${e}`);
+    console.log(`An error occured while executing stoploss \n Error: ${String(e)}`);
     return { success: false };
   }
 }
@@ -409,11 +411,26 @@ export async function getUserStopLosses(userId: string) {
 }
 
 export async function deleteStopLoss(stopLossId: string, userId: string) {
-  const result = await StopLoss.findOneAndDelete({ _id: new ObjectId(stopLossId), userId: new ObjectId(userId) });
+  const result = await StopLoss.findOneAndDelete({
+    _id: new ObjectId(stopLossId),
+    userId: new ObjectId(userId),
+  });
   return result;
 }
 
-export async function saveSubscription(userId: string, subscriptionObject: any) {
+interface NotificationSubscription {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
+export async function saveSubscription(
+  userId: string,
+  subscriptionObject: NotificationSubscription,
+) {
   const user = await User.findById(new ObjectId(userId));
   if (user) {
     user.notificationSubscription = subscriptionObject;
