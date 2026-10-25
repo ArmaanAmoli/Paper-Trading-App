@@ -382,7 +382,7 @@ server.get(
 server.delete(
   '/stopLoss/:id',
   route(deleteStopLossEndpoint, async ({ params, user }) => {
-    const { id } = params as { id: string };
+    const { id } = params;
     const deleted = await deleteStopLoss(id, user.userId);
     if (!deleted) {
       throw new Error('Stop loss not found');
