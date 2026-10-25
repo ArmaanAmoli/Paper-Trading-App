@@ -10,10 +10,21 @@ webpush.setVapidDetails(
   env.WEB_PUSH_PRIVATE_KEY,
 );
 
+interface PushSubscriptionKeys {
+  p256dh: string;
+  auth: string;
+}
+
+interface PushSubscription {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: PushSubscriptionKeys;
+}
+
 export async function sendPushNotification(
   userId: string,
   title: string,
-  body: string
+  body: string,
 ): Promise<{ success: boolean }> {
   console.log('push notification called');
   const user = await User.findById(userId).lean();
@@ -32,7 +43,15 @@ export async function sendPushNotification(
     icon: '../../src/assets/Icons/ico.png',
   });
   try {
-    await webpush.sendNotification(subscription as any, payload);
+    const pushSubscription: PushSubscription = {
+      endpoint: subscription.endpoint,
+      expirationTime: subscription.expirationTime ?? null,
+      keys: {
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      },
+    };
+    await webpush.sendNotification(pushSubscription, payload);
     console.log('notification sent');
     return { success: true };
   } catch (error) {

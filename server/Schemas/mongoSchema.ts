@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
+import mongoose, { Schema, type Document, type InferSchemaType } from 'mongoose';
 
 const NotificationSubscriberSchema = new Schema(
   {
@@ -9,7 +9,7 @@ const NotificationSubscriberSchema = new Schema(
       auth: { type: String, required: true },
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const UserSchema = new Schema(
@@ -23,7 +23,7 @@ const UserSchema = new Schema(
     lastLogin: { type: Date },
     notificationSubscription: NotificationSubscriberSchema,
   },
-  { timestamps: false }
+  { timestamps: false },
 );
 
 export type UserDocument = InferSchemaType<typeof UserSchema> & Document;
@@ -34,7 +34,7 @@ const WatchlistSchema = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     symbols: { type: [String], required: true, default: [] },
   },
-  { timestamps: false }
+  { timestamps: false },
 );
 
 export type WatchlistDocument = InferSchemaType<typeof WatchlistSchema> & Document;
@@ -49,7 +49,7 @@ const PortfolioSchema = new Schema(
     positionType: { type: String, enum: ['long', 'short'] },
     lastUpdated: { type: Date, default: Date.now },
   },
-  { timestamps: false }
+  { timestamps: false },
 );
 
 export type PortfolioDocument = InferSchemaType<typeof PortfolioSchema> & Document;
@@ -67,7 +67,7 @@ const TradeSchema = new Schema(
     orderId: { type: String, required: true, unique: true },
     wasStopLoss: { type: Boolean, required: true, default: false },
   },
-  { timestamps: false }
+  { timestamps: false },
 );
 
 export type TradeDocument = InferSchemaType<typeof TradeSchema> & Document;
@@ -82,7 +82,7 @@ const StopLossSchema = new Schema(
     type: { type: String, enum: ['buy', 'sell'], required: true },
     qty: { type: Number, required: true },
   },
-  { timestamps: false }
+  { timestamps: false },
 );
 
 export type StopLossDocument = InferSchemaType<typeof StopLossSchema> & Document;
