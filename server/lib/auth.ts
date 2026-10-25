@@ -13,11 +13,9 @@ export const jwtPayloadSchema = z.object({
 export type JwtPayload = z.infer<typeof jwtPayloadSchema>;
 
 // Extend Express Request type to include user property
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
+declare module 'express' {
+  interface Request {
+    user?: JwtPayload;
   }
 }
 

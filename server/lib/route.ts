@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import type { EndpointDefinition } from '@shared/contract/define.js';
 import { verifyToken } from './auth.js';
+import { AppError } from './errors.js';
 
 /**
  * Generic route handler that validates request against Zod schemas
@@ -11,7 +12,7 @@ export function route<
   TParams extends z.ZodTypeAny,
   TQuery extends z.ZodTypeAny,
   TBody extends z.ZodTypeAny,
-  TResponse extends z.ZodTypeAny
+  TResponse extends z.ZodTypeAny,
 >(
   endpoint: EndpointDefinition<TParams, TQuery, TBody, TResponse>,
   handler: (input: {
@@ -19,7 +20,7 @@ export function route<
     query: z.output<TQuery>;
     body: z.output<TBody>;
     user: { userId: string; email: string };
-  }) => Promise<z.output<TResponse>>
+  }) => Promise<z.output<TResponse>>,
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -29,19 +30,15 @@ export function route<
         : ({} as z.output<TParams>);
 
       // Parse query
-      const query = endpoint.query
-        ? endpoint.query.parse(req.query)
-        : ({} as z.output<TQuery>);
+      const query = endpoint.query ? endpoint.query.parse(req.query) : ({} as z.output<TQuery>);
 
       // Parse body
-      const body = endpoint.body
-        ? endpoint.body.parse(req.body)
-        : ({} as z.output<TBody>);
+      const body = endpoint.body ? endpoint.body.parse(req.body) : ({} as z.output<TBody>);
 
       // Verify JWT if auth required
       let user: { userId: string; email: string } | undefined;
       if (endpoint.auth) {
-        const payload = verifyToken(req as any);
+        const payload = verifyToken(req);
         user = { userId: payload.userId, email: payload.email };
       }
 
@@ -50,7 +47,7 @@ export function route<
         params,
         query,
         body,
-        user: user!,
+        user: user as { userId: string; email: string },
       });
 
       // In development, validate response against schema
@@ -64,9 +61,7 @@ export function route<
       res.json(result);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        const error = new Error('Validation failed');
-        (error as any).statusCode = 400;
-        (error as any).issues = err.issues;
+        const error = new AppError(400, 'Validation failed', err.issues);
         next(error);
       } else {
         next(err);

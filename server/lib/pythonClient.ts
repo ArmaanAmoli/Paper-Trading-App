@@ -25,65 +25,69 @@ export type OhlcvResponse = z.infer<typeof ohlcvSchema>;
 
 export type OhlcvArrayResponse = OhlcvResponse[];
 
-const searchResultSchema = z.object({
-  symbol: z.string(),
-  shortname: z.string().optional(),
-  longname: z.string().optional(),
-  exchDisp: z.string().optional(),
-  typeDisp: z.string().optional(),
-  // yfinance search returns various fields
-}).passthrough();
+const searchResultSchema = z
+  .object({
+    symbol: z.string(),
+    shortname: z.string().optional(),
+    longname: z.string().optional(),
+    exchDisp: z.string().optional(),
+    typeDisp: z.string().optional(),
+    // yfinance search returns various fields
+  })
+  .passthrough();
 
 export type SearchResponse = z.infer<typeof searchResultSchema>[];
 
 // Indicator responses
-const indicatorValueSchema = z.object({
-  Date: z.string(),
-  SMA: z.number().optional(),
-  EMA: z.number().optional(),
-  RSI: z.number().optional(),
-  Volume: z.number().optional(),
-  OBV: z.number().optional(),
-  BBAND_UP: z.number().optional(),
-  BBAND_MIDDLE: z.number().optional(),
-  BBAND_DOWN: z.number().optional(),
-  SLOWK: z.number().optional(),
-  SLOWD: z.number().optional(),
-  // For BBAND/STOCH which return objects
-  UP: z.any().optional(),
-  MIDDLE: z.any().optional(),
-  DOWN: z.any().optional(),
-}).passthrough();
+const indicatorValueSchema = z
+  .object({
+    Date: z.string(),
+    SMA: z.number().optional(),
+    EMA: z.number().optional(),
+    RSI: z.number().optional(),
+    Volume: z.number().optional(),
+    OBV: z.number().optional(),
+    BBAND_UP: z.number().optional(),
+    BBAND_MIDDLE: z.number().optional(),
+    BBAND_DOWN: z.number().optional(),
+    SLOWK: z.number().optional(),
+    SLOWD: z.number().optional(),
+    // For BBAND/STOCH which return objects
+    UP: z.any().optional(),
+    MIDDLE: z.any().optional(),
+    DOWN: z.any().optional(),
+  })
+  .passthrough();
 
 export type IndicatorValueResponse = z.infer<typeof indicatorValueSchema>;
 
 export type IndicatorArrayResponse = IndicatorValueResponse[];
 
 // BBAND specific
-const bbandSchema = z.object({
+const _bbandSchema = z.object({
   UP: z.array(indicatorValueSchema),
   MIDDLE: z.array(indicatorValueSchema),
   DOWN: z.array(indicatorValueSchema),
 });
 
-export type BbandResponse = z.infer<typeof bbandSchema>;
+export type BbandResponse = z.infer<typeof _bbandSchema>;
 
 // STOCH specific
-const stochSchema = z.object({
+const _stochSchema = z.object({
   SLOWK: z.array(indicatorValueSchema),
   SLOWD: z.array(indicatorValueSchema),
 });
 
-export type StochResponse = z.infer<typeof stochSchema>;
+export type StochResponse = z.infer<typeof _stochSchema>;
 
 // VOL specific (includes color)
-const volSchema = z.object({
+const _volSchema = z.object({
   Date: z.string(),
   Volume: z.number(),
   color: z.string(),
 });
 
-export type VolResponse = z.infer<typeof volSchema>;
+export type VolResponse = z.infer<typeof _volSchema>;
 
 export type VolArrayResponse = VolResponse[];
 
@@ -127,7 +131,7 @@ class PythonClient {
   async getOhlcvData(
     ticker: string,
     period: string,
-    interval: string
+    interval: string,
   ): Promise<OhlcvArrayResponse> {
     try {
       const response = await this.axiosInstance.get('/data', {
