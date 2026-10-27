@@ -53,7 +53,16 @@ export const searchEndpoint = defineEndpoint({
   query: z.object({
     query: z.string().min(1),
   }),
-  response: z.array(z.unknown()), // yfinance search results vary
+  response: z.array(
+    z
+      .object({
+        symbol: z.string(),
+        shortname: z.string().optional(),
+        typeDisp: z.string().optional(),
+        exchange: z.string().optional(),
+      })
+      .passthrough(),
+  ), // yfinance search results vary
 });
 
 export type SearchQuery = z.infer<typeof searchEndpoint.query>;
@@ -81,8 +90,142 @@ export const indicatorEndpoint = defineEndpoint({
   path: '/data/indicator',
   auth: true,
   query: indicatorBaseQuery,
-  response: z.unknown(), // Varies by indicator
+  response: z.record(z.string(), z.unknown()), // Varies by indicator
 });
 
 export type IndicatorQuery = z.infer<typeof indicatorEndpoint.query>;
 export type IndicatorResponse = z.infer<typeof indicatorEndpoint.response>;
+
+// Stop Loss (protected)
+export const stopLossMarketEndpoint = defineEndpoint({
+  method: 'GET',
+  path: '/stopLoss',
+  auth: true,
+  query: z.object({ symbol: z.string().optional() }).optional(),
+  response: z.array(
+    z.object({
+      _id: z.string(),
+      userId: z.string(),
+      symbol: z.string(),
+      price: z.number(),
+      startDate: z.string(),
+      type: z.enum(['buy', 'sell']),
+      qty: z.number(),
+    }),
+  ),
+});
+
+export type StopLossQuery = z.infer<typeof stopLossMarketEndpoint.query>;
+export type StopLossResponse = z.infer<typeof stopLossMarketEndpoint.response>;
+
+// Portfolio (protected)
+export const portfolioMarketEndpoint = defineEndpoint({
+  method: 'GET',
+  path: '/portfolio',
+  auth: true,
+  response: z.object({
+    count: z.number(),
+    positions: z.array(
+      z.object({
+        _id: z.string(),
+        userId: z.string(),
+        symbol: z.string(),
+        shares: z.number(),
+        avgPrice: z.number(),
+        positionType: z.enum(['long', 'short']),
+        lastUpdated: z.string(),
+      }),
+    ),
+  }),
+});
+
+export type PortfolioResponse = z.infer<typeof portfolioMarketEndpoint.response>;
+
+// Trade History (protected)
+export const tradeHistoryMarketEndpoint = defineEndpoint({
+  method: 'GET',
+  path: '/trade-history',
+  auth: true,
+  response: z.array(
+    z.object({
+      _id: z.string(),
+      userId: z.string(),
+      symbol: z.string(),
+      shares: z.number(),
+      price: z.number(),
+      type: z.enum(['buy', 'sell']),
+      timestamp: z.string(),
+      realizedPL: z.number(),
+      orderId: z.string(),
+      wasStopLoss: z.boolean(),
+    }),
+  ),
+});
+
+export type TradeHistoryResponse = z.infer<typeof tradeHistoryMarketEndpoint.response>;
+
+// User Data (protected)
+export const userDataEndpoint = defineEndpoint({
+  method: 'GET',
+  path: '/user-data',
+  auth: true,
+  response: z.object({
+    _id: z.string(),
+    username: z.string(),
+    email: z.string(),
+    balance: z.number(),
+    blockedMargin: z.number(),
+    createdAt: z.string(),
+    lastLogin: z.string().nullable(),
+    notificationSubscription: z
+      .object({
+        endpoint: z.string(),
+        expirationTime: z.number().nullable(),
+        keys: z.object({ p256dh: z.string(), auth: z.string() }),
+      })
+      .nullable(),
+  }),
+});
+
+export type UserDataResponse = z.infer<typeof userDataEndpoint.response>;
+
+// Watchlist item (single document)
+export const watchlistItemSchema = z.object({
+  _id: z.string(),
+  userId: z.string(),
+  symbols: z.array(z.string()),
+});
+
+export type WatchlistItem = z.infer<typeof watchlistItemSchema>;
+
+// Watchlist (protected) - returns array of watchlist items (typically one per user)
+export const watchlistEndpoint = defineEndpoint({
+  method: 'GET',
+  path: '/user-watchlist',
+  auth: true,
+  response: z.array(watchlistItemSchema),
+});
+
+export type WatchlistResponse = z.infer<typeof watchlistEndpoint.response>;
+
+// Re-export the item type (already exported above)
+
+export const addToWatchlistEndpoint = defineEndpoint({
+  method: 'POST',
+  path: '/user-watchlist/add',
+  auth: true,
+  body: z.object({ symbol: z.string().min(1) }),
+  response: z.object({ success: z.boolean() }),
+});
+
+export type AddToWatchlistResponse = z.infer<typeof addToWatchlistEndpoint.response>;
+
+export const deleteFromWatchlistEndpoint = defineEndpoint({
+  method: 'DELETE',
+  path: '/user-watchlist/delete',
+  auth: true,
+  body: z.object({ symbol: z.string().min(1) }),
+  response: z.object({ success: z.boolean() }),
+});
+
+export type DeleteFromWatchlistResponse = z.infer<typeof deleteFromWatchlistEndpoint.response>;
