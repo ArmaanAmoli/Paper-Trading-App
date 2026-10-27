@@ -26,9 +26,14 @@ export interface UserEquityContextValue {
   totalEquity: [number, React.Dispatch<React.SetStateAction<number>>];
 }
 
+export interface IndicatorListItem {
+  indicator: string;
+  [key: string]: unknown;
+}
+
 export interface IndicatorsListContextValue {
-  indicatorList: Array<Record<string, unknown>>;
-  setIndicatorList: React.Dispatch<React.SetStateAction<Array<Record<string, unknown>>>>;
+  indicatorList: IndicatorListItem[];
+  setIndicatorList: React.Dispatch<React.SetStateAction<IndicatorListItem[]>>;
 }
 
 export interface MarketDataContextValue {

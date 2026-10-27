@@ -9,6 +9,7 @@ import {
   type UserAccountContextValue,
   type UserEquityContextValue,
   type IndicatorsListContextValue,
+  type IndicatorListItem,
 } from './context';
 import api from '../services/api';
 import { fetchQuote } from '../services/dataRequesterForCharts';
@@ -214,7 +215,7 @@ export const UserEquityProvider = ({ children }: { children: React.ReactNode }) 
 };
 
 export const IndicatorsListProvider = ({ children }: { children: React.ReactNode }) => {
-  const [indicatorList, setIndicatorList] = useState<Array<Record<string, unknown>>>([]);
+  const [indicatorList, setIndicatorList] = useState<IndicatorListItem[]>([]);
   const value: IndicatorsListContextValue = {
     indicatorList,
     setIndicatorList,
