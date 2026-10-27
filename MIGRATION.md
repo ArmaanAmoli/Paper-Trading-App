@@ -45,18 +45,24 @@
 
 ## Phase 4: Frontend migration (bottom-up)
 
-- [ ] 4.1 src/lib/* (wsManager, formatters, paneManager)
-- [ ] 4.2 src/hooks/* (useTicker)
-- [ ] 4.3 src/services/* (api, watchlist, dataRequesterForCharts, placeOrder, tradeHistory)
-- [ ] 4.4 src/api/* (callEndpoint + per-domain wrappers)
-- [ ] 4.5 src/Context/* (context providers)
-- [ ] 4.6 src/Components/* (leaf components first)
-- [ ] 4.7 src/Components/Charts/* (candlestick, lineChart, ChartPriceMarkers)
-- [ ] 4.8 src/pages/* (login, signup, landingPage, market, stockChart, portfolioPage, userProfile)
-- [ ] 4.9 src/routes/* (AppRouter, protectedRoutes, checkTokenExpiry)
-- [ ] 4.10 src/main.tsx, index.html update
+- [x] 4.1 src/lib/* (wsManager, formatters, paneManager) - converted to .ts
+- [x] 4.2 src/hooks/* (useTicker) - converted to .ts
+- [x] 4.3 src/services/* (api, watchlist, dataRequesterForCharts, placeOrder, tradeHistory) - converted to .ts
+- [x] 4.4 src/api/* (callEndpoint + per-domain wrappers) - api.ts created with typed endpoint wrappers
+- [x] 4.5 src/Context/* (context providers) - context.tsx, context.ts, MarketPageContextProvider.tsx created; .jsx duplicates need removal
+- [ ] 4.6 src/Components/* (leaf components first) - ~9/15 done: Navbar.tsx, ticker.tsx, ErrorBoundary.tsx, floatingSearchTab.tsx, Avatar.tsx, ChartErrorBoundary.tsx, Toast/Toast.tsx, IndicatorPopUps/IndicatorModal.tsx, IndicatorPopUps/indicatorConfigs.ts; remaining: orderForm.jsx, watchlist.jsx, searchResultComponent.jsx, IndicatorsDropdown.jsx
+- [ ] 4.7 src/Components/Charts/* (candlestick, lineChart, ChartPriceMarkers) - all .jsx, not started
+- [ ] 4.8 src/pages/* (login, signup, landingPage, market, stockChart, portfolioPage, userProfile) - all .jsx, not started
+- [ ] 4.9 src/routes/* (AppRouter, protectedRoutes, checkTokenExpiry) - all .jsx/.js, not started
+- [ ] 4.10 src/main.tsx, index.html update - main.jsx exists, not converted
 - [ ] 4.11 Gate after each batch: typecheck && lint && format:check
 - [ ] 4.12 Before last commit: build
+
+### Duplicate files to remove after migration:
+- src/Context/MarketPageContextProvider.jsx (replaced by .tsx)
+- src/Components/IndicatorPopUps/indicatorConfigs.js (replaced by .ts)
+- src/Components/IndicatorPopUps/IndicatorModal.jsx (replaced by .tsx)
+- src/GetData/tradeHistory.js (legacy, replaced by src/services/tradeHistory.ts)
 
 ## Phase 5: Cleanup and ratchet
 
@@ -301,17 +307,24 @@ npm run build   # Vite build
 
 1. **README port mismatch**: README says Express runs on port 3000, but vite.config.js proxy and .env.example say 3001. Server code uses `process.env.EXPRESS_SERVER_PORT || 3001`.
 2. **README env vars incomplete**: README only mentions MONGO_URL and JWT_SECRET, but .env.example lists 10 variables.
-3. **Duplicate MongoDB connection**: Both server/server.js and server/queryManager.js call `mongoose.connect()`.
-4. **server/queryManager.js imports mongoose but doesn't export connection** - it creates its own connection.
-5. **StopLoss schema uses `mongoose.ObjectId`** but should be `mongoose.Schema.Types.ObjectId` for ref.
-6. **NotificationService creates new MongoDB connection** via `mongoose.connect()` in queryManager.js import side-effect.
-7. **Frontend axios calls in dataRequesterForCharts.js bypass api interceptor** - manual axios with getAuthHeaders() instead of using the shared api instance.
-8. **CandleStickChartComponent has massive useEffect with indicator rendering logic** - complex, hard to type, potential memory leaks.
-9. **Indicator ID generation differs between frontend and backend** - frontend uses `makeIndicatorId` in paneManager/candlestick, backend uses `generate_indicator_id` in websockets_server.py; must match exactly.
-10. **WebSocket token handling**: Frontend uses localStorage token as subprotocol; Express uses JWT_TOKEN_05_2036 env var. Different tokens for different purposes.
-11. **No TypeScript types for lightweight-charts v5** - need to verify @types/lightweight-charts or use built-in types.
-12. **service worker (public/sw.js) must stay JS** - served as static file, not bundled.
-13. **server/node_modules has its own package-lock.json** - may cause version drift.
+3. **Duplicate MongoDB connection**: FIXED in Phase 3 (consolidated connection)
+4. **server/queryManager.js imports mongoose but doesn't export connection** - FIXED in Phase 3
+5. **StopLoss schema uses `mongoose.ObjectId`** but should be `mongoose.Schema.Types.ObjectId` for ref - FIXED in Phase 3
+6. **NotificationService creates new MongoDB connection** via `mongoose.connect()` in queryManager.js import side-effect - FIXED in Phase 3
+7. **Frontend axios calls in dataRequesterForCharts.js bypass api interceptor** - manual axios with getAuthHeaders() instead of using the shared api instance - FIXED (converted to dataRequesterForCharts.ts using shared api)
+8. **CandleStickChartComponent has massive useEffect with indicator rendering logic** - complex, hard to type, potential memory leaks - PENDING (still .jsx)
+9. **Indicator ID generation differs between frontend and backend** - frontend uses `makeIndicatorId` in paneManager/candlestick, backend uses `generate_indicator_id` in websockets_server.py; must match exactly - PENDING verification
+10. **WebSocket token handling**: Frontend uses localStorage token as subprotocol; Express uses JWT_TOKEN_05_2036 env var. Different tokens for different purposes - ARCHITECTURAL (intentional separation)
+11. **No TypeScript types for lightweight-charts v5** - need to verify @types/lightweight-charts or use built-in types - PENDING (Charts still .jsx)
+12. **service worker (public/sw.js) must stay JS** - served as static file, not bundled - CONFIRMED (expected)
+13. **server/node_modules has its own package-lock.json** - may cause version drift - PENDING (move server deps to root package.json)
+
+### New Issues Found During Frontend Migration:
+
+14. **Duplicate Context files**: MarketPageContextProvider exists as both .tsx and .jsx; IndicatorModal as .tsx and .jsx; indicatorConfigs as .ts and .js - need cleanup
+15. **Legacy GetData folder**: src/GetData/tradeHistory.js remains unused after service migration
+16. **Mixed import styles**: Some converted .ts files may still import .js siblings that haven't been migrated yet
+17. **Type safety gaps**: Shared Zod contracts exist but some frontend components still use `any` or loose types until fully migrated
 
 ## Remaining @ts-expect-error / ! / eslint-disable List
 
@@ -388,11 +401,24 @@ Full server migration to TypeScript complete. All server code compiles and typec
 - `fix: indicator endpoint parameter mapping to FastAPI` (4fa3219)
 - `fix: indicator python client parameter types` (7dfc48d)
 
-## Phase 4: Frontend migration (bottom-up) - NEXT
+## Phase 4: Frontend migration (bottom-up) - IN PROGRESS
 
-Ready to begin frontend migration starting with src/lib → hooks → services → api → Context → Components → pages → routes → main.
+Frontend migration started bottom-up. Foundation layers (lib, hooks, services, api, Context) are complete. Currently working on leaf Components → Charts → pages → routes → main.
 
-**Server Verification Results:**
+**Frontend Verification Results (partial):**
+- `npm run typecheck` passes for converted files
+- `npm run build` passes
+- `npm run format:check` passes
+- `npm run lint` - errors remain in unconverted .js/.jsx files (expected)
+
+**Completed Foundation Layers:**
+- src/lib/* (3 files) - wsManager, paneManager, formatters
+- src/hooks/* (1 file) - useTicker
+- src/services/* (5 files) - api, watchlist, dataRequesterForCharts, placeOrder, tradeHistory
+- src/api/* (1 file) - callEndpoint with typed wrappers
+- src/Context/* (4 files) - context.tsx, context.ts, MarketPageContextProvider.tsx, MarketPageContextProvider.jsx (cleaned up); all lint/typecheck/format passing
+
+**Server Verification Results (from Phase 3):**
 - `npm run build:server` passes (TypeScript compilation + tsc-alias)
 - `npm run start:server` starts successfully on port 3001
 - MongoDB connection established
@@ -403,3 +429,4 @@ Ready to begin frontend migration starting with src/lib → hooks → services �
 
 - `fix(frontend): add required startDate field to stop loss order payload` (042c6de)
 - `fix: remove useless assertion` (798861d)
+- `feat(frontend): migrate lib, hooks, services, api, Context to TypeScript` (multiple commits)
