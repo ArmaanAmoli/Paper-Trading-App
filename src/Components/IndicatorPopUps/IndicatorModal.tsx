@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { IndicatorsList } from '../../Context/context';
 import { useContext } from 'react';
 import type { IndicatorConfig } from './indicatorConfigs';
+import type { IndicatorListItem } from '../../Context/context';
 
 const FOCUSABLE_SELECTOR = [
   'input',
@@ -28,7 +29,8 @@ export default function IndicatorModal({
   interval,
 }: IndicatorModalProps) {
   const { ticker } = useParams<{ ticker: string }>();
-  const [_indicatorList, setIndicatorList] = useContext(IndicatorsList);
+  const indicatorContext = useContext(IndicatorsList);
+  const setIndicatorList = indicatorContext?.setIndicatorList;
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({});
@@ -64,7 +66,7 @@ export default function IndicatorModal({
         setErrors({});
       }, 0);
     }
-  }, [configKey]);
+  }, [configKey, isOpen, indicatorConfig]);
 
   // Focus management
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function IndicatorModal({
   };
 
   const handleSubmit = async () => {
-    if (!indicatorConfig) return;
+    if (!indicatorConfig || !setIndicatorList) return;
     // Validate required fields
     const newErrors: Record<string, string> = {};
     indicatorConfig.fields.forEach((field) => {
@@ -192,13 +194,22 @@ export default function IndicatorModal({
 
     try {
       const data = await fetchIndicatorData(properties);
-      const finalProperties: Record<string, unknown> = { ...properties, ...data };
-      setIndicatorList((prev: Array<Record<string, unknown>>): Array<Record<string, unknown>> => [
+      const dataRecord = data;
+      const otherEntries = Object.entries(dataRecord).filter(([k]) => k !== 'title');
+      const finalProperties: IndicatorListItem = {
+        indicator: indicatorConfig.indicatorId,
+        indicatorId: indicatorConfig.indicatorId,
+        title: indicatorConfig.title,
+        submitLabel: indicatorConfig.submitLabel,
+        fields: indicatorConfig.fields,
+        ...Object.fromEntries(otherEntries),
+      };
+      setIndicatorList((prev: IndicatorListItem[]): IndicatorListItem[] => [
         ...prev,
         finalProperties,
       ]);
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to add indicator:', error);
       // Could add a general error toast here
       return;

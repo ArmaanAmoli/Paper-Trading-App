@@ -1,7 +1,7 @@
 export interface IndicatorField {
   name: string;
   label: string;
-  type: 'number' | 'color' | 'select' | 'text';
+  type: 'number' | 'color' | 'select';
   defaultValue: unknown;
   min?: number;
   max?: number;
