@@ -21,21 +21,21 @@ export default function MarketDataProvider({ children }: { children: React.React
     const handlers = new Map<string, (data: WebSocketMessage) => void>();
     const handler = (ticker: string) => (data: WebSocketMessage) => {
       // Type guard to ensure we only handle quote messages
-      if (
+      const isQuote = (
         'ticker' in data &&
         'currentPrice' in data &&
         'change' in data &&
         'percentChange' in data
-      ) {
-        const quoteData = data;
-        dataRef.current.set(ticker, quoteData);
-        if (!flushPending.current) {
-          flushPending.current = true;
-          requestAnimationFrame(() => {
-            flushPending.current = false;
-            setMarketDataMap(new Map(dataRef.current));
-          });
-        }
+      );
+      if (!isQuote) return;
+
+      dataRef.current.set(ticker, data);
+      if (!flushPending.current) {
+        flushPending.current = true;
+        requestAnimationFrame(() => {
+          flushPending.current = false;
+          setMarketDataMap(new Map(dataRef.current));
+        });
       }
     };
 
