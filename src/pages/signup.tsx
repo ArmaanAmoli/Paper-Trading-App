@@ -4,6 +4,10 @@ import React, { useState } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+interface SignupResponse {
+  message: string;
+}
+
 export default function Signup() {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({
@@ -12,7 +16,7 @@ export default function Signup() {
     password: '',
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserInfo((prev) => ({
       ...prev,
@@ -30,11 +34,11 @@ export default function Signup() {
         password: userInfo.password,
       }),
     });
-    const data = await res.json();
+    const data = (await res.json()) as SignupResponse;
     console.log(data);
 
     if (data.message === 'User Registered') {
-      navigate('/');
+      void navigate('/');
     }
   };
 
@@ -70,7 +74,7 @@ export default function Signup() {
           />
 
           <div className="submit">
-            <button className="user-auth" onClick={RegisterUser}>
+            <button className="user-auth" onClick={() => void RegisterUser()}>
               Create Account
             </button>
           </div>
