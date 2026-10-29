@@ -28,7 +28,44 @@ export interface UserEquityContextValue {
 
 export interface IndicatorListItem {
   indicator: string;
+  indicatorId: string;
+  title?: string;
+  submitLabel?: string;
+  fields: Array<{
+    name: string;
+    label: string;
+    type: 'number' | 'select' | 'color';
+    defaultValue: unknown;
+    required?: boolean;
+    min?: number;
+    max?: number;
+    step?: number;
+    placeholder?: string;
+    options?: Array<{ value: string; label: string }>;
+    errorMessage?: string;
+    transform?: (values: Record<string, unknown>) => Record<string, unknown>;
+  }>;
   [key: string]: unknown;
+}
+
+export interface IndicatorConfig {
+  indicatorId: string;
+  title: string;
+  submitLabel?: string;
+  fields: Array<{
+    name: string;
+    label: string;
+    type: 'number' | 'select' | 'color';
+    defaultValue: unknown;
+    required?: boolean;
+    min?: number;
+    max?: number;
+    step?: number;
+    placeholder?: string;
+    options?: Array<{ value: string; label: string }>;
+    errorMessage?: string;
+    transform?: (values: Record<string, unknown>) => Record<string, unknown>;
+  }>;
 }
 
 export interface IndicatorsListContextValue {
@@ -40,15 +77,18 @@ export interface MarketDataContextValue {
   marketDataMap: Map<string, { currentPrice: number; change: number; percentChange: number }>;
 }
 
-//Provide central watchlist array to all the elements.
+// Provide central watchlist array to all the elements.
 export const WatchlistContext = createContext<WatchlistContextValue | null>(null);
 
-//Contains user Account balance and blocked margin.
+// Contains user Account balance and blocked margin.
 export const UserAccountContext = createContext<UserAccountContextValue | null>(null);
 
-//Contains user portfolio information with pnl.
+// Contains user portfolio information with pnl.
 export const UserEquityContext = createContext<UserEquityContextValue | null>(null);
 
 export const IndicatorsList = createContext<IndicatorsListContextValue | null>(null);
 
 export const MarketData = createContext<MarketDataContextValue | null>(null);
+
+// Export provider components for external use
+export { WatchlistProvider, UserAccountProvider, UserEquityProvider, IndicatorsListProvider } from './contextProviders';

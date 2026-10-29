@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { wsManager } from '../lib/wsManager';
 import marketSymbols from '../services/Indices data/indicesFullName.json';
 import { MarketData } from './context';
-import type { MarketDataContextValue } from './context';
 import type { WebSocketMessage } from '@shared/contract/wsMessages';
 
 /*
@@ -28,7 +27,8 @@ export default function MarketDataProvider({ children }: { children: React.React
         'change' in data &&
         'percentChange' in data
       ) {
-        dataRef.current.set(ticker, data);
+        const quoteData = data;
+        dataRef.current.set(ticker, quoteData);
         if (!flushPending.current) {
           flushPending.current = true;
           requestAnimationFrame(() => {
@@ -40,9 +40,9 @@ export default function MarketDataProvider({ children }: { children: React.React
     };
 
     tickers.forEach((ticker) => {
-      const h = handler(ticker);
-      handlers.set(ticker, h);
-      wsManager.subscriber('quote', ticker, h);
+      handlers.set(ticker, handler(ticker));
+      const h = handlers.get(ticker);
+      if (h) wsManager.subscriber('quote', ticker, h);
     });
 
     return () => {
@@ -52,7 +52,5 @@ export default function MarketDataProvider({ children }: { children: React.React
       });
     };
   }, []);
-
-  const value: MarketDataContextValue = { marketDataMap };
-  return <MarketData.Provider value={value}>{children}</MarketData.Provider>;
+  return <MarketData.Provider value={{ marketDataMap }}>{children}</MarketData.Provider>;
 }
