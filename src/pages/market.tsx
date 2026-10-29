@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Market() {
   const navigate = useNavigate();
-  const marketDataMap = useContext(MarketData);
-  const tickers = Object.keys(marketSymbols);
+  const marketDataContext = useContext(MarketData);
+  const marketDataMap = marketDataContext?.marketDataMap;
+  const tickers = Object.keys(marketSymbols) as (keyof typeof marketSymbols)[];
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -44,10 +45,10 @@ export default function Market() {
                     <tr
                       key={ticker + index}
                       className="cursor-pointer"
-                      onClick={() => navigate(`/chart/${ticker}`)}
+                      onClick={() => void navigate(`/chart/${ticker}`)}
                       tabIndex={0}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') navigate(`/chart/${ticker}`);
+                        if (e.key === 'Enter' || e.key === ' ') void navigate(`/chart/${ticker}`);
                       }}
                     >
                       <td className="text-text-dim tabular-nums">{index + 1}</td>
