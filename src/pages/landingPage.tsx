@@ -1,6 +1,5 @@
-import Watchlist from '../Components/watchlist.jsx';
-import Market from './market.jsx';
-import LineChart from '../Components/Charts/lineChart.jsx';
+import Watchlist from '../Components/Watchlist';
+import Market from './market';
 import '../pages/styles/landingPage.css';
 export default function LandingPage() {
   return (
