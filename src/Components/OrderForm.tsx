@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { placeOrder } from '../services/placeOrder';
 import { useTicker } from '../hooks/useTicker';
-import { toast, ToastProvider } from '../Components/Toast/Toast';
+import { toast } from '../Components/Toast/toastUtils';
+import { ToastProvider } from '../Components/Toast/Toast';
 import '../pages/styles/orderFormNew.css';
 
 interface OrderFormProps {

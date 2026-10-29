@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { DataResponse as OhlcvArrayResponse, QuoteResponse } from '@shared/contract/market';
 
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL as string;
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL;
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
