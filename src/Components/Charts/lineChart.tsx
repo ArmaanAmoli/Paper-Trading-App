@@ -1,24 +1,30 @@
-import { createChart, ColorType, AreaSeries } from 'lightweight-charts';
-import React, { useEffect, useRef, useState } from 'react';
-import { fetchData } from '../../services/dataRequesterForCharts.js';
-// import { Daily } from "../../../AlphaVantageApi/Daily.js";
-//import { weeklyAjusted } from "../../../AlphaVantageApi/weeklyAdjusted.js";
+import { createChart, ColorType, AreaSeries, type IChartApi, type ISeriesApi } from 'lightweight-charts';
+import { useEffect, useRef, useState } from 'react';
+import { fetchData } from '../../services/dataRequesterForCharts';
+import type { UTCTimestamp, SingleValueData } from 'lightweight-charts';
 
-function transformData(apiResponse) {
-  const finalData = apiResponse.map((quote) => {
-    return {
-      time: new Date(quote.Date).getTime() / 1000,
-      value: Number(quote.Close),
-    };
-  });
+interface LineData extends SingleValueData {
+  time: UTCTimestamp;
+  value: number;
+}
+
+function transformData(apiResponse: Array<{ Date: string; Close: number }>): LineData[] {
+  const finalData: LineData[] = apiResponse.map((quote) => ({
+    time: new Date(quote.Date).getTime() / 1000 as UTCTimestamp,
+    value: Number(quote.Close),
+  }));
   return finalData;
 }
 
-export default function LineChart({ ticker }) {
-  const chartContainer = useRef(null); // stores the container reference of div below
-  const chartRef = useRef(null); // store the chart object
-  const seriesRef = useRef(null); // store the data series
-  const [data, setData] = useState([]);
+interface LineChartProps {
+  ticker: string;
+}
+
+export default function LineChart({ ticker }: LineChartProps) {
+  const chartContainer = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<'Area'> | null>(null);
+  const [data, setData] = useState<LineData[]>([]);
 
   // Fetch data
   useEffect(() => {
@@ -26,7 +32,7 @@ export default function LineChart({ ticker }) {
 
     const dataFromYahoo = async () => {
       try {
-        let dataFromYahooJSON = await fetchData(ticker, '1d', '2y');
+        const dataFromYahooJSON = await fetchData(ticker, '1d', '2y');
 
         // ensured data is an array
         if (Array.isArray(dataFromYahooJSON)) {
@@ -37,10 +43,10 @@ export default function LineChart({ ticker }) {
         }
       } catch (err) {
         // Catch any network errors or non-200 responses from Axios
-        console.error('Failed to fetch data:', err.message);
+        console.error('Failed to fetch data:', err instanceof Error ? err.message : err);
       }
     };
-    dataFromYahoo();
+    void dataFromYahoo();
   }, [ticker]);
 
   useEffect(() => {

@@ -1,30 +1,105 @@
 import { useEffect, useRef, useContext, useMemo } from 'react';
-import { UserEquityContext } from '../../Context/context.js';
-import { cancelStopLoss } from '../../services/api.js';
-import { useTicker } from '../../hooks/useTicker.js';
-import { formatNumber, formatSignedNumber, formatPercent } from '../../lib/formatters.js';
+import { UserEquityContext } from '../../Context/context';
+import { cancelStopLoss } from '../../services/api';
+import { useTicker } from '../../hooks/useTicker';
+import { formatNumber, formatSignedNumber, formatPercent } from '../../lib/formatters';
+import type { IChartApi, ISeriesApi, SeriesType } from 'lightweight-charts';
+import type { StopLossData } from './candlestick';
 
-function toFiniteNumber(val) {
+function toFiniteNumber(val: unknown): number {
   if (val === null || val === undefined) return NaN;
   const num = typeof val === 'string' ? parseFloat(val) : Number(val);
   return Number.isFinite(num) ? num : NaN;
 }
 
-function normalizeSymbol(sym) {
-  return String(sym ?? '')
+function normalizeSymbol(sym: unknown): string {
+  if (sym === null || sym === undefined) return '';
+  // Only stringify primitives to avoid '[object Object]'
+  if (typeof sym === 'object') return '';
+  // eslint-disable-next-line @typescript-eslint/no-base-to-string
+  return String(sym)
     .trim()
     .toUpperCase();
 }
 
-function roundPrice(price, decimals = 2) {
+function roundPrice(price: number, decimals = 2): number {
   const factor = Math.pow(10, decimals);
   return Math.round(price * factor) / factor;
 }
 
+interface PositionData {
+  symbol: string;
+  shares: number;
+  avgPrice: number;
+  positionType: 'long' | 'short';
+  lastUpdated: string;
+}
+
+interface PnLData {
+  Pnl: string;
+  pChange: string;
+}
+
+interface StopLossItem {
+  _id?: string;
+  id?: string;
+  symbol?: string;
+  ticker?: string;
+  instrument?: string;
+  asset?: string;
+  price?: number | string;
+  triggerPrice?: number | string;
+  trigger_price?: number | string;
+  qty?: number | string;
+  quantity?: number | string;
+  type?: 'buy' | 'sell';
+}
+
+// Simplified marker types using type assertions
+interface BaseMarker {
+  id: string;
+  kind: 'position' | 'stopLoss';
+  price: number;
+  qty: number;
+  side: 'LONG' | 'SHORT';
+  label: string;
+  symbol: string;
+  color: string;
+  isPosition: boolean;
+  pnl?: number;
+  pnlPercent?: number;
+  count?: number;
+  displayPrice?: string;
+  stopLossIds?: string[];
+  title?: string;
+}
+
+// With Y coordinate for rendering
+interface MarkerWithY extends BaseMarker {
+  y: number;
+  pinned?: 'top' | 'bottom';
+  axisLabelVisible: boolean;
+}
+
+// Type guards for narrowing
+function isPositionMarker(marker: MarkerWithY): boolean {
+  return marker.kind === 'position';
+}
+
+function isStopLossMarker(marker: MarkerWithY): boolean {
+  return marker.kind === 'stopLoss';
+}
+
 // Single source of truth: builds markers for the current symbol only
-function buildMarkersForSymbol(symbol, position, stopLosses, prices, livePrice) {
+function buildMarkersForSymbol(
+  symbol: string,
+  position: PositionData | undefined,
+  stopLosses: StopLossItem[],
+  prices: Record<string, PnLData>,
+  livePrice: number,
+): BaseMarker[] {
   const currentSymbol = normalizeSymbol(symbol);
-  const markers = [];
+  const markers: BaseMarker[] = [];
 
   // Position marker (already filtered by assetList.find)
   if (position) {
@@ -63,7 +138,7 @@ function buildMarkersForSymbol(symbol, position, stopLosses, prices, livePrice) 
   }
 
   // Stop losses: FAIL-CLOSED filter by symbol
-  const validStopLosses = [];
+  const validStopLosses: (StopLossItem & { _normalizedSymbol: string; _id: string; _price: number; _qty: number; _type: 'buy' | 'sell' })[] = [];
   for (const sl of stopLosses || []) {
     const slSymbol = normalizeSymbol(sl.symbol ?? sl.ticker ?? sl.instrument ?? sl.asset);
 
@@ -93,12 +168,12 @@ function buildMarkersForSymbol(symbol, position, stopLosses, prices, livePrice) 
       _id: id,
       _price: price,
       _qty: qty,
-      _type: type,
+      _type: type ?? 'sell',
     });
   }
 
   // Merge stop losses at same price (same symbol, same side)
-  const groups = new Map();
+  const groups = new Map<string, { price: number; side: 'LONG' | 'SHORT'; items: typeof validStopLosses; ids: string[]; totalQty: number }>();
   for (const sl of validStopLosses) {
     const roundedPrice = roundPrice(sl._price, 2);
     const side = sl._type === 'buy' ? 'LONG' : 'SHORT';
@@ -108,6 +183,7 @@ function buildMarkersForSymbol(symbol, position, stopLosses, prices, livePrice) 
       groups.set(key, { price: roundedPrice, side, items: [], ids: [], totalQty: 0 });
     }
     const group = groups.get(key);
+    if (!group) continue;
     group.items.push(sl);
     group.ids.push(sl._id);
     group.totalQty += sl._qty;
@@ -141,7 +217,12 @@ function buildMarkersForSymbol(symbol, position, stopLosses, prices, livePrice) 
   return markers;
 }
 
-function computeYCoordinate(price, priceToCoordinate, getVisiblePriceRange, plotAreaRect) {
+function computeYCoordinate(
+  price: number,
+  priceToCoordinate: ((price: number) => number | null) | undefined,
+  getVisiblePriceRange: (() => { minValue: number; maxValue: number } | null) | undefined,
+  plotAreaRect: { height: number } | null,
+): number | null {
   if (!priceToCoordinate || !plotAreaRect) return null;
 
   const y = priceToCoordinate(price);
@@ -165,15 +246,20 @@ function computeYCoordinate(price, priceToCoordinate, getVisiblePriceRange, plot
   return Number.isFinite(computedY) ? computedY : null;
 }
 
-function Label({ marker, formatNumber, formatSignedNumber, formatPercent, onCancel }) {
-  const isPosition = marker.kind === 'position';
-  const labelY = marker.y;
+interface LabelProps {
+  marker: MarkerWithY;
+  formatSignedNumber: (val: number) => string;
+  formatPercent: (val: number) => string;
+  onCancel: () => void;
+}
 
-  if (isPosition) {
+function Label({ marker, formatSignedNumber, formatPercent, onCancel }: LabelProps) {
+  if (isPositionMarker(marker)) {
+    const pnl = marker.pnl ?? 0;
     const borderColor =
-      marker.pnl > 0
+      pnl > 0
         ? 'rgba(50, 145, 255, 0.5)'
-        : marker.pnl < 0
+        : pnl < 0
           ? 'rgba(229, 72, 77, 0.5)'
           : '#3D3D3D';
 
@@ -184,7 +270,7 @@ function Label({ marker, formatNumber, formatSignedNumber, formatPercent, onCanc
         style={{
           position: 'absolute',
           left: '12px',
-          top: `${labelY - 11}px`,
+          top: `${marker.y - 11}px`,
           height: '22px',
           borderRadius: '4px',
           border: `1px solid ${borderColor}`,
@@ -211,11 +297,11 @@ function Label({ marker, formatNumber, formatSignedNumber, formatPercent, onCanc
         </span>
         <span
           style={{
-            color: marker.pnl > 0 ? '#3291FF' : marker.pnl < 0 ? '#FF6369' : '#707070',
+            color: pnl > 0 ? '#3291FF' : pnl < 0 ? '#FF6369' : '#707070',
             padding: '0 8px',
           }}
         >
-          {formatSignedNumber(marker.pnl ?? 0)} ({formatPercent(marker.pnlPercent ?? 0)})
+          {formatSignedNumber(pnl)} ({formatPercent(marker.pnlPercent ?? 0)})
         </span>
       </div>
     );
@@ -277,6 +363,17 @@ function Label({ marker, formatNumber, formatSignedNumber, formatPercent, onCanc
   }
 }
 
+interface ChartPriceMarkersProps {
+  chartRef: React.RefObject<IChartApi | null>;
+  seriesRef: React.RefObject<ISeriesApi<SeriesType> | null>;
+  ticker: string | undefined;
+  priceToCoordinate: ((price: number) => number | null) | undefined;
+  getVisiblePriceRange: (() => { minValue: number; maxValue: number } | null) | undefined;
+  plotAreaRect: { height: number; width: number } | null;
+  stopLosses: StopLossData[];
+  onStopLossChange: () => void;
+}
+
 export default function ChartPriceMarkers({
   chartRef,
   seriesRef,
@@ -286,30 +383,34 @@ export default function ChartPriceMarkers({
   plotAreaRect,
   stopLosses,
   onStopLossChange,
-}) {
-  const { portfolio, pnl } = useContext(UserEquityContext);
-  const [assetList] = portfolio || [];
-  const [prices] = pnl;
-  const quoteData = useTicker('quote', ticker);
+}: ChartPriceMarkersProps) {
+  const context = useContext(UserEquityContext);
+  const quoteData = useTicker('quote', ticker ?? '');
   const livePrice = toFiniteNumber(quoteData?.currentPrice);
 
-  const priceLinesRef = useRef(new Map());
-  const currentSymbolRef = useRef(normalizeSymbol(ticker));
+  const priceLinesRef = useRef<Map<string, { price: number; remove: () => void }>>(new Map());
+  const currentSymbolRef = useRef(normalizeSymbol(ticker ?? ''));
+
+  // Extract context values for stable useMemo dependencies
+  const portfolio = useMemo(() => context?.portfolio?.[0] ?? [], [context?.portfolio]);
+  const pnl = useMemo(() => context?.pnl?.[0] ?? {}, [context?.pnl]);
 
   // Update ref when ticker changes (for race condition guard)
   useEffect(() => {
-    currentSymbolRef.current = normalizeSymbol(ticker);
+    currentSymbolRef.current = normalizeSymbol(ticker ?? '');
   }, [ticker]);
 
   // Build markers using single source of truth - FAIL-CLOSED
   const baseMarkers = useMemo(() => {
     if (!ticker || !plotAreaRect) return [];
 
+    const assetList = portfolio;
+    const prices = pnl;
     const currentSymbol = normalizeSymbol(ticker);
     const position = assetList?.find((item) => normalizeSymbol(item.symbol) === currentSymbol);
 
     return buildMarkersForSymbol(currentSymbol, position, stopLosses, prices, livePrice);
-  }, [ticker, assetList, prices, stopLosses, livePrice, plotAreaRect]);
+  }, [ticker, portfolio, pnl, stopLosses, livePrice, plotAreaRect]);
 
   // Add Y coordinates and handle stacking/pinning
   const markersWithY = useMemo(() => {
@@ -326,12 +427,12 @@ export default function ChartPriceMarkers({
         if (y === null || y === undefined || !Number.isFinite(y)) return null;
         return { ...marker, y };
       })
-      .filter(Boolean);
+      .filter((m): m is MarkerWithY => m !== null);
 
     // Dev-only safety net
-    if (typeof window !== 'undefined' && window.__DEV__) {
+    if (typeof window !== 'undefined' && (window as Window & { __DEV__?: boolean }).__DEV__) {
       for (const m of markersWithY) {
-        if (m.symbol !== normalizeSymbol(ticker)) {
+        if (m.symbol !== normalizeSymbol(ticker ?? '')) {
           console.error(
             '[ChartPriceMarkers] DEV CHECK FAILED: marker symbol mismatch',
             m.symbol,
@@ -359,12 +460,12 @@ export default function ChartPriceMarkers({
     // Pin off-screen markers
     return stackedMarkers.map((marker) => {
       if (marker.y < 0) {
-        return { ...marker, y: 0, pinned: 'top', axisLabelVisible: false };
-      } else if (marker.y > plotAreaRect.height) {
+        return { ...marker, y: 0, pinned: 'top' as const, axisLabelVisible: false };
+      } else if (plotAreaRect && marker.y > plotAreaRect.height) {
         return {
           ...marker,
           y: plotAreaRect.height - 22,
-          pinned: 'bottom',
+          pinned: 'bottom' as const,
           axisLabelVisible: false,
         };
       }
@@ -373,16 +474,16 @@ export default function ChartPriceMarkers({
   }, [baseMarkers, plotAreaRect, priceToCoordinate, getVisiblePriceRange, ticker]);
 
   // Handle stop loss cancellation (merged or single)
-  const handleCancelStopLoss = (marker) => {
+  const handleCancelStopLoss = (marker: MarkerWithY) => {
     // Fail-closed: verify symbol matches current chart symbol
-    if (marker.symbol !== normalizeSymbol(ticker)) {
+    if (marker.symbol !== normalizeSymbol(ticker ?? '')) {
       console.error('[ChartPriceMarkers] Symbol mismatch on cancel:', marker.symbol, 'vs', ticker);
       return;
     }
 
-    const ids = marker.stopLossIds || [marker.stopLossId].filter(Boolean);
+    const ids = isStopLossMarker(marker) ? (marker.stopLossIds ?? []) : [marker.id].filter(Boolean);
     const count = ids.length;
-    const displayPrice = marker.displayPrice || formatNumber(marker.price);
+    const displayPrice = isStopLossMarker(marker) ? (marker.displayPrice ?? formatNumber(marker.price)) : formatNumber(marker.price);
 
     let confirmed = false;
     if (count > 1) {
@@ -396,9 +497,9 @@ export default function ChartPriceMarkers({
     if (!confirmed) return;
 
     // Cancel all, then refetch
-    Promise.allSettled(ids.map((id) => cancelStopLoss(id)))
+    Promise.allSettled(ids.map((id: string) => cancelStopLoss(id)))
       .then((results) => {
-        const failed = ids.filter((id, i) => results[i].status === 'rejected');
+        const failed = ids.filter((_id: string, i: number) => results[i].status === 'rejected');
 
         if (failed.length > 0) {
           alert(`Failed to cancel ${failed.length} of ${count} stop losses. Remaining will stay.`);
@@ -407,7 +508,7 @@ export default function ChartPriceMarkers({
         // Always refetch to get authoritative state
         if (onStopLossChange) onStopLossChange();
       })
-      .catch((err) => alert('Failed to cancel: ' + err.message));
+      .catch((err) => alert('Failed to cancel: ' + (err instanceof Error ? err.message : String(err))));
   };
 
   // Sync price lines with markersWithY - runs on marker changes (including symbol change)
@@ -417,10 +518,10 @@ export default function ChartPriceMarkers({
     const series = seriesRef.current;
 
     // Remove price lines for markers that no longer exist
-    priceLinesRef.current.forEach((priceLine, lineId) => {
+    priceLinesRef.current.forEach((_priceLine, lineId) => {
       if (!markersWithY.find((m) => m.id === lineId)) {
         try {
-          series.removePriceLine(priceLine);
+          series.removePriceLine(_priceLine as unknown as ReturnType<typeof series.createPriceLine>);
         } catch {
           /* ignore */
         }
@@ -432,12 +533,12 @@ export default function ChartPriceMarkers({
     markersWithY.forEach((marker) => {
       if (!Number.isFinite(marker.price)) return;
 
-      let priceLine = priceLinesRef.current.get(marker.id);
+      const priceLine = priceLinesRef.current.get(marker.id);
 
       if (!priceLine) {
-        const isPosition = marker.kind === 'position';
+        const isPosition = isPositionMarker(marker);
         try {
-          priceLine = series.createPriceLine({
+          const newPriceLine = series.createPriceLine({
             price: marker.price,
             color: isPosition ? '#A1A1A1' : '#E5484D',
             lineWidth: 1,
@@ -445,27 +546,27 @@ export default function ChartPriceMarkers({
             axisLabelVisible: marker.axisLabelVisible !== false, // hide when pinned off-screen
             title: '',
           });
-          priceLinesRef.current.set(marker.id, priceLine);
+          priceLinesRef.current.set(marker.id, newPriceLine as unknown as { price: number; remove: () => void });
         } catch (_err) {
           console.warn('[ChartPriceMarkers] Failed to create price line:', _err);
           return;
         }
       } else {
         try {
-          priceLine.applyOptions({ price: marker.price });
+          (priceLine as unknown as { applyOptions: (opts: { price: number }) => void }).applyOptions({ price: marker.price });
         } catch {
           /* ignore */
         }
         try {
-          priceLine.applyOptions({ axisLabelVisible: marker.axisLabelVisible !== false });
+          (priceLine as unknown as { applyOptions: (opts: { axisLabelVisible: boolean }) => void }).applyOptions({ axisLabelVisible: marker.axisLabelVisible !== false });
         } catch {
           /* ignore */
         }
       }
 
-      const isPosition = marker.kind === 'position';
+      const isPosition = isPositionMarker(marker);
       try {
-        priceLine.applyOptions({
+        (priceLine as unknown as { applyOptions: (opts: { color: string; lineWidth: number; lineStyle: number }) => void }).applyOptions({
           color: isPosition ? '#A1A1A1' : '#E5484D',
           lineWidth: 1,
           lineStyle: isPosition ? 2 : 1,
@@ -475,7 +576,7 @@ export default function ChartPriceMarkers({
       }
 
       try {
-        priceLine.applyOptions({
+        (priceLine as unknown as { applyOptions: (opts: { axisLabelColor: string; axisLabelTextColor: string }) => void }).applyOptions({
           axisLabelColor: isPosition ? '#3D3D3D' : '#E5484D',
           axisLabelTextColor: '#FFFFFF',
         });
@@ -485,7 +586,7 @@ export default function ChartPriceMarkers({
     });
 
     // Dev-only count check
-    if (typeof window !== 'undefined' && window.__DEV__) {
+    if (typeof window !== 'undefined' && (window as Window & { __DEV__?: boolean }).__DEV__) {
       if (priceLinesRef.current.size !== markersWithY.length) {
         console.error(
           '[ChartPriceMarkers] DEV CHECK: price lines count mismatch',
@@ -499,14 +600,14 @@ export default function ChartPriceMarkers({
 
   // Cleanup ALL price lines on unmount
   useEffect(() => {
+    const series = seriesRef.current;
+    const lines = priceLinesRef.current;
     return () => {
-      const series = seriesRef.current;
-      const lines = priceLinesRef.current;
       if (series) {
         try {
           lines.forEach((priceLine) => {
             try {
-              series.removePriceLine(priceLine);
+              series.removePriceLine(priceLine as unknown as ReturnType<typeof series.createPriceLine>);
             } catch {
               /* ignore */
             }
@@ -537,7 +638,6 @@ export default function ChartPriceMarkers({
         <Label
           key={marker.id}
           marker={marker}
-          formatNumber={formatNumber}
           formatSignedNumber={formatSignedNumber}
           formatPercent={formatPercent}
           onCancel={() => handleCancelStopLoss(marker)}
