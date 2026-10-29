@@ -1,36 +1,37 @@
 import { useParams } from 'react-router-dom';
-import CandleStickChartComponent from '../Components/Charts/candlestick.jsx';
-import Watchlist from '../Components/watchlist.jsx';
-import OrderForm from '../Components/orderForm.jsx';
-import IndicatorsDropdown from '../Components/IndicatorsDropdown.jsx';
+import CandleStickChartComponent from '../Components/Charts/candlestick';
+import Watchlist from '../Components/Watchlist';
+import OrderForm from '../Components/OrderForm';
+import IndicatorsDropdown from '../Components/IndicatorsDropdown';
 import { useEffect, useState, useCallback } from 'react';
-import { IndicatorsList } from '../Context/context.js';
-import IndicatorModal from '../Components/IndicatorPopUps/IndicatorModal.jsx';
-import { indicatorConfigs } from '../Components/IndicatorPopUps/indicatorConfigs.js';
-import ChartErrorBoundary from '../Components/ChartErrorBoundary.jsx';
-import { fetchActiveStopLosses } from '../services/api.js';
+import IndicatorModal from '../Components/IndicatorPopUps/IndicatorModal';
+import { indicatorConfigs } from '../Components/IndicatorPopUps/indicatorConfigs';
+import ChartErrorBoundary from '../Components/ChartErrorBoundary';
+import { fetchActiveStopLosses } from '../services/api';
 import './styles/chartTradePage.css';
+import type { IndicatorConfig } from '../Components/IndicatorPopUps/indicatorConfigs';
+import type { StopLossData } from '../Components/Charts/candlestick';
 
 export default function StockMainChart() {
-  const [activeTab, setActiveTab] = useState('order'); // 'order' | 'watchlist'
-  const { ticker } = useParams();
+  const [activeTab, setActiveTab] = useState<'order' | 'watchlist'>('order');
+  const { ticker } = useParams<{ ticker: string }>();
 
   const [interval, setInterval] = useState('1h');
 
   // Single modal state
-  const [modalConfig, setModalConfig] = useState(null);
+  const [modalConfig, setModalConfig] = useState<IndicatorConfig | null>(null);
 
   // Stop losses state (lifted from ChartPriceMarkers)
-  const [stopLosses, setStopLosses] = useState([]);
+  const [stopLosses, setStopLosses] = useState<StopLossData[]>([]);
 
   // Listen for indicator popup open events from the dropdown
   useEffect(() => {
-    const handleOpenPopup = (e) => {
+    const handleOpenPopup = (e: CustomEvent<{ indicator: string; interval: string }>) => {
       const { indicator, interval: eventInterval } = e.detail;
       if (eventInterval !== interval) return;
 
       // Map indicator IDs to config keys
-      const configMap = {
+      const configMap: Record<string, string> = {
         SMA: 'SMA',
         EMA: 'SMA',
         RSI: 'RSI',
@@ -41,12 +42,19 @@ export default function StockMainChart() {
 
       const configKey = configMap[indicator];
       if (configKey && indicatorConfigs[configKey]) {
-        setModalConfig(indicatorConfigs[configKey]);
+        const config = indicatorConfigs[configKey];
+        // Convert IndicatorConfig to IndicatorConfig (same)
+        setModalConfig({
+          indicatorId: config.indicatorId,
+          title: config.title,
+          submitLabel: config.submitLabel,
+          fields: config.fields,
+        });
       }
     };
 
-    window.addEventListener('open-indicator-popup', handleOpenPopup);
-    return () => window.removeEventListener('open-indicator-popup', handleOpenPopup);
+    window.addEventListener('open-indicator-popup', handleOpenPopup as EventListener);
+    return () => window.removeEventListener('open-indicator-popup', handleOpenPopup as EventListener);
   }, [interval]);
 
   const closeModal = () => setModalConfig(null);
@@ -82,7 +90,7 @@ export default function StockMainChart() {
         console.warn('Failed to refresh stop losses:', err);
       }
     }
-    load();
+    void load();
     return () => {
       mounted = false;
     };

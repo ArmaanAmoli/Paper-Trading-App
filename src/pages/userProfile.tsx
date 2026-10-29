@@ -1,16 +1,19 @@
 import { useEffect, useState, useContext } from 'react';
-import { UserAccountContext, UserEquityContext } from '../Context/context.js';
-import { getTradeHistory } from '../services/tradeHistory.js';
+import { UserAccountContext, UserEquityContext } from '../Context/context';
+import { getTradeHistory } from '../services/tradeHistory';
 import { useNavigate } from 'react-router-dom';
-import { formatNumber, formatSignedNumber, getValueColorClass } from '../lib/formatters.js';
-import Avatar from '../Components/Avatar.jsx';
+import { formatNumber, formatSignedNumber, getValueColorClass } from '../lib/formatters';
+import Avatar from '../Components/Avatar';
 import './styles/userProfile.css';
+import type { TradeHistoryResponse } from '@shared/contract/trade';
 
 export default function UserProfile() {
-  const [userData] = useContext(UserAccountContext);
-  const { totalEquity } = useContext(UserEquityContext);
-  const [Equity] = totalEquity || [0];
-  const [tradeHistory, setTradeHistory] = useState(null);
+  const userAccount = useContext(UserAccountContext);
+  const userEquity = useContext(UserEquityContext);
+  
+  const userData = userAccount?.userAccountInformation ?? null;
+  const equity = userEquity?.totalEquity?.[0] ?? 0;
+  const [tradeHistory, setTradeHistory] = useState<TradeHistoryResponse | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,23 +23,22 @@ export default function UserProfile() {
         setTradeHistory(data);
       }
     }
-    fetchTradeHistory();
+    void fetchTradeHistory();
     const intervalId = setInterval(fetchTradeHistory, 10000);
     return () => clearInterval(intervalId);
   }, []);
 
   function logOut() {
     localStorage.removeItem('token');
-    navigate('/', { replace: true });
+    void navigate('/', { replace: true });
   }
 
   const balance = userData?.balance ?? 0;
   const blockedMargin = userData?.blockedMargin ?? 0;
-  const equity = Equity ?? 0;
   const holdingsValue = equity;
   const totalEquityValue = balance + equity;
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return '--';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -49,7 +51,7 @@ export default function UserProfile() {
     });
   };
 
-  const formatMemberSince = (dateString) => {
+  const formatMemberSince = (dateString: string) => {
     if (!dateString) return '--';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -92,7 +94,7 @@ export default function UserProfile() {
                 </div>
                 <div className="profile-detail">
                   <dt className="profile-detail-label">Member since</dt>
-                  <dd className="profile-detail-value">{formatMemberSince(userData?.createdAt)}</dd>
+                  <dd className="profile-detail-value">{formatMemberSince(userData?.createdAt ?? '')}</dd>
                 </div>
               </dl>
 
@@ -107,7 +109,7 @@ export default function UserProfile() {
                 >
                   Update Profile
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={logOut}>
+                <button type="button" className="btn btn-secondary" onClick={() => void logOut()}>
                   Log out
                 </button>
               </div>
