@@ -90,7 +90,19 @@ export const indicatorEndpoint = defineEndpoint({
   path: '/data/indicator',
   auth: true,
   query: indicatorBaseQuery,
-  response: z.record(z.string(), z.unknown()), // Varies by indicator
+  response: z.union([
+    z.array(z.record(z.string(), z.unknown())),
+    z.object({
+      UP: z.array(z.record(z.string(), z.unknown())).optional(),
+      MIDDLE: z.array(z.record(z.string(), z.unknown())).optional(),
+      DOWN: z.array(z.record(z.string(), z.unknown())).optional(),
+    }).passthrough(),
+    z.object({
+      SLOWK: z.array(z.record(z.string(), z.unknown())).optional(),
+      SLOWD: z.array(z.record(z.string(), z.unknown())).optional(),
+    }).passthrough(),
+    z.record(z.string(), z.unknown()),
+  ]), // Varies by indicator
 });
 
 export type IndicatorQuery = z.infer<typeof indicatorEndpoint.query>;
