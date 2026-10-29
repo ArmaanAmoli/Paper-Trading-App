@@ -1,19 +1,19 @@
 import { Routes, Route, Outlet } from 'react-router-dom';
-import Login from '../pages/login.jsx';
-import Signup from '../pages/signup.jsx';
-import LandingPage from '../pages/landingPage.jsx';
-import ProtectedRoutes from './protectedRoutes.jsx';
-import StockMainChart from '../pages/stockChart.jsx';
-import PortfolioPage from '../pages/portfolioPage.jsx';
-import UserProfile from '../pages/userProfile.jsx';
+import Login from '../pages/login';
+import Signup from '../pages/signup';
+import LandingPage from '../pages/landingPage';
+import ProtectedRoutes from './protectedRoutes';
+import StockMainChart from '../pages/stockChart';
+import PortfolioPage from '../pages/portfolioPage';
+import UserProfile from '../pages/userProfile';
 import {
   WatchlistProvider,
   UserEquityProvider,
   UserAccountProvider,
   IndicatorsListProvider,
-} from '../Context/context.jsx';
-import MarketDataProvider from '../Context/MarketPageContextProvider.jsx';
-import Navbar from '../Components/Navbar.jsx';
+} from '../Context/context';
+import MarketDataProvider from '../Context/MarketPageContextProvider';
+import Navbar from '../Components/Navbar';
 
 const AuthenticatedProviders = () => {
   return (
@@ -56,14 +56,7 @@ const AppRouter = () => {
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         {/* Protected routes wrapped inside the parent route */}
-        <Route element={<ProtectedRoutes />}>
-          <Route element={<AuthenticatedProviders />}>
-            <Route element={<AppLayout />}>
-              <Route path="/landing-page" element={<LandingPage />} />
-              <Route path="/chart/:ticker" element={<StockMainChart />} />
-              <Route path="/userPortfolio" element={<PortfolioPage />} />
-              <Route path="/userprofile" element={<UserProfile />} />
-            </Route>
+        <Route element={<ProtectedRoutes />}>          <Route element={<AuthenticatedProviders />}>            <Route element={<AppLayout />}>              <Route path="/landing-page" element={<LandingPage />} />              <Route path="/chart/:ticker" element={<StockMainChart />} />              <Route path="/userPortfolio" element={<PortfolioPage />} />              <Route path="/userprofile" element={<UserProfile />} />            </Route>
           </Route>
         </Route>
       </Routes>
