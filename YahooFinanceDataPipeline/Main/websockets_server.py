@@ -25,10 +25,12 @@ async def verifyJWT(websocket:WebSocket):
         # Clean the header string (browsers separate multiple protocols with commas)
         token = [p.strip() for p in subprotocols.split(",")][0]
         
-        # IMPORTANT: You must accept the matching subprotocol during handshake!
-        await websocket.accept(subprotocol=token)
+        # NOTE: FastAPI already accepted the WebSocket connection when entering this endpoint.
+        # The subprotocol is automatically handled by FastAPI based on the sec-websocket-protocol header.
+        # We just need to verify the JWT token.
         print(f"Token successfully received via subprotocol: {token}")
     else:
+        # No token provided, close the connection
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return False
 
@@ -36,11 +38,10 @@ async def verifyJWT(websocket:WebSocket):
         decoded_payload = jwt.decode(token , JWT_SECRET , algorithms = ["HS256"])
         return True
     except jwt.ExpiredSignatureError:
-        # await websocket.send_text("Auth falied : Expired Session")
-        await websocket.close()
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return False
     except jwt.InvalidTokenError:
-        await websocket.close()
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return False
 
 ticker_subscribers:dict[str , list[WebSocket]] = defaultdict(list)
@@ -98,11 +99,18 @@ def stop_fetcher(ticker:str):
 @app.websocket("/ws/quote")
 async def quote_ws(websocket: WebSocket): # This endpoint just maintains the ticker_subscriber dictionary
     
-    isVerified = await verifyJWT( websocket)
+    isVerified = await verifyJWT(websocket)
     if(isVerified == False):return
     
+    # Accept the WebSocket connection with the subprotocol (token)
+    subprotocol = websocket.headers.get("sec-websocket-protocol")
+    if subprotocol:
+        await websocket.accept(subprotocol=subprotocol)
+    else:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    
     subscribed:set[str] = set() # each user have their own subscribed set
-    # await websocket.accept() # Initial Handshake request by client
     try:
         while True:
             # msg-example: {action:"subscribe" or "unsubscribe" , ticker: "AAPL"}
@@ -132,8 +140,11 @@ async def quote_ws(websocket: WebSocket): # This endpoint just maintains the tic
         print(f"Client disconnected {websocket}")
         
     finally:
-        await websocket.close()
-        # print("ws/quote")
+        try:
+            await websocket.close()
+        except RuntimeError:
+            # WebSocket already closed, ignore
+            pass
         
 
 
@@ -387,8 +398,11 @@ async def indicator_ws(websocket: WebSocket):
                     props_part = json.loads(indicator_id.split("::", 3)[3] if len(indicator_id.split("::", 3)) > 3 else "{}")
                     stop_indicator_fetcher(ticker_part, interval_part, indicator_part, props_part)
         
-        await websocket.close()
-        # print(f"[INDICATOR] Client disconnected")
+        try:
+            await websocket.close()
+        except RuntimeError:
+            # WebSocket already closed, ignore
+            pass
 
 
 
