@@ -1,7 +1,7 @@
 
 # Paper Trading App
 
-This repository houses a full-stack paper-trading application. It features a React + Vite frontend, an Express API that manages user auth and trade persistence in MongoDB, and a Python FastAPI service that supplies real-time market data and technical indicators powered by Yahoo Finance.
+This repository houses a full-stack paper-trading application. It features a React + Vite frontend (TypeScript), an Express API (TypeScript) that manages user auth and trade persistence in MongoDB, and a Python FastAPI service that supplies real-time market data and technical indicators powered by Yahoo Finance.
 
 ---
 
@@ -26,8 +26,8 @@ flowchart LR
 
 ### Component Map (Where to look)
 
-* **Frontend:** `src/` — Main router located at `src/routes/AppRouter.jsx`.
-* **Backend API:** `server/server.js` — Main Express server and route handlers.
+* **Frontend:** `src/` — Main router located at `src/routes/AppRouter.tsx`.
+* **Backend API:** `server/server.ts` — Main Express server and route handlers.
 * **Market Data Pipelines:** `YahooFinanceDataPipeline/Main/server.py` — FastAPI endpoints handling technical indicators, pricing data, and search.
 
 ---
@@ -86,7 +86,7 @@ uvicorn server:app --reload --host 127.0.0.1 --port 8000
 Open a new terminal window, navigate back to the project root, and run:
 
 ```bash
-node server/server.js
+npm run dev:server
 
 ```
 
@@ -101,7 +101,7 @@ npm run dev
 
 ```
 
-Vite will host the frontend at `http://localhost:5173` and automatically proxy endpoints targeting port `3000` via its internal configuration (`vite.config.js`).
+Vite will host the frontend at `http://localhost:5173` and automatically proxy endpoints targeting port `3000` via its internal configuration (`vite.config.ts`).
 
 ---
 
@@ -120,17 +120,17 @@ Vite will host the frontend at `http://localhost:5173` and automatically proxy e
 * `MONGO_URL`: Connection string for MongoDB database.
 * `JWT_SECRET`: Secret key used to sign authorization tokens (1-hour default expiration lifecycle).
 
-> **Tip:** If you need to map custom ports, remember to update `server/server.js`, `vite.config.js` (proxy targets), and the WebSocket connection strings inside `src/lib/wsManager.js`.
+> **Tip:** If you need to map custom ports, remember to update `server/server.ts`, `vite.config.ts` (proxy targets), and the WebSocket connection strings inside `src/lib/wsManager.ts`.
 
 ---
 
 ## Key Files Directory
 
-* **API Entrypoint:** `server/server.js`
-* **Query & Business Logic:** `server/queryManager.js`
-* **MongoDB Schema Definition:** `server/Schemas/mongoSchema.js`
-* **Frontend Client Routing:** `src/routes/AppRouter.jsx`
-* **WebSocket State Manager:** `src/lib/wsManager.js`
+* **API Entrypoint:** `server/server.ts`
+* **Query & Business Logic:** `server/queryManager.ts`
+* **MongoDB Schema Definition:** `server/Schemas/mongoSchema.ts`
+* **Frontend Client Routing:** `src/routes/AppRouter.tsx`
+* **WebSocket State Manager:** `src/lib/wsManager.ts`
 * **Market-Data Backend:** `YahooFinanceDataPipeline/Main/server.py`
 
 ---
@@ -160,7 +160,7 @@ sequenceDiagram
 * **Authentication Issues:** Ensure all requests to protected Express routes include the `Authorization: Bearer <token>` header.
 * **MongoDB Connection Failures:** Ensure your local Mongo daemon is active (`mongod`) and matches your `.env` connection string.
 * **Missing Market Data:** If indicators or quotes fail to load, check that the FastAPI server on port `8000` is active and hasn't run into a `yfinance` rate limit.
-* **CORS / Proxy Misconfigurations:** If network calls return 404 errors in the browser, double-check the target setups inside `vite.config.js`.
+* **CORS / Proxy Misconfigurations:** If network calls return 404 errors in the browser, double-check the target setups inside `vite.config.ts`.
 
 ---
 
@@ -174,6 +174,18 @@ npm run build
 ```
 
 The production assets will optimize into a static `/dist` directory, ready to be served via Nginx or integrated into your Express static asset handler.
+
+---
+
+## TypeScript
+
+This project is fully migrated to TypeScript. Type checking is enforced via:
+
+- `tsc --noEmit` (run via `npm run typecheck`)
+- ESLint with TypeScript rules
+- Strict mode enabled in all `tsconfig.json` files
+
+Shared contracts between frontend and backend are defined in `shared/contract/` using Zod schemas for runtime validation and static types.
 
 ---
 
@@ -194,4 +206,3 @@ The production assets will optimize into a static `/dist` directory, ready to be
 <img width="1914" height="956" alt="Screenshot 2026-10-20 160753" src="https://github.com/user-attachments/assets/c9d693fd-4034-4e11-ad1c-60c476b567cb" />
 
 <img width="1919" height="941" alt="Screenshot 2026-10-20 160808" src="https://github.com/user-attachments/assets/3498207a-b276-42fa-9520-70f813a38c66" />
-
