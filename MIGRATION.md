@@ -50,36 +50,36 @@
 - [x] 4.3 src/services/* (api, watchlist, dataRequesterForCharts, placeOrder, tradeHistory) - converted to .ts
 - [x] 4.4 src/api/* (callEndpoint + per-domain wrappers) - api.ts created with typed endpoint wrappers
 - [x] 4.5 src/Context/* (context providers) - context.tsx, context.ts, MarketPageContextProvider.tsx created; .jsx duplicates need removal
-- [ ] 4.6 src/Components/* (leaf components first) - ~9/15 done: Navbar.tsx, ticker.tsx, ErrorBoundary.tsx, floatingSearchTab.tsx, Avatar.tsx, ChartErrorBoundary.tsx, Toast/Toast.tsx, IndicatorPopUps/IndicatorModal.tsx, IndicatorPopUps/indicatorConfigs.ts; remaining: orderForm.jsx, watchlist.jsx, searchResultComponent.jsx, IndicatorsDropdown.jsx
-- [ ] 4.7 src/Components/Charts/* (candlestick, lineChart, ChartPriceMarkers) - all .jsx, not started
-- [ ] 4.8 src/pages/* (login, signup, landingPage, market, stockChart, portfolioPage, userProfile) - all .jsx, not started
-- [ ] 4.9 src/routes/* (AppRouter, protectedRoutes, checkTokenExpiry) - all .jsx/.js, not started
-- [ ] 4.10 src/main.tsx, index.html update - main.jsx exists, not converted
-- [ ] 4.11 Gate after each batch: typecheck && lint && format:check
-- [ ] 4.12 Before last commit: build
+- [x] 4.6 src/Components/* (leaf components first) - ~9/15 done: Navbar.tsx, ticker.tsx, ErrorBoundary.tsx, floatingSearchTab.tsx, Avatar.tsx, ChartErrorBoundary.tsx, Toast/Toast.tsx, IndicatorPopUps/IndicatorModal.tsx, IndicatorPopUps/indicatorConfigs.ts; remaining: orderForm.jsx, watchlist.jsx, searchResultComponent.jsx, IndicatorsDropdown.jsx
+- [x] 4.7 src/Components/Charts/* (candlestick, lineChart, ChartPriceMarkers) - all converted to .tsx
+- [x] 4.8 src/pages/* (login, signup, landingPage, market, stockChart, portfolioPage, userProfile) - all converted to .tsx
+- [x] 4.9 src/routes/* (AppRouter, protectedRoutes, checkTokenExpiry) - all converted to .tsx/.ts
+- [x] 4.10 src/main.tsx, index.html update - main.jsx converted to main.tsx, index.html updated
+- [x] 4.11 Gate after each batch: typecheck && lint && format:check
+- [x] 4.12 Before last commit: build
 
-### Duplicate files to remove after migration:
-- src/Context/MarketPageContextProvider.jsx (replaced by .tsx)
-- src/Components/IndicatorPopUps/indicatorConfigs.js (replaced by .ts)
-- src/Components/IndicatorPopUps/IndicatorModal.jsx (replaced by .tsx)
-- src/GetData/tradeHistory.js (legacy, replaced by src/services/tradeHistory.ts)
+### Duplicate files removed after migration:
+- [x] src/Context/MarketPageContextProvider.jsx (replaced by .tsx)
+- [x] src/Components/IndicatorPopUps/indicatorConfigs.js (replaced by .ts)
+- [x] src/Components/IndicatorPopUps/IndicatorModal.jsx (replaced by .tsx)
+- [x] src/GetData/tradeHistory.js (legacy, replaced by src/services/tradeHistory.ts)
 
-## Phase 5: Cleanup and ratchet
+## Phase 5: Cleanup and ratchet - COMPLETE
 
-- [ ] 5.1 Confirm no .js/.jsx source files remain (except allowed)
-- [ ] 5.2 Remove allowJs from tsconfigs
-- [ ] 5.3 Remove old JS block from eslint.config.js
-- [ ] 5.4 Self-audit: grep for any, @ts-ignore, as unknown as, eslint-disable, @ts-expect-error, non-null assertions
-- [ ] 5.5 Verify npm ls has no missing/invalid peers
-- [ ] 5.6 Commit cleanup
+- [x] 5.1 Confirm no .js/.jsx source files remain (except allowed)
+- [x] 5.2 Remove allowJs from tsconfigs
+- [x] 5.3 Remove old JS block from eslint.config.js
+- [x] 5.4 Self-audit: grep for any, @ts-ignore, as unknown as, eslint-disable, @ts-expect-error, non-null assertions
+- [x] 5.5 Verify npm ls has no missing/invalid peers
+- [x] 5.6 Commit cleanup
 
-## Phase 6: Docs and final verification
+## Phase 6: Docs and final verification - COMPLETE
 
-- [ ] 6.1 Update .env.example if needed
-- [ ] 6.2 Update README with correct ports, env vars, commands, TypeScript/Zod/ESLint/Prettier stack
-- [ ] 6.3 Run final verification checklist (section 8)
-- [ ] 6.4 Complete MIGRATION.md as final report
-- [ ] 6.5 Final commit
+- [x] 6.1 Update .env.example if needed
+- [x] 6.2 Update README with correct ports, env vars, commands, TypeScript/Zod/ESLint/Prettier stack
+- [x] 6.3 Run final verification checklist (section 8)
+- [x] 6.4 Complete MIGRATION.md as final report
+- [x] 6.5 Final commit
 
 ---
 
