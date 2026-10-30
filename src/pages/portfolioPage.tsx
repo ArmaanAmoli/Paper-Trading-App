@@ -1,226 +1,247 @@
-import { useEffect, useState, useContext, useCallback } from 'react';
-import { UserEquityContext, UserAccountContext } from '../Context/context';
-import { fetchActiveStopLosses, cancelStopLoss } from '../services/api';
-import { formatNumber } from '../lib/formatters';
-import Avatar from '../Components/Avatar';
+import { useContext, useState, useEffect, useCallback } from 'react';
 import './styles/portfolioPage.css';
+import { UserAccountContext, UserEquityContext } from '../Context/context';
+import { fetchActiveStopLosses, cancelStopLoss } from '../services/api';
+import {
+  formatNumber,
+  formatSignedNumber,
+  formatPercent,
+  getValueColorClass,
+  getSideBadgeClass,
+  getSideLabel,
+} from '../lib/formatters';
 import type { StopLossData } from '../Components/Charts/candlestick';
+import type { PortfolioResponse } from '@shared/contract/trade';
+
 export default function PortfolioPage() {
-  const userAccount = useContext(UserAccountContext);
-  const userEquity = useContext(UserEquityContext);
-  const [stopLosses, setStopLosses] = useState<StopLossData[]>([]);
+  const userAccountContext = useContext(UserAccountContext);
+  const userEquityContext = useContext(UserEquityContext);
 
-  const userData = userAccount?.userAccountInformation;
-  const positions = userEquity?.portfolio?.[0] ?? [];
-  const Equity = userEquity?.totalEquity?.[0] ?? 0;
+  // UserAccountContext provides an object, not a tuple
+  const userAccountInformation = userAccountContext?.userAccountInformation ?? {
+    username: '',
+    email: '',
+    balance: 0,
+    blockedMargin: 0,
+  };
 
-  useEffect(() => {
-    async function fetchStopLosses() {
-      try {
-        const data = await fetchActiveStopLosses();
-        setStopLosses(data || []);
-      } catch (err) {
-        console.warn('Failed to fetch stop losses:', err);
-      }
-    }
-    void fetchStopLosses();
-    const intervalId = setInterval(fetchStopLosses, 10000);
-    return () => clearInterval(intervalId);
-  }, []);
+  // UserEquityContext provides an object with tuple properties
+  const portfolio = userEquityContext?.portfolio?.[0] ?? [];
+  const pnl = userEquityContext?.pnl?.[0] ?? {};
+  const totalPnlValue = userEquityContext?.totalPnl?.[0] ?? 0;
+  const Equity = userEquityContext?.totalEquity?.[0] ?? 0;
 
-  const handleCancelStopLoss = useCallback(async (id: string) => {
-    if (!window.confirm('Cancel this stop loss order?')) return;
-    try {
-      await cancelStopLoss(id);
-      setStopLosses((prev: StopLossData[]) => prev.filter((sl: StopLossData) => sl._id !== id));
-    } catch (err) {
-      console.error('Failed to cancel stop loss:', err);
-      alert('Failed to cancel stop loss');
-    }
-  }, []);
+  const assetList = portfolio;
+  const prices = pnl as Record<string, { Pnl: string; pChange: string }>;
 
-  const balance = userData?.balance ?? 0;
-  const blockedMargin = userData?.blockedMargin ?? 0;
+  const balance = userAccountInformation?.balance ?? 0;
   const equity = Equity ?? 0;
-  const holdingsValue = equity;
   const totalEquityValue = balance + equity;
 
+  // Stop losses state
+  const [stopLosses, setStopLosses] = useState<StopLossData[]>([]);
+  const [stopLossesLoading, setStopLossesLoading] = useState(true);
+  const [stopLossesError, setStopLossesError] = useState<string | null>(null);
+
+  // Fetch active stop losses
+  useEffect(() => {
+    let mounted = true;
+    async function loadStopLosses() {
+      setStopLossesLoading(true);
+      setStopLossesError(null);
+      try {
+        const data = await fetchActiveStopLosses();
+        if (mounted) setStopLosses(data || []);
+      } catch (err) {
+        if (mounted) setStopLossesError(err instanceof Error ? err.message : 'Failed to load stop losses');
+      } finally {
+        if (mounted) setStopLossesLoading(false);
+      }
+    }
+    void loadStopLosses();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Cancel stop loss handler
+  const handleCancelStopLoss = useCallback(async (stopLossId: string, symbol: string, price: string) => {
+    const confirmed = window.confirm(`Cancel this stop loss for ${symbol} at ${price}?`);
+    if (!confirmed) return;
+    try {
+      await cancelStopLoss(stopLossId);
+      setStopLosses((prev) => prev.filter((sl) => sl._id !== stopLossId));
+    } catch (err) {
+      alert('Failed to cancel stop loss: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  }, []);
+
   return (
-    <div className="portfolio-page">
+    <div className="Portfolio-page">
       <div className="portfolio-container">
         {/* Page Header */}
         <header className="portfolio-header">
           <h1 className="portfolio-title">Portfolio</h1>
-          <p className="portfolio-subtitle">Your holdings, stop losses, and account summary</p>
+          <p className="portfolio-subtitle">Your open positions and account summary</p>
         </header>
 
-        {/* Main Layout Grid */}
-        <div className="portfolio-grid">
-          {/* Left Column: Summary Card */}
-          <aside className="portfolio-card-wrapper">
-            <div className="portfolio-card">
-              {/* Avatar & Name */}
-              <div className="portfolio-top">
-                <Avatar name={userData?.username} size={64} />
-                <div className="portfolio-identity">
-                  <h2 className="portfolio-name">{userData?.username ?? '--'}</h2>
-                  <p className="portfolio-email">{userData?.email ?? '--'}</p>
-                </div>
-              </div>
+        {/* Summary Cards Grid */}
+        <div className="summary-grid">
+          <article className="summary-card">
+            <p className="summary-label">Unrealized P&L</p>
+            <p className={`summary-value ${getValueColorClass(totalPnlValue)}`}>
+              {formatSignedNumber(totalPnlValue)}
+            </p>
+          </article>
 
-              <hr className="portfolio-divider" />
+          <article className="summary-card">
+            <p className="summary-label">Account Balance</p>
+            <p className="summary-value">{formatNumber(balance)}</p>
+          </article>
 
-              {/* Stats */}
-              <div className="stat-grid">
-                <article className="stat-card">
-                  <p className="stat-label">Balance</p>
-                  <p className="stat-value">${formatNumber(balance)}</p>
-                </article>
-                <article className="stat-card">
-                  <p className="stat-label">Equity</p>
-                  <p className="stat-value">${formatNumber(totalEquityValue)}</p>
-                </article>
-                <article className="stat-card">
-                  <p className="stat-label">Blocked Margin</p>
-                  <p className="stat-value">${formatNumber(blockedMargin)}</p>
-                </article>
-                <article className="stat-card">
-                  <p className="stat-label">Holdings Value</p>
-                  <p className="stat-value">${formatNumber(holdingsValue)}</p>
-                </article>
-              </div>
-
-              <hr className="portfolio-divider" />
-
-              {/* Actions */}
-              <div className="portfolio-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={true}
-                >
-                  Update Profile
-                </button>
-              </div>
-            </div>
-          </aside>
-
-          {/* Right Column */}
-          <main className="portfolio-main">
-            {/* Positions Table */}
-            <section className="history-card">
-              <header className="history-header">
-                <h2 className="history-title">Positions</h2>
-                <span className="history-count">
-                  {positions && positions.length > 0 ? positions.length : 0}
-                </span>
-              </header>
-              <div className="history-table-wrapper">
-                {positions && positions.length > 0 ? (
-                  <table className="history-table" role="grid">
-                    <colgroup>
-                      <col style={{ width: '72px' }} />
-                      <col style={{ minWidth: '120px' }} />
-                      <col style={{ width: '90px' }} />
-                      <col style={{ width: '130px' }} />
-                      <col style={{ width: '130px' }} />
-                      <col style={{ width: '130px' }} />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th className="align-left">S.NO</th>
-                        <th className="align-left">SYMBOL</th>
-                        <th className="align-right">SHARES</th>
-                        <th className="align-right">AVG PRICE</th>
-                        <th className="align-right">CURRENT</th>
-                        <th className="align-right">P&L</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {positions.map((item: { _id?: string; symbol: string; shares: number; avgPrice: number }, index: number) => (
-                        <tr key={item._id || item.symbol + index}>
-                          <td className="align-left">{index + 1}</td>
-                          <td className="align-left">{item.symbol}</td>
-                          <td className="align-right tabular-nums">{item.shares}</td>
-                          <td className="align-right tabular-nums">{formatNumber(item.avgPrice)}</td>
-                          <td className="align-right tabular-nums">--</td>
-                          <td className="align-right tabular-nums">--</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="history-empty">
-                    <p className="history-empty-title">No positions yet</p>
-                    <p className="history-empty-subtitle">Your open positions will appear here.</p>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Stop Losses Table */}
-            <section className="history-card">
-              <header className="history-header">
-                <h2 className="history-title">Stop Losses</h2>
-                <span className="history-count">
-                  {stopLosses && stopLosses.length > 0 ? stopLosses.length : 0}
-                </span>
-              </header>
-              <div className="history-table-wrapper">
-                {stopLosses && stopLosses.length > 0 ? (
-                  <table className="history-table" role="grid">
-                    <colgroup>
-                      <col style={{ width: '72px' }} />
-                      <col style={{ minWidth: '120px' }} />
-                      <col style={{ width: '90px' }} />
-                      <col style={{ width: '100px' }} />
-                      <col style={{ width: '130px' }} />
-                      <col style={{ width: '190px' }} />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th className="align-left">S.NO</th>
-                        <th className="align-left">SYMBOL</th>
-                        <th className="align-left">TYPE</th>
-                        <th className="align-right">QTY</th>
-                        <th className="align-right">TRIGGER PRICE</th>
-                        <th className="align-right">ACTION</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stopLosses.map((item: StopLossData, index: number) => (
-                        <tr key={item._id || item.symbol + index}>
-                          <td className="align-left">{index + 1}</td>
-                          <td className="align-left">{item.symbol}</td>
-                          <td className="align-left">
-                            <span className={`side-badge ${item.type === 'buy' ? 'side-buy' : 'side-sell'}`}>
-                              {item.type === 'buy' ? 'BUY' : 'SELL'}
-                            </span>
-                          </td>
-                          <td className="align-right tabular-nums">{item.qty}</td>
-                          <td className="align-right tabular-nums">{formatNumber(item.price)}</td>
-                          <td className="align-right">
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleCancelStopLoss(item._id)}
-                            >
-                              Cancel
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="history-empty">
-                    <p className="history-empty-title">No stop losses yet</p>
-                    <p className="history-empty-subtitle">Your stop loss orders will appear here.</p>
-                  </div>
-                )}
-              </div>
-            </section>
-          </main>
+          <article className="summary-card">
+            <p className="summary-label">Equity</p>
+            <p className="summary-value">{formatNumber(totalEquityValue)}</p>
+          </article>
         </div>
+
+        {/* Positions Table Card */}
+        <section className="positions-card">
+          <div className="positions-card-header">
+            <h2 className="positions-card-title">Open positions</h2>
+            <span className="positions-count-badge">{assetList?.length ?? 0}</span>
+          </div>
+
+          <div className="positions-table-wrapper">
+            {assetList && assetList.length > 0 ? (
+              <table className="positions-table">
+                <thead>
+                  <tr>
+                    <th>S.NO</th>
+                    <th>SYMBOL</th>
+                    <th>SIDE</th>
+                    <th>QTY</th>
+                    <th>DAILY PNL</th>
+                    <th>%RETURN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assetList.map((item: PortfolioResponse['positions'][number], index: number) => {
+                    const symbol = item.symbol;
+                    const pnlValue = prices?.[symbol]?.Pnl;
+                    const pChange = prices?.[symbol]?.pChange;
+                    const isLoading = pnlValue === undefined || pChange === undefined;
+                    const pnlColor = getValueColorClass(pnlValue);
+                    const pChangeColor = getValueColorClass(pChange);
+                    const sideBadgeClass = getSideBadgeClass(item.shares);
+                    const sideLabel = getSideLabel(item.shares);
+
+                    return (
+                      <tr key={symbol} className="row">
+                        <td>{index + 1}</td>
+                        <td>{symbol}</td>
+                        <td>
+                          <span className={`side-badge ${sideBadgeClass}`}>{sideLabel}</span>
+                        </td>
+                        <td className="tabular-nums">{Math.abs(item.shares)}</td>
+                        <td className={`tabular-nums ${pnlColor}`}>
+                          {isLoading ? (
+                            <span className="loading-dot">...</span>
+                          ) : (
+                            formatSignedNumber(pnlValue)
+                          )}
+                        </td>
+                        <td className={`tabular-nums ${pChangeColor}`}>
+                          {isLoading ? (
+                            <span className="loading-dot">...</span>
+                          ) : (
+                            formatPercent(pChange)
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="positions-empty">
+                <p className="positions-empty-title">No open positions yet</p>
+                <p className="positions-empty-subtitle">
+                  Place a trade from the Chart page to see it here.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Active Stop Losses Card */}
+        <section className="stop-losses-card">
+          <div className="stop-losses-card-header">
+            <h2 className="stop-losses-card-title">Active stop losses</h2>
+            <span className="stop-losses-count-badge">{stopLosses.length}</span>
+          </div>
+
+          <div className="stop-losses-table-wrapper">
+            {stopLossesLoading ? (
+              <div className="stop-losses-loading">Loading...</div>
+            ) : stopLossesError ? (
+              <div className="stop-losses-error">{stopLossesError}</div>
+            ) : stopLosses.length > 0 ? (
+              <table className="stop-losses-table">
+                <colgroup>
+                  <col style={{ width: 'auto' }} />
+                  <col style={{ width: '100px' }} />
+                  <col style={{ width: '100px' }} />
+                  <col style={{ width: '140px' }} />
+                  <col style={{ width: '72px' }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>SYMBOL</th>
+                    <th>SIDE</th>
+                    <th>QTY</th>
+                    <th>TRIGGER PRICE</th>
+                    <th>ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stopLosses.map((sl) => (
+                    <tr key={sl._id} className="row">
+                      <td title={sl.symbol}>{sl.symbol}</td>
+                      <td>
+                        <span
+                          className={`side-badge ${sl.type === 'buy' ? 'side-long' : 'side-short'}`}
+                        >
+                          {sl.type === 'buy' ? 'LONG' : 'SHORT'}
+                        </span>
+                      </td>
+                      <td className="tabular-nums">{formatNumber(sl.qty)}</td>
+                      <td className="tabular-nums trigger-price">{formatNumber(sl.price)}</td>
+                      <td className="actions-cell">
+                        <button
+                          className="cancel-stoploss-btn"
+                          onClick={() =>
+                            handleCancelStopLoss(sl._id, sl.symbol, formatNumber(sl.price))
+                          }
+                          aria-label={`Cancel stop loss for ${sl.symbol} at ${formatNumber(sl.price)}`}
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="stop-losses-empty">
+                <p className="stop-losses-empty-title">No active stop losses</p>
+                <p className="stop-losses-empty-subtitle">
+                  Add one from the Order panel on the Chart page.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
