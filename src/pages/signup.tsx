@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import isTokenExpired from '../routes/checkTokenExpiry';
 import { toast } from 'react-toastify';
@@ -12,6 +12,7 @@ interface SignupResponse {
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const usernameRef = useRef<HTMLInputElement>(null);
   const [userInfo, setUserInfo] = useState({
     username: '',
@@ -22,16 +23,34 @@ export default function Signup() {
   const [err, setErr] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    // Check for token in URL (from Google OAuth callback)
+    const token = searchParams.get('token');
+    if (token) {
+      localStorage.setItem('token', token);
+      // Remove token from URL
+      setSearchParams({}, { replace: true });
+      void navigate('/', { replace: true });
+      return;
+    }
 
-    if (token && !isTokenExpired(token)) {
+    // Check for error from Google OAuth
+    const error = searchParams.get('error');
+    if (error === 'google_failed') {
+      setErr('Google sign-in failed. Please try again.');
+      setSearchParams({}, { replace: true });
+    }
+
+    // Check for existing valid token in localStorage
+    const storedToken = localStorage.getItem('token');
+    if (storedToken && !isTokenExpired(storedToken)) {
       void navigate('/');
     }
     // Focus username input on mount
     usernameRef.current?.focus();
-  }, [navigate]);
+  }, [navigate, searchParams, setSearchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -55,7 +74,9 @@ export default function Signup() {
   };
 
   const handleGoogleLogin = () => {
-    toast.info('Google login coming soon');
+    setGoogleLoading(true);
+    // Full page redirect to backend's Google OAuth endpoint
+    window.location.href = `${API_BASE_URL}/api/auth/google`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -108,7 +129,7 @@ export default function Signup() {
           type="button"
           className="btn-google"
           onClick={handleGoogleLogin}
-          disabled={isLoading}
+          disabled={isLoading || googleLoading}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -128,10 +149,12 @@ export default function Signup() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          Continue with Google
+          {googleLoading ? 'Redirecting…' : 'Continue with Google'}
         </button>
 
         <div className="auth-divider">or</div>
+
+        {err && <p className="auth-error" role="alert">{err}</p>}
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="auth-input-wrapper">
@@ -193,8 +216,6 @@ export default function Signup() {
             minLength={8}
             error={confirmPasswordError}
           />
-
-          {err && <p className="auth-error" role="alert">{err}</p>}
 
           <button
             type="submit"

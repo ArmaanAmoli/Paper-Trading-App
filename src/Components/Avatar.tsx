@@ -1,9 +1,10 @@
 interface AvatarProps {
   name?: string | null;
+  avatar?: string | null;
   size?: number;
 }
 
-export default function Avatar({ name, size = 32 }: AvatarProps) {
+export default function Avatar({ name, avatar, size = 32 }: AvatarProps) {
   const getInitial = (name?: string | null) => {
     if (!name || !name.trim()) return '?';
     return name.trim().charAt(0).toUpperCase();
@@ -20,10 +21,14 @@ export default function Avatar({ name, size = 32 }: AvatarProps) {
         width: size,
         height: size,
         fontSize: fontSize,
+        backgroundImage: avatar ? `url(${avatar})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       }}
       aria-hidden="true"
     >
-      {showLetter ? initial : null}
+      {showLetter && !avatar ? initial : null}
     </div>
   );
 }

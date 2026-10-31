@@ -43,9 +43,89 @@ export async function login(details: { email: string; password: string }) {
   const { email, password } = details;
   const userData = await User.findOne({ email });
   if (!userData) return null;
+  
+  // Check if user is a Google-only user (no password set)
+  if (!userData.passwordHash) {
+    throw new AppError(400, 'This account uses Google sign-in. Please use "Continue with Google" to log in.');
+  }
+  
   const match = await bcrypt.compare(password, userData.passwordHash);
   if (!match) return null;
   return userData;
+}
+
+/**
+ * Find or create a user from Google OAuth profile
+ * @param profile - Google profile containing id, email, name, picture, email_verified
+ * @returns User document
+ */
+export async function findOrCreateGoogleUser(profile: {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+  email_verified: boolean;
+}) {
+  if (!profile.email_verified) {
+    throw new AppError(400, 'Google account email is not verified');
+  }
+
+  // 1. Try to find user by Google ID
+  let user = await User.findOne({ googleId: profile.id });
+  if (user) {
+    user.lastLogin = new Date();
+    if (profile.picture && !user.avatar) {
+      user.avatar = profile.picture;
+    }
+    await user.save();
+    return user;
+  }
+
+  // 2. Try to find user by email (link account)
+  user = await User.findOne({ email: profile.email });
+  if (user) {
+    user.googleId = profile.id;
+    user.authProvider = 'google';
+    user.lastLogin = new Date();
+    if (profile.picture && !user.avatar) {
+      user.avatar = profile.picture;
+    }
+    await user.save();
+    return user;
+  }
+
+  // 3. Create new user
+  // Generate a unique username from name/email
+  let baseUsername = profile.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .slice(0, 20);
+  if (!baseUsername) {
+    baseUsername = profile.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20);
+  }
+  if (!baseUsername) {
+    baseUsername = 'user';
+  }
+
+  let username = baseUsername;
+  let counter = 1;
+  while (await User.findOne({ username })) {
+    username = `${baseUsername}${counter}`;
+    counter++;
+  }
+
+  const newUser = new User({
+    username,
+    email: profile.email,
+    googleId: profile.id,
+    authProvider: 'google',
+    avatar: profile.picture,
+    // passwordHash is optional for Google users
+    createdAt: new Date(),
+    lastLogin: new Date(),
+  });
+  await newUser.save();
+  return newUser;
 }
 
 export async function portfolio(userId: string) {

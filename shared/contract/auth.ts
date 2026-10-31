@@ -64,6 +64,10 @@ export const userDataEndpoint = defineEndpoint({
         }),
       })
       .nullable(),
+    // Google OAuth fields
+    googleId: z.string().nullable().optional(),
+    authProvider: z.enum(['local', 'google']).optional(),
+    avatar: z.string().nullable().optional(),
   }),
 });
 

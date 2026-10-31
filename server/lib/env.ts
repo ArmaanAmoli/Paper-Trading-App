@@ -13,6 +13,11 @@ const envSchema = z.object({
   EXCHANGE_RATE_API: z.string().min(1),
   VITE_API_BASE_URL: z.string().url(),
   VITE_WEB_PUSH_PUBLIC_KEY: z.string().min(1),
+  // Google OAuth (optional - server starts without them but OAuth won't work)
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CALLBACK_URL: z.string().url().optional(),
+  FRONTEND_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
