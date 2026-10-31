@@ -50,6 +50,21 @@ export async function googleAuthStart(req: Request, res: Response, next: NextFun
       path: '/',
     });
 
+    // Capture the origin the user came from so we can redirect back
+    // to the same origin after OAuth. localhost and 127.0.0.1 are
+    // treated as different origins by browsers, so localStorage is
+    // not shared between them.
+    const origin = req.headers.referer
+      ? new URL(req.headers.referer).origin
+      : env.FRONTEND_URL;
+    res.cookie('google_oauth_origin', origin, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 10 * 60 * 1000, // 10 minutes
+      path: '/',
+    });
+
     const authUrl = client.generateAuthUrl({
       access_type: 'offline',
       scope: ['openid', 'email', 'profile'],
@@ -71,14 +86,17 @@ export async function googleAuthCallback(req: Request, res: Response, next: Next
   try {
     const client = getOAuth2Client();
     const env = getEnv();
-    const frontendUrl = env.FRONTEND_URL || 'http://localhost:5173';
+    // Redirect back to the origin the user came from, so the token
+    // is stored under the same origin the user will return to.
+    const frontendUrl = req.cookies?.google_oauth_origin || env.FRONTEND_URL || 'http://localhost:5173';
 
     // Verify state parameter to prevent CSRF
     const state = req.cookies?.google_oauth_state;
     const returnedState = req.query.state;
     
-    // Clear the state cookie immediately
+    // Clear OAuth cookies immediately
     res.clearCookie('google_oauth_state', { path: '/' });
+    res.clearCookie('google_oauth_origin', { path: '/' });
 
     if (!state || !returnedState || state !== returnedState) {
       const errorUrl = new URL('/login', frontendUrl);
