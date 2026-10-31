@@ -65,8 +65,12 @@ export function App() {
 
   //code to connect to websockets data feed
   useLayoutEffect(() => {
-    wsManager.connect('quote', 'ws://127.0.0.1:8001/ws/quote');
-    wsManager.connect('indicator', 'ws://127.0.0.1:8001/ws/indicator');
+    try {
+      wsManager.connect('quote', 'ws://127.0.0.1:8001/ws/quote');
+      wsManager.connect('indicator', 'ws://127.0.0.1:8001/ws/indicator');
+    } catch (error) {
+      console.warn('WebSocket connection failed (backend may not be running):', error);
+    }
     return () => {
       wsManager.disconnect('quote');
       wsManager.disconnect('indicator');

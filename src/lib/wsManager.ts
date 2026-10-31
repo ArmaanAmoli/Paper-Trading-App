@@ -88,7 +88,8 @@ export class WebSocketManager {
     if (!entry || !entry.shouldReconnect) return;
 
     const token = localStorage.getItem('token') ?? '';
-    const ws = new WebSocket(entry.url, [token]);
+    // Only pass protocol array if token exists (empty string is not a valid subprotocol)
+    const ws = token ? new WebSocket(entry.url, [token]) : new WebSocket(entry.url);
     entry.ws = ws;
 
     ws.onopen = () => {

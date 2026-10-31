@@ -24,12 +24,14 @@ import {
   saveSubscription,
   getUserStopLosses,
   deleteStopLoss,
+  deleteUser,
 } from './queryManager.js';
 import {
   signUpEndpoint,
   loginEndpoint,
   userDataEndpoint,
   saveSubscriptionEndpoint,
+  deleteAccountEndpoint,
 } from '@shared/contract/auth.js';
 import {
   buyEndpoint,
@@ -140,6 +142,13 @@ server.post(
   route(saveSubscriptionEndpoint, async ({ body, user }) => {
     await saveSubscription(user.userId, body.data);
     return { success: true as const };
+  }),
+);
+server.delete(
+  '/user/me',
+  route(deleteAccountEndpoint, async ({ user }) => {
+    await deleteUser(user.userId);
+    return { message: 'Account deleted successfully' as const };
   }),
 );
 
