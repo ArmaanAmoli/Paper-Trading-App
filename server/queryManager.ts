@@ -418,6 +418,34 @@ export async function deleteStopLoss(stopLossId: string, userId: string) {
   return result;
 }
 
+export async function deleteUser(userId: string) {
+  const objectIdUserId = new ObjectId(userId);
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+
+    // Delete all associated data
+    await Trade.deleteMany({ userId: objectIdUserId }).session(session);
+    await Portfolio.deleteMany({ userId: objectIdUserId }).session(session);
+    await Watchlist.deleteMany({ userId: objectIdUserId }).session(session);
+    await StopLoss.deleteMany({ userId: objectIdUserId }).session(session);
+
+    // Delete the user
+    const deletedUser = await User.findByIdAndDelete(objectIdUserId).session(session);
+    if (!deletedUser) {
+      throw new AppError(404, 'User not found');
+    }
+
+    await session.commitTransaction();
+    return { success: true };
+  } catch (err) {
+    await session.abortTransaction();
+    throw err;
+  } finally {
+    void session.endSession();
+  }
+}
+
 interface NotificationSubscription {
   endpoint: string;
   expirationTime: number | null;
