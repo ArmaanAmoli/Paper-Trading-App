@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import isTokenExpired from '../routes/checkTokenExpiry';
 import { toast } from 'react-toastify';
+import PasswordInput from '../Components/PasswordInput';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -134,23 +135,18 @@ export default function Login() {
             />
           </div>
 
-          <div className="auth-input-wrapper">
-            <label htmlFor="password" className="auth-label">Password</label>
-            <input
-              id="password"
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              value={userInfo.password}
-              onChange={handleChange}
-              className="auth-input"
-              placeholder="••••••••"
-              disabled={isLoading}
-              required
-            />
-          </div>
-
-          {err && <p className="auth-error" role="alert">{err}</p>}
+          <PasswordInput
+            label="Password"
+            name="password"
+            id="password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            value={userInfo.password}
+            onChange={handleChange}
+            disabled={isLoading}
+            required
+            error={err}
+          />
 
           <button
             type="submit"

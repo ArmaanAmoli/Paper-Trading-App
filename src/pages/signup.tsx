@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import isTokenExpired from '../routes/checkTokenExpiry';
 import { toast } from 'react-toastify';
+import PasswordInput from '../Components/PasswordInput';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -16,8 +17,10 @@ export default function Signup() {
     username: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
   const [err, setErr] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -37,6 +40,18 @@ export default function Signup() {
       [name]: value,
     }));
     if (err) setErr('');
+    if (name === 'confirmPassword' && confirmPasswordError) {
+      setConfirmPasswordError('');
+    }
+  };
+
+  const validateConfirmPassword = () => {
+    if (userInfo.confirmPassword && userInfo.password !== userInfo.confirmPassword) {
+      setConfirmPasswordError('Passwords do not match');
+      return false;
+    }
+    setConfirmPasswordError('');
+    return true;
   };
 
   const handleGoogleLogin = () => {
@@ -45,14 +60,16 @@ export default function Signup() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateConfirmPassword()) return;
     void RegisterUser();
   };
 
   const RegisterUser = async () => {
-    if (!userInfo.username || !userInfo.email || !userInfo.password) return;
+    if (!userInfo.username || !userInfo.email || !userInfo.password || !userInfo.confirmPassword) return;
     
     setIsLoading(true);
     setErr('');
+    setConfirmPasswordError('');
     try {
       const res = await fetch(`${API_BASE_URL}/sign-up`, {
         method: 'POST',
@@ -150,29 +167,39 @@ export default function Signup() {
             />
           </div>
 
-          <div className="auth-input-wrapper">
-            <label htmlFor="password" className="auth-label">Password</label>
-            <input
-              id="password"
-              type="password"
-              name="password"
-              autoComplete="new-password"
-              value={userInfo.password}
-              onChange={handleChange}
-              className="auth-input"
-              placeholder="••••••••"
-              disabled={isLoading}
-              required
-              minLength={8}
-            />
-          </div>
+          <PasswordInput
+            label="Password"
+            name="password"
+            id="password"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            value={userInfo.password}
+            onChange={handleChange}
+            disabled={isLoading}
+            required
+            minLength={8}
+          />
+
+          <PasswordInput
+            label="Confirm password"
+            name="confirmPassword"
+            id="confirmPassword"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            value={userInfo.confirmPassword}
+            onChange={handleChange}
+            disabled={isLoading}
+            required
+            minLength={8}
+            error={confirmPasswordError}
+          />
 
           {err && <p className="auth-error" role="alert">{err}</p>}
 
           <button
             type="submit"
             className="auth-submit"
-            disabled={isLoading || !userInfo.username || !userInfo.email || !userInfo.password}
+            disabled={isLoading || !userInfo.username || !userInfo.email || !userInfo.password || !userInfo.confirmPassword || userInfo.password !== userInfo.confirmPassword}
           >
             {isLoading ? 'Creating account…' : 'Sign up'}
           </button>
