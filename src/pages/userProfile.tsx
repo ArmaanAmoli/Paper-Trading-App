@@ -4,8 +4,11 @@ import { getTradeHistory } from '../services/tradeHistory';
 import { useNavigate } from 'react-router-dom';
 import { formatNumber, formatSignedNumber, getValueColorClass } from '../lib/formatters';
 import Avatar from '../Components/Avatar';
+import { toast } from 'react-toastify';
 import './styles/userProfile.css';
 import type { TradeHistoryResponse } from '@shared/contract/trade';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function UserProfile() {
   const userAccount = useContext(UserAccountContext);
@@ -15,6 +18,10 @@ export default function UserProfile() {
   const equity = userEquity?.totalEquity?.[0] ?? 0;
   const [tradeHistory, setTradeHistory] = useState<TradeHistoryResponse | null>(null);
   const navigate = useNavigate();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     async function fetchTradeHistory() {
@@ -32,6 +39,49 @@ export default function UserProfile() {
     localStorage.removeItem('token');
     void navigate('/', { replace: true });
   }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/user/me`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        localStorage.removeItem('token');
+        toast.success('Account deleted');
+        setShowDeleteModal(false);
+        void navigate('/', { replace: true });
+      } else {
+        setDeleteError(data.message || 'Failed to delete account');
+      }
+    } catch (err) {
+      console.error(err);
+      setDeleteError('Something went wrong. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const openDeleteModal = () => {
+    setDeleteConfirmText('');
+    setDeleteError('');
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeleteConfirmText('');
+    setDeleteError('');
+  };
 
   const balance = userData?.balance ?? 0;
   const blockedMargin = userData?.blockedMargin ?? 0;
@@ -121,7 +171,7 @@ export default function UserProfile() {
                 <button
                   type="button"
                   className="btn btn-danger"
-                  disabled={true} // Existing handler/confirmation stays as-is
+                  onClick={openDeleteModal}
                 >
                   Delete Account
                 </button>
@@ -217,6 +267,88 @@ export default function UserProfile() {
           </main>
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div
+          className="modal-overlay"
+          onClick={closeDeleteModal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-modal-title"
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>            <header className="modal-header">
+              <h2 id="delete-modal-title" className="modal-title">Delete your account?</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={closeDeleteModal}
+                aria-label="Close"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </header>
+
+            <div className="modal-body">
+              <p className="modal-text">
+                This will permanently delete your account, all trades, holdings, watchlist, and associated data. This action cannot be undone.
+              </p>
+              <div className="modal-confirm-input">
+                <label htmlFor="delete-confirm" className="modal-confirm-label">
+                  Type "DELETE" to confirm:
+                </label>
+                <input
+                  id="delete-confirm"
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="auth-input"
+                  placeholder="DELETE"
+                  autoFocus
+                  disabled={isDeleting}
+                />
+              </div>
+              {deleteError && (
+                <p className="auth-error" role="alert" style={{ marginTop: '12px' }}>
+                  {deleteError}
+                </p>
+              )}
+            </div>
+
+            <footer className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary modal-cancel"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger modal-delete"
+                onClick={handleDeleteAccount}
+                disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+              >
+                {isDeleting ? 'Deleting…' : 'Delete account'}
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
