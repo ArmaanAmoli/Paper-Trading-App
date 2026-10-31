@@ -23,7 +23,7 @@
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  background: var(--color-surface-raised);
+  background: var(--color-surface-hover);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -65,13 +65,13 @@
 .toast-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   margin-bottom: 2px;
 }
 
 .toast-description {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
@@ -84,14 +84,14 @@
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all var(--transition-fast);
   flex-shrink: 0;
 }
 
 .toast-close:hover {
-  color: var(--color-text-primary);
+  color: var(--color-text);
   background: var(--color-surface);
 }
 
@@ -103,7 +103,7 @@
   height: 2px;
   border-radius: 0 0 8px 8px;
   opacity: 0.3;
-  background: var(--color-border-strong);
+  background: var(--color-border-input);
 }
 
 .toast-success .toast-progress {

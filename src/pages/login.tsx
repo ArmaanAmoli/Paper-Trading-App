@@ -1,7 +1,7 @@
-import './styles/login.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import isTokenExpired from '../routes/checkTokenExpiry';
+import { toast } from 'react-toastify';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,11 +12,13 @@ interface LoginResponse {
 
 export default function Login() {
   const navigate = useNavigate();
+  const emailRef = useRef<HTMLInputElement>(null);
   const [userInfo, setUserInfo] = useState({
     email: '',
     password: '',
   });
   const [err, setErr] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -24,6 +26,8 @@ export default function Login() {
     if (token && !isTokenExpired(token)) {
       void navigate('/landing-page');
     }
+    // Focus email input on mount
+    emailRef.current?.focus();
   }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,9 +36,23 @@ export default function Login() {
       ...prev,
       [name]: value,
     }));
+    if (err) setErr('');
+  };
+
+  const handleGoogleLogin = () => {
+    toast.info('Google login coming soon');
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void LoginUser();
   };
 
   const LoginUser = async () => {
+    if (!userInfo.email || !userInfo.password) return;
+    
+    setIsLoading(true);
+    setErr('');
     try {
       const res = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
@@ -56,50 +74,98 @@ export default function Login() {
     } catch (Error) {
       console.error(Error);
       setErr('Something went wrong please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <div className="login-page">
-        <div className="login-div">
-          <h1>Login</h1>
-          <div className="user-details">
+    <div className="auth-page">
+      <div className="auth-card">
+        <header className="auth-header">
+          <div className="auth-logo">Paper Trading</div>
+          <h1 className="auth-title">Log in to Paper Trading</h1>
+        </header>
+
+        <button
+          type="button"
+          className="btn-google"
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
+          </svg>
+          Continue with Google
+        </button>
+
+        <div className="auth-divider">or</div>
+
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
+          <div className="auth-input-wrapper">
+            <label htmlFor="email" className="auth-label">Email</label>
             <input
-              className="in"
+              ref={emailRef}
+              id="email"
               type="email"
               name="email"
+              autoComplete="email"
               value={userInfo.email}
               onChange={handleChange}
-              placeholder="email"
+              className="auth-input"
+              placeholder="you@example.com"
+              disabled={isLoading}
+              required
             />
+          </div>
 
+          <div className="auth-input-wrapper">
+            <label htmlFor="password" className="auth-label">Password</label>
             <input
-              className="in"
+              id="password"
               type="password"
               name="password"
+              autoComplete="current-password"
               value={userInfo.password}
               onChange={handleChange}
-              placeholder="Password"
+              className="auth-input"
+              placeholder="••••••••"
+              disabled={isLoading}
+              required
             />
           </div>
 
-          {/* Display error message here */}
-          {err && <p className="error">{err}</p>}
+          {err && <p className="auth-error" role="alert">{err}</p>}
 
-          <div>
-            <p className="noAccount">
-              Don't have an account ?&nbsp;<Link to="/signup">Signup</Link>
-            </p>
-          </div>
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={isLoading || !userInfo.email || !userInfo.password}
+          >
+            {isLoading ? 'Signing in…' : 'Login'}
+          </button>
+        </form>
 
-          <div className="submit">
-            <button className="user-auth" onClick={LoginUser}>
-              Login
-            </button>
-          </div>
-        </div>
+        <footer className="auth-footer">
+          Don't have an account?{' '}
+          <Link to="/signup">Sign up</Link>
+        </footer>
       </div>
-    </>
+    </div>
   );
 }

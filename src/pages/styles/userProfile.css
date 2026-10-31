@@ -11,7 +11,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* No background - inherits from html (--color-background) */
+  /* No background - inherits from html (--color-bg) */
 }
 
 /* Page container - aligns with navbar-inner */
@@ -32,14 +32,14 @@
 .profile-title {
   font-size: 24px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   margin: 0 0 8px;
   letter-spacing: -0.02em;
 }
 
 .profile-subtitle {
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   margin: 0;
 }
 
@@ -97,13 +97,13 @@
 .profile-name {
   font-size: 18px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   margin: 0 0 4px;
 }
 
 .profile-email {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   margin: 0;
   word-break: break-all;
 }
@@ -152,7 +152,7 @@
 
 .profile-detail-value:not(.monospace) {
   font-family: var(--font-sans);
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 /*** Actions ***/
@@ -194,19 +194,19 @@
 
 .btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.5);
+  box-shadow: 0 0 0 2px var(--color-up-glow);
 }
 
 /*** Secondary button - Update Profile, Log out ***/
 .btn-secondary {
   background: transparent;
   border-color: var(--color-border);
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--color-surface-raised);
-  border-color: var(--color-border-strong);
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-input);
 }
 
 .btn-secondary:active:not(:disabled) {
@@ -289,7 +289,7 @@
 .stat-label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   margin: 0 0 8px;
 }
 
@@ -301,7 +301,7 @@
   font-feature-settings:
     'tnum' 1,
     'cv01' 1;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   margin: 0;
   white-space: nowrap;
   line-height: 1.2;
@@ -333,17 +333,17 @@
 .history-title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   margin: 0;
 }
 
 .history-count {
-  background: var(--color-surface-raised);
+  background: var(--color-surface-hover);
   border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 2px 8px;
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -378,7 +378,7 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  background: var(--color-surface-raised);
+  background: var(--color-surface-hover);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
   vertical-align: middle;
@@ -400,7 +400,7 @@
 }
 
 .history-table tbody tr:hover {
-  background: var(--color-surface-raised);
+  background: var(--color-surface-hover);
 }
 
 .history-table tbody tr:last-child {
@@ -410,7 +410,7 @@
 .history-table tbody td {
   padding: 12px 20px;
   vertical-align: middle;
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .history-table tbody td.align-left {
@@ -431,7 +431,7 @@
   /* SYMBOL */
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -454,14 +454,14 @@
 
 .side-buy {
   color: var(--color-blue-text);
-  background: var(--color-blue-subtle);
-  border: 1px solid rgba(0, 112, 243, 0.3);
+  background: var(--color-up-bg);
+  border: 1px solid var(--color-up-border);
 }
 
 .side-sell {
   color: var(--color-red-text);
-  background: var(--color-red-subtle);
-  border: 1px solid rgba(229, 72, 77, 0.3);
+  background: var(--color-down-bg);
+  border: 1px solid var(--color-down-border);
 }
 
 /*** QTY ***/
@@ -497,7 +497,7 @@
 .history-empty {
   padding: 48px 20px;
   text-align: center;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
 }
 
 .history-empty-title {
