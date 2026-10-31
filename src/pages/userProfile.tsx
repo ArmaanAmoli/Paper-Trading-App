@@ -127,7 +127,7 @@ export default function UserProfile() {
             <div className="profile-card">
               {/* Avatar & Name */}
               <div className="profile-top">
-                <Avatar name={userData?.username} size={64} />
+                <Avatar name={userData?.username} avatar={userData?.avatar} size={64} />
                 <div className="profile-identity">
                   <h2 className="profile-name">{userData?.username ?? '--'}</h2>
                   <p className="profile-email">{userData?.email ?? '--'}</p>

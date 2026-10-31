@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import process from 'node:process';
 import 'dotenv/config';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { allStopLossPromise } from './StopLoss/getAllStopLoss.js';
@@ -11,6 +12,7 @@ import { StopLoss, type StopLossDocument } from './Schemas/mongoSchema.js';
 import { getEnv } from './lib/env.js';
 import { route } from './lib/route.js';
 import { pythonClient } from './lib/pythonClient.js';
+import { googleAuthStart, googleAuthCallback } from './lib/googleAuth.js';
 import {
   SignUp,
   login,
@@ -25,6 +27,7 @@ import {
   getUserStopLosses,
   deleteStopLoss,
   deleteUser,
+  findOrCreateGoogleUser,
 } from './queryManager.js';
 import {
   signUpEndpoint,
@@ -80,6 +83,7 @@ allStopLossPromise
 
 // MIDDLEWARES
 server.use(express.json());
+server.use(cookieParser());
 server.use(cors());
 
 // Request Handlers using route() wrapper
@@ -109,6 +113,11 @@ server.post(
     return { message: 'Login Success' as const, token };
   }),
 );
+
+// Google OAuth routes
+server.get('/api/auth/google', googleAuthStart);
+server.get('/api/auth/google/callback', googleAuthCallback);
+
 server.get(
   '/user-data',
   route(userDataEndpoint, async ({ user }) => {
