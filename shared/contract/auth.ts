@@ -93,3 +93,15 @@ export const saveSubscriptionEndpoint = defineEndpoint({
 
 export type SaveSubscriptionBody = z.infer<typeof saveSubscriptionEndpoint.body>;
 export type SaveSubscriptionResponse = z.infer<typeof saveSubscriptionEndpoint.response>;
+
+// Delete account (protected)
+export const deleteAccountEndpoint = defineEndpoint({
+  method: 'DELETE',
+  path: '/user/me',
+  auth: true,
+  response: z.object({
+    message: z.string(),
+  }),
+});
+
+export type DeleteAccountResponse = z.infer<typeof deleteAccountEndpoint.response>;
