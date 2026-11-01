@@ -1,3 +1,4 @@
+import { beforeAll, afterEach, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 
 // Guard: never run tests unless NODE_ENV is test and DB points locally.

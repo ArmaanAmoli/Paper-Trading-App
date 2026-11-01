@@ -46,7 +46,6 @@ import {
   getUserStopLosses,
   deleteStopLoss,
   deleteUser,
-  findOrCreateGoogleUser,
 } from '../queryManager.ts';
 import { pythonClient } from '../lib/pythonClient.ts';
 import { googleAuthStart, googleAuthCallback } from '../lib/googleAuth.ts';
