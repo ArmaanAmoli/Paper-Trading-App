@@ -1,4 +1,5 @@
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
+import { MongoClient } from 'mongodb';
 
 let replSet: MongoMemoryReplSet | undefined;
 
@@ -16,7 +17,24 @@ export default async function globalSetup() {
     replSet: { count: 1, storageEngine: 'wiredTiger' },
   });
 
-  process.env.MONGO_URL = replSet.getUri();
+  const uri = replSet.getUri();
+
+  // MongoDB defaults `maxTransactionLockRequestTimeoutMillis` to 5ms. The suite
+  // mixes transaction-based writes (executeTrade, deleteUser) with the per-test
+  // collection cleanup, which can collide and fail with
+  // "Unable to acquire IX lock ... within 5ms". Raise the timeout for tests only.
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+    await client.db('admin').command({
+      setParameter: 1,
+      maxTransactionLockRequestTimeoutMillis: 1000,
+    });
+  } finally {
+    await client.close();
+  }
+
+  process.env.MONGO_URL = uri;
 }
 
 export async function teardown() {

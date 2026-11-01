@@ -18,6 +18,11 @@ export default defineConfig({
     exclude: ['node_modules', 'dist'],
     setupFiles: ['./tests/setup.ts'],
     globalSetup: ['./tests/globalSetup.ts'],
+    // All test files share the same in-memory MongoDB, and the per-test cleanup in
+    // tests/setup.ts clears every collection. Running files in parallel would let
+    // one file's cleanup wipe rows another file is still using, so files run
+    // sequentially instead.
+    fileParallelism: false,
     testTimeout: 15000,
     hookTimeout: 60000,
     teardownTimeout: 60000,
