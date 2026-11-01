@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "NODE_ENV=test JWT_SECRET=test_secret_key_at_least_32_chars_long FAST_API_SERVER_DOMAIN=http://127.0.0.1:8000 FAST_API_WEB_SOCKET_SERVER_DOMAIN=ws://127.0.0.1:8001 JWT_TOKEN_05_2036=token WEB_PUSH_PUBLIC_KEY=BFJ3OcWgOgWKpX90kGTw8Pbff7c4uOuM9qc-x1vbi4n868vqtnhex9ydgNWm80UMGg6uc437bNIZO2hZs7fsTWs WEB_PUSH_PRIVATE_KEY=Z1CrfLKGUnrnQRz53tCP6bj1YhW80dp12IzkORpGx2A EXCHANGE_RATE_API=api VITE_API_BASE_URL=http://127.0.0.1:5173 VITE_WEB_PUSH_PUBLIC_KEY=public vitest run",
+    "test:coverage": "NODE_ENV=test JWT_SECRET=test_secret_key_at_least_32_chars_long FAST_API_SERVER_DOMAIN=http://127.0.0.1:8000 FAST_API_WEB_SOCKET_SERVER_DOMAIN=ws://127.0.0.1:8001 JWT_TOKEN_05_2036=token WEB_PUSH_PUBLIC_KEY=BFJ3OcWgOgWKpX90kGTw8Pbff7c4uOuM9qc-x1vbi4n868vqtnhex9ydgNWm80UMGg6uc437bNIZO2hZs7fsTWs WEB_PUSH_PRIVATE_KEY=Z1CrfLKGUnrnQRz53tCP6bj1YhW80dp12IzkORpGx2A EXCHANGE_RATE_API=api VITE_API_BASE_URL=http://127.0.0.1:5173 VITE_WEB_PUSH_PUBLIC_KEY=public vitest run --coverage",
     "start": "node server.js"
   },
   "keywords": [],
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^5.0.5",
     "mongodb-memory-server": "^11.3.0",
     "supertest": "^7.3.1",
     "vitest": "^5.0.5"
