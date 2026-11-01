@@ -49,12 +49,17 @@ export async function createTestUser(
     username,
     email,
     passwordHash,
-    googleId,
     authProvider,
     balance,
     createdAt: new Date(),
     lastLogin: new Date(),
   });
+  // NOTE: `googleId` has a unique+sparse index. MongoDB's sparse index only skips
+  // *missing* fields, so an explicit `googleId: null` would collide across users
+  // (E11000 on googleId_1). Omit the field entirely for local users.
+  if (googleId !== null) {
+    user.googleId = googleId;
+  }
   await user.save();
   return user;
 }

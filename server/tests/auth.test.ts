@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import supertest from 'supertest';
 import { makeApp, authHeader, createTestUser } from './helpers/index.js';
 import { User } from '../Schemas/mongoSchema.ts';
@@ -9,10 +9,6 @@ let app: ReturnType<typeof makeApp>['app'];
 
 beforeEach(async () => {
   app = makeApp().app;
-});
-
-afterEach(async () => {
-  await User.deleteMany({});
 });
 
 function signup(payload: Record<string, unknown>) {
