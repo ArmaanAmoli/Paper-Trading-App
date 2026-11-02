@@ -3,9 +3,7 @@ import mongoose from 'mongoose';
 
 // Guard: never run tests unless NODE_ENV is test and DB points locally.
 if (process.env.NODE_ENV !== 'test') {
-  throw new Error(
-    `Tests must run with NODE_ENV=test. Current value: ${process.env.NODE_ENV}`,
-  );
+  throw new Error(`Tests must run with NODE_ENV=test. Current value: ${process.env.NODE_ENV}`);
 }
 
 if (!process.env.MONGO_URL || !process.env.MONGO_URL.includes('127.0.0.1')) {
@@ -34,7 +32,10 @@ for (const key of requiredEnvs) {
 
 beforeAll(async () => {
   if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(process.env.MONGO_URL!);
+    // `autoIndex: false` keeps workers from issuing index builds while other
+    // workers run multi-document transactions (see globalSetup.ts). The unique
+    // indexes are created once, up front, by globalSetup.
+    await mongoose.connect(process.env.MONGO_URL!, { autoIndex: false });
   }
 });
 
@@ -48,8 +49,11 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
+  // Only close the connection here. Dropping the database would also drop the
+  // unique indexes created once by globalSetup, so a later test file could no
+  // longer detect duplicate emails/usernames. The in-memory replica set is
+  // discarded by globalSetup's teardown anyway.
   if (mongoose.connection.readyState !== 0) {
-    await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
   }
 });
