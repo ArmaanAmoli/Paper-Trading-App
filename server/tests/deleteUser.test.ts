@@ -5,8 +5,10 @@ import { makeApp, authHeader, createTestUser } from './helpers/index.js';
 import { deleteUser } from '../queryManager.ts';
 import { User, Trade, Portfolio, Watchlist, StopLoss } from '../Schemas/mongoSchema.ts';
 
+type TestUser = Awaited<ReturnType<typeof createTestUser>>;
+
 let app: ReturnType<typeof makeApp>['app'];
-let user: Awaited<ReturnType<typeof makeApp>>;
+let user: TestUser;
 let token: string;
 
 beforeEach(async () => {
@@ -16,11 +18,9 @@ beforeEach(async () => {
     username: 'deleteuser',
     password: 'Password123!',
   });
-  token = jwt.sign(
-    { userId: user._id.toString(), email: user.email },
-    process.env.JWT_SECRET!,
-    { expiresIn: '1h' },
-  );
+  token = jwt.sign({ userId: user._id.toString(), email: user.email }, process.env.JWT_SECRET!, {
+    expiresIn: '1h',
+  });
 });
 
 describe('DELETE /user/me (direct route)', () => {
@@ -57,7 +57,7 @@ describe('DELETE /user/me (direct route)', () => {
       type: 'sell',
     });
 
-    const res = await app.delete('/user/me').set(authHeader(token));
+    const res = await supertest(app).delete('/user/me').set(authHeader(token));
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: 'Account deleted successfully' });
@@ -70,7 +70,7 @@ describe('DELETE /user/me (direct route)', () => {
   });
 
   it('requires authentication', async () => {
-    const res = await app.delete('/user/me');
+    const res = await supertest(app).delete('/user/me');
     expect(res.status).toBe(401);
   });
 });
