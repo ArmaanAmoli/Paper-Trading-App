@@ -50,7 +50,13 @@ export default defineConfig([
     extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.app.json', './tsconfig.server.json', './tsconfig.server.test.json', './tsconfig.node.json'],
+        project: [
+          './tsconfig.app.json',
+          './tsconfig.test.json',
+          './tsconfig.server.json',
+          './tsconfig.server.test.json',
+          './tsconfig.node.json',
+        ],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -86,8 +92,17 @@ export default defineConfig([
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ['server/**/*.ts', 'vite.config.ts'],
+    files: ['server/**/*.ts', 'vite.config.ts', 'vitest.config.ts'],
     languageOptions: { globals: globals.node },
+  },
+  // Frontend test files: relax rules that fight against the mock/adapter style
+  // used by Vitest (unbound methods and async stubs that never await).
+  {
+    files: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/require-await': 'off',
+    },
   },
   prettier, // must be last
 ]);
