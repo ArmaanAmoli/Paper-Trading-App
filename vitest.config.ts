@@ -16,7 +16,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ['./src/lib/testSetup.ts'],
     env: {
       VITE_API_BASE_URL: 'http://localhost:3001',
       VITE_WEB_PUSH_PUBLIC_KEY: 'test-vapid-key',

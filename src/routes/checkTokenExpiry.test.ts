@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import isTokenExpired from './checkTokenExpiry';
-import { createExpiredToken, createJwt, createValidToken } from '../test/helpers';
+import { createExpiredToken, createJwt, createValidToken } from '../lib/testHelpers';
 
 describe('isTokenExpired', () => {
   it('returns false for a token that expires in the future', () => {

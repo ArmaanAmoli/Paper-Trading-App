@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import ProtectedRoutes from './protectedRoutes';
-import { createExpiredToken, createValidToken } from '../test/helpers';
+import { createExpiredToken, createValidToken } from '../lib/testHelpers';
 
 function renderProtectedRoutes() {
   const router = createMemoryRouter(

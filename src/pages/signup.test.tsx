@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import Signup from './signup';
-import { createValidToken } from '../test/helpers';
+import { createValidToken } from '../lib/testHelpers';
 
 function renderSignup(initialEntry = '/signup') {
   const router = createMemoryRouter(

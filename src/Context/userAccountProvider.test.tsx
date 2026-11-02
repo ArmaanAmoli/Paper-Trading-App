@@ -4,7 +4,7 @@ import { useContext } from 'react';
 import { UserAccountContext } from './context';
 import { UserAccountProvider } from './contextProviders';
 import api from '../services/api';
-import { createUserData } from '../test/helpers';
+import { createUserData } from '../lib/testHelpers';
 
 vi.mock('../services/api', () => ({
   default: {

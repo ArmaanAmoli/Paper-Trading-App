@@ -5,7 +5,7 @@ import { UserEquityContext } from './context';
 import { UserEquityProvider } from './contextProviders';
 import api from '../services/api';
 import { fetchQuote } from '../services/dataRequesterForCharts';
-import { createPortfolioPosition, createQuote } from '../test/helpers';
+import { createPortfolioPosition, createQuote } from '../lib/testHelpers';
 
 vi.mock('../services/api', () => ({
   default: {

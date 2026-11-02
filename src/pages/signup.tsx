@@ -1,7 +1,6 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import isTokenExpired from '../routes/checkTokenExpiry';
-import { toast } from 'react-toastify';
 import PasswordInput from '../Components/PasswordInput';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
