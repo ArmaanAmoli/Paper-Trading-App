@@ -95,13 +95,22 @@ export default defineConfig([
     files: ['server/**/*.ts', 'vite.config.ts', 'vitest.config.ts'],
     languageOptions: { globals: globals.node },
   },
-  // Frontend test files: relax rules that fight against the mock/adapter style
-  // used by Vitest (unbound methods and async stubs that never await).
+  // Test files: relax rules that fight against the mock/adapter style
+  // used by Vitest (unbound methods, async stubs, any-typed mock objects, etc.).
   {
-    files: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/test/**/*.ts'],
+    files: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/test/**/*.ts', 'server/tests/**/*.test.ts'],
     rules: {
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-enum-comparison': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
     },
   },
   prettier, // must be last
