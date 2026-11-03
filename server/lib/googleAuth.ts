@@ -34,7 +34,7 @@ function generateState(): string {
  * GET /api/auth/google
  * Redirects to Google's consent screen
  */
-export async function googleAuthStart(req: Request, res: Response, next: NextFunction) {
+export function googleAuthStart(req: Request, res: Response, next: NextFunction) {
   try {
     const client = getOAuth2Client();
     const env = getEnv();
@@ -88,11 +88,11 @@ export async function googleAuthCallback(req: Request, res: Response, _next: Nex
     const env = getEnv();
     // Redirect back to the origin the user came from, so the token
     // is stored under the same origin the user will return to.
-    const frontendUrl = req.cookies?.google_oauth_origin || env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = (req.cookies?.google_oauth_origin || env.FRONTEND_URL || 'http://localhost:5173') as string;
 
     // Verify state parameter to prevent CSRF
-    const state = req.cookies?.google_oauth_state;
-    const returnedState = req.query.state;
+    const state: string | undefined = req.cookies?.google_oauth_state as string | undefined;
+    const returnedState: string | undefined = req.query.state as string | undefined;
     
     // Clear OAuth cookies immediately
     res.clearCookie('google_oauth_state', { path: '/' });
@@ -116,12 +116,12 @@ export async function googleAuthCallback(req: Request, res: Response, _next: Nex
     client.setCredentials(tokens);
 
     // Get user info from Google
-    const ticket = await client.verifyIdToken({
-      idToken: tokens.id_token!,
+    const tokenPayload = await client.verifyIdToken({
+      idToken: tokens.id_token ?? '',
       audience: env.GOOGLE_CLIENT_ID,
     });
 
-    const payload = ticket.getPayload();
+    const payload = tokenPayload.getPayload() as { sub: string; email: string; name: string; picture?: string; email_verified: boolean } | null;
     if (!payload) {
       const errorUrl = new URL('/login', frontendUrl);
       errorUrl.searchParams.set('error', 'google_failed');
@@ -142,8 +142,8 @@ export async function googleAuthCallback(req: Request, res: Response, _next: Nex
     // Find or create user
     const user = await findOrCreateGoogleUser({
       id: payload.sub,
-      email: payload.email!,
-      name: payload.name!,
+      email: payload.email,
+      name: payload.name,
       picture: payload.picture,
       email_verified: payload.email_verified,
     });

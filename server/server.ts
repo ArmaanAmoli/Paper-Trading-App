@@ -27,7 +27,6 @@ import {
   getUserStopLosses,
   deleteStopLoss,
   deleteUser,
-  findOrCreateGoogleUser,
 } from './queryManager.js';
 import {
   signUpEndpoint,
