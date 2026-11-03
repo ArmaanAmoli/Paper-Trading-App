@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "types": ["vite/client", "vitest/globals"],
+    "noEmit": true,
+    "noUnusedLocals": false
+  },
+  "include": ["src", "shared", "src/Context"],
+  "exclude": ["node_modules", "dist"]
+}
