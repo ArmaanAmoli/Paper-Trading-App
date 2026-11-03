@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 
 let app: ReturnType<typeof makeApp>['app'];
 
-beforeEach(async () => {
+beforeEach(() => {
   app = makeApp().app;
 });
 
@@ -35,28 +35,28 @@ describe('POST /sign-up', () => {
 
     const user = await User.findOne({ email: 'alice@example.com' });
     expect(user).toBeTruthy();
-    expect(user!.balance).toBe(1_000_000);
-    expect(user!.authProvider).toBe('local');
-    expect(user!.passwordHash).toBeTruthy();
-    expect(user!.passwordHash).not.toBe('Password123!'); // hashed
+    expect(user?.balance).toBe(1_000_000);
+    expect(user?.authProvider).toBe('local');
+    expect(user?.passwordHash).toBeTruthy();
+    expect(user?.passwordHash).not.toBe('Password123!'); // hashed
   });
 
   it('rejects missing email', async () => {
     const res = await signup({ password: 'Password123!', username: 'alice' });
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Validation failed');
+    expect((res.body as { message: string }).message).toBe('Validation failed');
   });
 
   it('rejects invalid email', async () => {
     const res = await signup({ email: 'not-an-email', password: 'Password123!', username: 'alice' });
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Validation failed');
+    expect((res.body as { message: string }).message).toBe('Validation failed');
   });
 
   it('rejects password shorter than 8 characters', async () => {
     const res = await signup({ email: 'alice@example.com', password: 'short', username: 'alice' });
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Validation failed');
+    expect((res.body as { message: string }).message).toBe('Validation failed');
   });
 
   it('rejects username shorter than 3 characters', async () => {
@@ -80,7 +80,7 @@ describe('POST /sign-up', () => {
   it('hashes password with bcrypt (salt 10)', async () => {
     await signup({ email: 'carol@example.com', password: 'Password123!', username: 'carol' });
     const user = await User.findOne({ email: 'carol@example.com' });
-    const match = await bcrypt.compare('Password123!', user!.passwordHash!);
+    const match = await bcrypt.compare('Password123!', user?.passwordHash ?? '');
     expect(match).toBe(true);
   });
 });
@@ -101,13 +101,13 @@ describe('POST /login', () => {
   it('rejects wrong password', async () => {
     const res = await login({ email: 'dave@example.com', password: 'WrongPassword123!' });
     expect(res.status).toBe(500); // docs say 401 but code throws generic Error
-    expect(res.body.message).toBe('Incorrect Password');
+    expect((res.body as { message: string }).message).toBe('Incorrect Password');
   });
 
   it('rejects unknown user', async () => {
     const res = await login({ email: 'nobody@example.com', password: 'Password123!' });
     expect(res.status).toBe(500); // docs say 401 but code returns null
-    expect(res.body.message).toBe('Incorrect Password');
+    expect((res.body as { message: string }).message).toBe('Incorrect Password');
   });
 
   it('rejects Google-only user with no password', async () => {
@@ -139,7 +139,7 @@ describe('JWT creation and verification', () => {
   it('rejects request with no Authorization header', async () => {
     const res = await supertest(app).get('/user-data');
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('No token provided');
+    expect((res.body as { message: string }).message).toBe('No token provided');
   });
 
   it('rejects invalid token format', async () => {
@@ -147,7 +147,7 @@ describe('JWT creation and verification', () => {
       .get('/user-data')
       .set({ Authorization: 'NotBearer token123' });
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('Invalid token format');
+    expect((res.body as { message: string }).message).toBe('Invalid token format');
   });
 
   it('rejects empty token after Bearer', async () => {
@@ -155,7 +155,7 @@ describe('JWT creation and verification', () => {
       .get('/user-data')
       .set({ Authorization: 'Bearer ' });
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('Invalid token format');
+    expect((res.body as { message: string }).message).toBe('Invalid token format');
   });
 
   it('rejects tampered token', async () => {
@@ -167,7 +167,7 @@ describe('JWT creation and verification', () => {
     const tampered = valid.slice(0, -5) + 'XXXXX';
     const res = await getUserData(tampered);
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('Invalid token');
+    expect((res.body as { message: string }).message).toBe('Invalid token');
   });
 
   it('rejects expired token', async () => {
@@ -178,7 +178,7 @@ describe('JWT creation and verification', () => {
     );
     const res = await getUserData(expired);
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('Token expired');
+    expect((res.body as { message: string }).message).toBe('Token expired');
   });
 
   it('accepts valid token and attaches user', async () => {

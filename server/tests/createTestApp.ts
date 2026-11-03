@@ -51,7 +51,7 @@ import { pythonClient } from '../lib/pythonClient.ts';
 import { googleAuthStart, googleAuthCallback } from '../lib/googleAuth.ts';
 import { StopLoss } from '../Schemas/mongoSchema.ts';
 
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
 export interface TestApp {
   app: ReturnType<typeof express>;
@@ -374,11 +374,11 @@ function buildApp() {
   );
 
   app.use(
-    (err: Error, _req: Request, res: Response, _next: Function) => {
+    (err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
       let statusCode = 500;
       let message = 'server Error';
-      if (err instanceof UnauthorizedError || (err as any)?.statusCode) {
-        statusCode = (err as any).statusCode;
+      if (err instanceof UnauthorizedError || err.statusCode) {
+        statusCode = err.statusCode ?? 500;
         message = err.message;
       } else {
         message = err.message || 'server Error';
