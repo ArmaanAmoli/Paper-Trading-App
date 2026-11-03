@@ -5,6 +5,6 @@
     "noEmit": true,
     "noUnusedLocals": false
   },
-  "include": ["src", "shared", "src/Context", "src/test"],
+  "include": ["src", "shared", "src/Context"],
   "exclude": ["node_modules", "dist"]
 }

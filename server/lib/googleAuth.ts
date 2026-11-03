@@ -82,7 +82,7 @@ export async function googleAuthStart(req: Request, res: Response, next: NextFun
  * GET /api/auth/google/callback
  * Handles the callback from Google after user consent
  */
-export async function googleAuthCallback(req: Request, res: Response, next: NextFunction) {
+export async function googleAuthCallback(req: Request, res: Response, _next: NextFunction) {
   try {
     const client = getOAuth2Client();
     const env = getEnv();
