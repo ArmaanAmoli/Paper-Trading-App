@@ -19,7 +19,10 @@ export default function Signup() {
     password: '',
     confirmPassword: '',
   });
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState<string>(() => {
+    const error = searchParams.get('error');
+    return error === 'google_failed' ? 'Google sign-in failed. Please try again.' : '';
+  });
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -38,7 +41,6 @@ export default function Signup() {
     // Check for error from Google OAuth
     const error = searchParams.get('error');
     if (error === 'google_failed') {
-      setErr('Google sign-in failed. Please try again.');
       setSearchParams({}, { replace: true });
     }
 

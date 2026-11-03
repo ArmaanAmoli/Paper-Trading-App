@@ -53,7 +53,7 @@ export default function UserProfile() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      const data = await res.json();
+      const data = (await res.json()) as { message?: string };
       
       if (res.ok) {
         localStorage.removeItem('token');
