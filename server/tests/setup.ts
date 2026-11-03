@@ -6,7 +6,8 @@ if (process.env.NODE_ENV !== 'test') {
   throw new Error(`Tests must run with NODE_ENV=test. Current value: ${process.env.NODE_ENV}`);
 }
 
-if (!process.env.MONGO_URL || !process.env.MONGO_URL.includes('127.0.0.1')) {
+const mongoUrl = process.env.MONGO_URL;
+if (!mongoUrl || !mongoUrl.includes('127.0.0.1')) {
   throw new Error(
     `Tests must use a local test database. Current MONGO_URL: ${process.env.MONGO_URL}`,
   );
@@ -31,11 +32,11 @@ for (const key of requiredEnvs) {
 }
 
 beforeAll(async () => {
-  if (mongoose.connection.readyState === 0) {
+  if (!mongoose.connection.readyState) {
     // `autoIndex: false` keeps workers from issuing index builds while other
     // workers run multi-document transactions (see globalSetup.ts). The unique
     // indexes are created once, up front, by globalSetup.
-    await mongoose.connect(process.env.MONGO_URL!, { autoIndex: false });
+    await mongoose.connect(process.env.MONGO_URL as string, { autoIndex: false });
   }
 });
 
@@ -53,7 +54,7 @@ afterAll(async () => {
   // unique indexes created once by globalSetup, so a later test file could no
   // longer detect duplicate emails/usernames. The in-memory replica set is
   // discarded by globalSetup's teardown anyway.
-  if (mongoose.connection.readyState !== 0) {
+  if (mongoose.connection.readyState !== mongoose.ConnectionStates.disconnected) {
     await mongoose.connection.close();
   }
 });
