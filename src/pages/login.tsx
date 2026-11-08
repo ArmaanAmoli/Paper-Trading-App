@@ -1,14 +1,11 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import isTokenExpired from '../routes/checkTokenExpiry';
 import PasswordInput from '../Components/PasswordInput';
+import { loginWithPkce } from '../services/auth';
+import { fetchUserData } from '../services/api';
+import { notifySessionStarted } from '../lib/authEvents';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-interface LoginResponse {
-  message: string;
-  token?: string;
-}
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -26,29 +23,45 @@ export default function Login() {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
-    // Check for token in URL (from Google OAuth callback)
-    const token = searchParams.get('token');
-    if (token) {
-      localStorage.setItem('token', token);
-      // Remove token from URL
-      setSearchParams({}, { replace: true });
-      void navigate('/landing-page', { replace: true });
-      return;
+    // The session is cookie-based, so ask the server whether the user is
+    // already signed in instead of reading a token from localStorage.
+    let active = true;
+
+    async function redirectIfAuthenticated() {
+      // Uses the api client, so an expired access token is refreshed
+      // automatically via POST /auth/refresh (refresh_token cookie) before
+      // the check — this is what restores the session after a reopen.
+      // A transient failure (e.g. a rate-limited refresh) must not leave the
+      // user stuck on the login page, so retry briefly before giving up.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          await fetchUserData();
+          if (active) {
+            // Session restored — tell App to start the authenticated-only
+            // work (WS feeds, push sync).
+            notifySessionStarted();
+            void navigate('/landing-page', { replace: true });
+          }
+          return;
+        } catch {
+          if (!active || attempt === 2) return;
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      }
     }
 
-    // Check for error from Google OAuth
+    void redirectIfAuthenticated();
+
     const error = searchParams.get('error');
     if (error === 'google_failed') {
       setSearchParams({}, { replace: true });
     }
 
-    // Check for existing valid token in localStorage
-    const storedToken = localStorage.getItem('token');
-    if (storedToken && !isTokenExpired(storedToken)) {
-      void navigate('/landing-page');
-    }
-    // Focus email input on mount
     emailRef.current?.focus();
+
+    return () => {
+      active = false;
+    };
   }, [navigate, searchParams, setSearchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,30 +86,21 @@ export default function Login() {
 
   const LoginUser = async () => {
     if (!userInfo.email || !userInfo.password) return;
-    
+
     setIsLoading(true);
     setErr('');
     try {
-      const res = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: userInfo.email,
-          password: userInfo.password,
-        }),
-      });
-      const data = (await res.json()) as LoginResponse;
-      console.log(data);
-
-      if (res.ok && data.token) {
-        localStorage.setItem('token', data.token);
-        void navigate('/landing-page', { replace: true });
-      } else {
-        setErr(data.message || 'Invalid credentials');
-      }
-    } catch (Error) {
-      console.error(Error);
-      setErr('Something went wrong please try again.');
+      await loginWithPkce(userInfo.email, userInfo.password);
+      // Session started — tell App to start the authenticated-only work
+      // (WS feeds, push sync) without a page reload.
+      notifySessionStarted();
+      void navigate('/landing-page', { replace: true });
+    } catch (requestError) {
+      setErr(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Something went wrong please try again.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -139,11 +143,17 @@ export default function Login() {
 
         <div className="auth-divider">or</div>
 
-        {err && <p className="auth-error" role="alert">{err}</p>}
+        {err && (
+          <p className="auth-error" role="alert">
+            {err}
+          </p>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="auth-input-wrapper">
-            <label htmlFor="email" className="auth-label">Email</label>
+            <label htmlFor="email" className="auth-label">
+              Email
+            </label>
             <input
               ref={emailRef}
               id="email"
@@ -182,8 +192,7 @@ export default function Login() {
         </form>
 
         <footer className="auth-footer">
-          Don't have an account?{' '}
-          <Link to="/signup">Sign up</Link>
+          Don't have an account? <Link to="/signup">Sign up</Link>
         </footer>
       </div>
     </div>

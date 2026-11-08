@@ -1,19 +1,19 @@
 import { useEffect, useState, useContext } from 'react';
+import { isAxiosError } from 'axios';
 import { UserAccountContext, UserEquityContext } from '../Context/context';
 import { getTradeHistory } from '../services/tradeHistory';
 import { useNavigate } from 'react-router-dom';
 import { formatNumber, formatSignedNumber, getValueColorClass } from '../lib/formatters';
 import Avatar from '../Components/Avatar';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 import './styles/userProfile.css';
 import type { TradeHistoryResponse } from '@shared/contract/trade';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function UserProfile() {
   const userAccount = useContext(UserAccountContext);
   const userEquity = useContext(UserEquityContext);
-  
+
   const userData = userAccount?.userAccountInformation ?? null;
   const equity = userEquity?.totalEquity?.[0] ?? 0;
   const [tradeHistory, setTradeHistory] = useState<TradeHistoryResponse | null>(null);
@@ -35,37 +35,32 @@ export default function UserProfile() {
     return () => clearInterval(intervalId);
   }, []);
 
-  function logOut() {
-    localStorage.removeItem('token');
-    void navigate('/', { replace: true });
+  async function logOut() {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      void navigate('/', { replace: true });
+    }
   }
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') return;
-    
+
     setIsDeleting(true);
     setDeleteError('');
     try {
-      const res = await fetch(`${API_BASE_URL}/user/me`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = (await res.json()) as { message?: string };
-      
-      if (res.ok) {
-        localStorage.removeItem('token');
-        toast.success('Account deleted');
-        setShowDeleteModal(false);
-        void navigate('/', { replace: true });
-      } else {
-        setDeleteError(data.message || 'Failed to delete account');
-      }
+      await api.delete('/user/me');
+
+      toast.success('Account deleted');
+      setShowDeleteModal(false);
+      void navigate('/', { replace: true });
     } catch (err) {
-      console.error(err);
-      setDeleteError('Something went wrong. Please try again.');
+      if (isAxiosError(err)) {
+        const data = err.response?.data as { message?: string } | undefined;
+        setDeleteError(data?.message ?? 'Failed to delete account');
+      } else {
+        setDeleteError('Something went wrong. Please try again.');
+      }
     } finally {
       setIsDeleting(false);
     }
@@ -144,7 +139,9 @@ export default function UserProfile() {
                 </div>
                 <div className="profile-detail">
                   <dt className="profile-detail-label">Member since</dt>
-                  <dd className="profile-detail-value">{formatMemberSince(userData?.createdAt ?? '')}</dd>
+                  <dd className="profile-detail-value">
+                    {formatMemberSince(userData?.createdAt ?? '')}
+                  </dd>
                 </div>
               </dl>
 
@@ -168,11 +165,7 @@ export default function UserProfile() {
               <hr className="profile-divider" />
               <div className="profile-danger-zone">
                 <p className="danger-text">Permanently delete your account and all data.</p>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={openDeleteModal}
-                >
+                <button type="button" className="btn btn-danger" onClick={openDeleteModal}>
                   Delete Account
                 </button>
               </div>
@@ -277,8 +270,12 @@ export default function UserProfile() {
           aria-modal="true"
           aria-labelledby="delete-modal-title"
         >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>            <header className="modal-header">
-              <h2 id="delete-modal-title" className="modal-title">Delete your account?</h2>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            {' '}
+            <header className="modal-header">
+              <h2 id="delete-modal-title" className="modal-title">
+                Delete your account?
+              </h2>
               <button
                 type="button"
                 className="modal-close"
@@ -301,10 +298,10 @@ export default function UserProfile() {
                 </svg>
               </button>
             </header>
-
             <div className="modal-body">
               <p className="modal-text">
-                This will permanently delete your account, all trades, holdings, watchlist, and associated data. This action cannot be undone.
+                This will permanently delete your account, all trades, holdings, watchlist, and
+                associated data. This action cannot be undone.
               </p>
               <div className="modal-confirm-input">
                 <label htmlFor="delete-confirm" className="modal-confirm-label">
@@ -327,7 +324,6 @@ export default function UserProfile() {
                 </p>
               )}
             </div>
-
             <footer className="modal-footer">
               <button
                 type="button"
