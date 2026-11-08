@@ -90,3 +90,78 @@ const StopLossSchema = new Schema(
 
 export type StopLossDocument = InferSchemaType<typeof StopLossSchema> & Document;
 export const StopLoss = mongoose.model<StopLossDocument>('StopLoss', StopLossSchema);
+
+// --------------------------------------------------------------------------
+// PKCE / session models (added for OAuth 2.1 / RFC 7636 compliance)
+// --------------------------------------------------------------------------
+
+const AuthCodeSchema = new Schema(
+  {
+    // Hash of the one-time authorization code (never stored plaintext)
+    codeHash: { type: String, required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    // PKCE code challenge the code is bound to
+    codeChallenge: { type: String, required: true },
+    // Single-use: deleted / invalidated after first successful exchange
+    used: { type: Boolean, default: false },
+    // Short-lived: 60–120 seconds
+    expiresAt: { type: Date, required: true, index: { expires: 0 } },
+  },
+  { timestamps: false },
+);
+
+export type AuthCodeDocument = InferSchemaType<typeof AuthCodeSchema> & Document;
+export const AuthCode = mongoose.model<AuthCodeDocument>('AuthCode', AuthCodeSchema);
+
+const RefreshTokenSchema = new Schema(
+  {
+    // Hash of the refresh token (never stored plaintext)
+    tokenHash: { type: String, required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    // Token family id: all rotations of one login share the same familyId
+    familyId: { type: String, required: true, index: true },
+    // Rotated on every refresh; old token is revoked
+    revoked: { type: Boolean, default: false },
+    // When the token was revoked — used for the multi-tab rotation grace window
+    revokedAt: { type: Date, default: null },
+    // Reuse of a revoked token in the same family revokes the whole family
+    familyRevoked: { type: Boolean, default: false },
+    expiresAt: { type: Date, required: true, index: { expires: 0 } },
+  },
+  { timestamps: false },
+);
+
+export type RefreshTokenDocument = InferSchemaType<typeof RefreshTokenSchema> & Document;
+export const RefreshToken = mongoose.model<RefreshTokenDocument>(
+  'RefreshToken',
+  RefreshTokenSchema,
+);
+
+const OAuthTransactionSchema = new Schema(
+  {
+    // Opaque id stored in a short-lived cookie; keys the PKCE transaction
+    transactionId: { type: String, required: true, unique: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
+    // PKCE code verifier (hashed? no — needed in plaintext at exchange; stored
+    // server-side only, short-lived, HttpOnly cookie references this record)
+    codeVerifier: { type: String, required: true },
+    // OAuth state for CSRF protection on the Google flow
+    state: { type: String, required: true },
+    // Origin the user came from, for post-callback redirect
+    origin: { type: String, required: true },
+    // Exact redirect_uri sent to Google for this transaction. The callback
+    // must be served on the origin the user started from: cookies are
+    // host-scoped, so a callback on localhost would never see the
+    // google_oauth_tx cookie (or set session cookies) for a tab browsing
+    // 127.0.0.1, and vice versa.
+    callbackUrl: { type: String, required: true },
+    expiresAt: { type: Date, required: true, index: { expires: 0 } },
+  },
+  { timestamps: false },
+);
+
+export type OAuthTransactionDocument = InferSchemaType<typeof OAuthTransactionSchema> & Document;
+export const OAuthTransaction = mongoose.model<OAuthTransactionDocument>(
+  'OAuthTransaction',
+  OAuthTransactionSchema,
+);
