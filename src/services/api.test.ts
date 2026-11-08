@@ -20,36 +20,18 @@ import api, {
   searchTickers,
 } from './api';
 
-class MemoryStorage implements Storage {
-  private readonly store = new Map<string, string>();
-
-  get length(): number {
-    return this.store.size;
-  }
-
-  clear(): void {
-    this.store.clear();
-  }
-
-  getItem(key: string): string | null {
-    return this.store.get(key) ?? null;
-  }
-
-  key(index: number): string | null {
-    return Array.from(this.store.keys())[index] ?? null;
-  }
-
-  removeItem(key: string): void {
-    this.store.delete(key);
-  }
-
-  setItem(key: string, value: string): void {
-    this.store.set(key, String(value));
-  }
-}
-
 function createResponse<T>(config: InternalAxiosRequestConfig, data: T): AxiosResponse<T> {
   return { data, status: 200, statusText: 'OK', headers: {}, config };
+}
+
+function createUnauthorized(config: InternalAxiosRequestConfig): AxiosError {
+  return new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, undefined, {
+    data: { message: 'No token provided' },
+    status: 401,
+    statusText: 'Unauthorized',
+    headers: {},
+    config,
+  });
 }
 
 function readJsonBody(config: InternalAxiosRequestConfig): Record<string, unknown> {
@@ -60,13 +42,9 @@ function readJsonBody(config: InternalAxiosRequestConfig): Record<string, unknow
 }
 
 const originalAdapter = api.defaults.adapter;
-
-let storage: MemoryStorage;
 let location: { pathname: string; href: string };
 
 beforeEach(() => {
-  storage = new MemoryStorage();
-  vi.stubGlobal('localStorage', storage);
   location = { pathname: '/', href: '' };
   vi.stubGlobal('window', { location });
 });
@@ -76,86 +54,73 @@ afterEach(() => {
 });
 
 describe('api instance configuration', () => {
-  it('uses the configured base URL', () => {
+  it('uses the configured base URL and cookie credentials', () => {
     expect(api.defaults.baseURL).toBe('http://localhost:3001');
-  });
-});
-
-describe('request interceptor', () => {
-  it('adds the stored token as a bearer authorization header', async () => {
-    storage.setItem('token', 'jwt-token');
-    const adapter = vi.fn<AxiosAdapter>((config) =>
-      Promise.resolve(createResponse(config, { ok: true })),
-    );
-    api.defaults.adapter = adapter;
-
-    await api.get('/user-data');
-
-    const sentConfig = adapter.mock.calls[0][0];
-    expect(sentConfig.headers.get('authorization')).toBe('Bearer jwt-token');
-  });
-
-  it('does not add an authorization header when no token is stored', async () => {
-    const adapter = vi.fn<AxiosAdapter>((config) =>
-      Promise.resolve(createResponse(config, { ok: true })),
-    );
-    api.defaults.adapter = adapter;
-
-    await api.get('/user-data');
-
-    const sentConfig = adapter.mock.calls[0][0];
-    expect(sentConfig.headers.get('authorization')).toBeUndefined();
+    expect(api.defaults.withCredentials).toBe(true);
   });
 });
 
 describe('response interceptor', () => {
-  it('removes the token and redirects to the root on a 401 response', async () => {
-    storage.setItem('token', 'jwt-token');
-    location.pathname = '/landing-page';
-
+  it('refreshes the session and retries the original request on a 401 response', async () => {
+    let userDataCalls = 0;
     const adapter = vi.fn<AxiosAdapter>(async (config) => {
-      throw new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, undefined, {
-        data: { message: 'No token provided' },
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: {},
-        config,
-      });
+      if (config.url === '/auth/refresh') {
+        return createResponse(config, { message: 'Token refreshed' });
+      }
+
+      if (config.url === '/user-data') {
+        userDataCalls += 1;
+        if (userDataCalls === 1) {
+          throw createUnauthorized(config);
+        }
+        return createResponse(config, { authenticated: true });
+      }
+
+      return createResponse(config, {});
     });
     api.defaults.adapter = adapter;
 
-    await expect(api.get('/user-data')).rejects.toBeInstanceOf(AxiosError);
+    const result = await fetchUserData();
 
-    expect(storage.getItem('token')).toBeNull();
+    expect(result).toEqual({ authenticated: true });
+    expect(userDataCalls).toBe(2);
+    expect(location.href).toBe('');
+  });
+
+  it('redirects to the root when the session cannot be refreshed', async () => {
+    location.pathname = '/landing-page';
+    const adapter = vi.fn<AxiosAdapter>(async (config) => {
+      throw createUnauthorized(config);
+    });
+    api.defaults.adapter = adapter;
+
+    await expect(fetchUserData()).rejects.toBeInstanceOf(AxiosError);
     expect(location.href).toBe('/');
   });
 
   it('does not redirect when the failing path is already the root', async () => {
-    storage.setItem('token', 'jwt-token');
     location.pathname = '/';
-    location.href = '';
-
     const adapter = vi.fn<AxiosAdapter>(async (config) => {
-      throw new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, undefined, {
-        data: { message: 'No token provided' },
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: {},
-        config,
-      });
+      throw createUnauthorized(config);
     });
     api.defaults.adapter = adapter;
 
-    await expect(api.get('/user-data')).rejects.toBeInstanceOf(AxiosError);
-
-    expect(storage.getItem('token')).toBeNull();
+    await expect(fetchUserData()).rejects.toBeInstanceOf(AxiosError);
     expect(location.href).toBe('');
   });
 
-  it('keeps the token for non-401 failures', async () => {
-    storage.setItem('token', 'jwt-token');
-    location.pathname = '/landing-page';
+  it('does not retry the refresh endpoint itself', async () => {
+    const adapter = vi.fn<AxiosAdapter>(async (config) => {
+      throw createUnauthorized(config);
+    });
+    api.defaults.adapter = adapter;
 
+    await expect(api.post('/auth/refresh')).rejects.toBeInstanceOf(AxiosError);
+    expect(adapter).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry or redirect for non-401 failures', async () => {
+    location.pathname = '/landing-page';
     const adapter = vi.fn<AxiosAdapter>(async (config) => {
       throw new AxiosError('Server Error', 'ERR_BAD_RESPONSE', config, undefined, {
         data: { message: 'Internal server error' },
@@ -167,9 +132,8 @@ describe('response interceptor', () => {
     });
     api.defaults.adapter = adapter;
 
-    await expect(api.get('/user-data')).rejects.toBeInstanceOf(AxiosError);
-
-    expect(storage.getItem('token')).toBe('jwt-token');
+    await expect(fetchUserData()).rejects.toBeInstanceOf(AxiosError);
+    expect(adapter).toHaveBeenCalledTimes(1);
     expect(location.href).toBe('');
   });
 });

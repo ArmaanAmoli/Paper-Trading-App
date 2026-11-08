@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import axios from 'axios';
 import { fetchData, fetchIndicatorData, fetchQuote } from './dataRequesterForCharts';
 
@@ -14,10 +14,6 @@ beforeEach(() => {
   mockedAxios.get.mockReset();
 });
 
-afterEach(() => {
-  localStorage.clear();
-});
-
 describe('fetchData', () => {
   it('requests OHLCV data with the ticker, period and interval', async () => {
     mockedAxios.get.mockResolvedValue({ data: [] });
@@ -26,11 +22,11 @@ describe('fetchData', () => {
 
     expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3001/data', {
       params: { ticker: 'AAPL', period: '1mo', interval: '1d' },
-      headers: {},
+      withCredentials: true,
     });
   });
 
-  it('sends the bearer token when one is stored', async () => {
+  it('sends cookies instead of an Authorization header', async () => {
     localStorage.setItem('token', 'jwt-token');
     mockedAxios.get.mockResolvedValue({ data: [] });
 
@@ -38,8 +34,10 @@ describe('fetchData', () => {
 
     expect(mockedAxios.get).toHaveBeenCalledWith(
       'http://localhost:3001/data',
-      expect.objectContaining({ headers: { authorization: 'Bearer jwt-token' } }),
+      expect.objectContaining({ withCredentials: true }),
     );
+    const config = mockedAxios.get.mock.calls[0]?.[1];
+    expect(config).not.toHaveProperty('headers');
   });
 
   it('returns an empty array when the request fails', async () => {
@@ -61,7 +59,7 @@ describe('fetchQuote', () => {
 
     expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3001/quote', {
       params: { ticker: 'AAPL' },
-      headers: {},
+      withCredentials: true,
     });
     expect(quote).toEqual({ ticker: 'AAPL', currentPrice: 150, change: 1, percentChange: 0.5 });
   });
@@ -83,7 +81,7 @@ describe('fetchIndicatorData', () => {
 
     expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3001/data/indicator', {
       params: { ticker: 'AAPL', indicator: 'SMA' },
-      headers: {},
+      withCredentials: true,
     });
     expect(result).toEqual({ MIDDLE: [] });
   });
