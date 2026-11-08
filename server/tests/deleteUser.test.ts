@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import supertest from 'supertest';
 import jwt from 'jsonwebtoken';
-import { makeApp, authHeader, createTestUser } from './helpers/index.js';
+import { makeApp, authCookie, createTestUser } from './helpers/index.js';
 import { deleteUser } from '../queryManager.ts';
 import { User, Trade, Portfolio, Watchlist, StopLoss } from '../Schemas/mongoSchema.ts';
 
@@ -57,7 +57,7 @@ describe('DELETE /user/me (direct route)', () => {
       type: 'sell',
     });
 
-    const res = await supertest(app).delete('/user/me').set(authHeader(token));
+    const res = await supertest(app).delete('/user/me').set(authCookie(token));
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: 'Account deleted successfully' });

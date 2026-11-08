@@ -64,8 +64,33 @@ export async function createTestUser(
   return user;
 }
 
-export function authHeader(token: string) {
-  return { Authorization: `Bearer ${token}` };
+/**
+ * Attach an access token as the HttpOnly cookie the server reads.
+ * The server no longer accepts Authorization headers for session auth.
+ */
+export function authCookie(token: string) {
+  return { Cookie: `access_token=${token}` };
+}
+
+/**
+ * Attach both session cookies (access + refresh) to a request.
+ */
+export function sessionCookies(accessToken: string, refreshToken?: string) {
+  const parts = [`access_token=${accessToken}`];
+  if (refreshToken) {
+    parts.push(`refresh_token=${refreshToken}`);
+  }
+  return { Cookie: parts.join('; ') };
+}
+
+/**
+ * Read the Set-Cookie response header as an array.
+ * Superagent types `headers` as `{ [index: string]: string }`, but at runtime
+ * `set-cookie` is a `string[]`, so normalize both shapes.
+ */
+export function setCookies(res: { headers: { [index: string]: string } }): string[] {
+  const raw = res.headers['set-cookie'];
+  return typeof raw === 'string' ? [raw] : raw;
 }
 
 export async function clearDb() {
