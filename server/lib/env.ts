@@ -11,7 +11,10 @@ const envSchema = z.object({
   WEB_PUSH_PUBLIC_KEY: z.string().min(1),
   WEB_PUSH_PRIVATE_KEY: z.string().min(1),
   EXCHANGE_RATE_API: z.string().min(1),
-  VITE_API_BASE_URL: z.string().url(),
+  // Empty in development: the frontend calls the API same-origin through the
+  // Vite proxy. Set to the API origin when frontend and API are on different
+  // origins (e.g. production).
+  VITE_API_BASE_URL: z.string().url().or(z.literal('')).optional(),
   VITE_WEB_PUSH_PUBLIC_KEY: z.string().min(1),
   // Google OAuth (optional - server starts without them but OAuth won't work)
   GOOGLE_CLIENT_ID: z.string().optional(),
