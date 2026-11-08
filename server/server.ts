@@ -4,15 +4,30 @@ import process from 'node:process';
 import 'dotenv/config';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { allStopLossPromise } from './StopLoss/getAllStopLoss.js';
 import { socket, stopLossWS } from './StopLoss/stoploss.js';
-import { StopLoss, type StopLossDocument } from './Schemas/mongoSchema.js';
+import { StopLoss, User, type StopLossDocument } from './Schemas/mongoSchema.js';
 import { getEnv } from './lib/env.js';
 import { route } from './lib/route.js';
 import { pythonClient } from './lib/pythonClient.js';
 import { googleAuthStart, googleAuthCallback } from './lib/googleAuth.js';
+import {
+  createAuthCode,
+  consumeAuthCode,
+  revokeAllRefreshTokens,
+  revokeAllAuthCodes,
+} from './lib/authStore.js';
+import {
+  issueSession,
+  rotateSession,
+  clearSession,
+  issueWsTicket,
+  REFRESH_TOKEN_COOKIE,
+} from './lib/session.js';
+import { csrfMiddleware, buildAllowedOrigins } from './lib/csrf.js';
+import { rateLimit } from './lib/rateLimit.js';
+import { getCookie } from './lib/cookies.js';
 import {
   SignUp,
   login,
@@ -30,10 +45,12 @@ import {
 } from './queryManager.js';
 import {
   signUpEndpoint,
-  loginEndpoint,
   userDataEndpoint,
   saveSubscriptionEndpoint,
   deleteAccountEndpoint,
+  loginPkceEndpoint,
+  tokenExchangeBodySchema,
+  wsTicketEndpoint,
 } from '@shared/contract/auth.js';
 import {
   buyEndpoint,
@@ -55,7 +72,7 @@ import {
   searchEndpoint,
   indicatorEndpoint,
 } from '@shared/contract/market.js';
-import { isAppError } from './lib/errors.js';
+import { isAppError, UnauthorizedError } from './lib/errors.js';
 
 const env = getEnv();
 const server = express();
@@ -83,7 +100,36 @@ allStopLossPromise
 // MIDDLEWARES
 server.use(express.json());
 server.use(cookieParser());
-server.use(cors());
+
+// CORS: explicit origin allowlist with credentials (no wildcard)
+const allowedOrigins = buildAllowedOrigins();
+server.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
+
+// CSRF protection for state-changing requests
+server.use(csrfMiddleware(allowedOrigins));
+
+// Rate limiting on auth endpoints
+server.use(
+  '/auth',
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 30,
+    message: 'Too many auth requests, please try again later',
+  }),
+);
+server.use(
+  '/api/auth/google',
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    message: 'Too many OAuth requests, please try again later',
+  }),
+);
 
 // Request Handlers using route() wrapper
 //-----------------------------------------------------------------------ACCOUNT-------------------------------------------------------------------------------------------
@@ -94,22 +140,88 @@ server.post(
     return { message: 'User Registered' as const };
   }),
 );
+// --- PKCE-based email/password login ---
+
+// Step 1: POST /auth/login — validate credentials + code_challenge,
+// return a one-time, short-lived authorization code in the body.
 server.post(
-  '/login',
-  route(loginEndpoint, async ({ body }) => {
-    const user = await login(body);
+  '/auth/login',
+  route(loginPkceEndpoint, async ({ body }) => {
+    const user = await login({ email: body.email, password: body.password });
     if (!user) {
-      throw new Error('Incorrect Password');
+      throw new UnauthorizedError('Incorrect Password');
     }
-    const token = jwt.sign(
-      {
-        userId: user._id.toString(),
-        email: user.email,
-      },
-      env.JWT_SECRET,
-      { expiresIn: '1h' },
-    );
-    return { message: 'Login Success' as const, token };
+
+    const code = await createAuthCode({
+      userId: user._id.toString(),
+      codeChallenge: body.code_challenge,
+    });
+
+    return { message: 'Login Success' as const, code };
+  }),
+);
+
+// Step 2: POST /auth/token — exchange code + code_verifier for HttpOnly cookies.
+server.post('/auth/token', async (req, res, next) => {
+  try {
+    const body = tokenExchangeBodySchema.parse(req.body);
+
+    const { userId } = await consumeAuthCode({
+      code: body.code,
+      codeVerifier: body.code_verifier,
+    });
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new UnauthorizedError('User not found');
+    }
+
+    // Tokens are delivered only as HttpOnly cookies; the body carries no tokens.
+    await issueSession(res, {
+      id: user._id.toString(),
+      email: user.email,
+    });
+
+    res.json({ message: 'Tokens issued' as const });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/refresh — rotate the refresh token and issue a new access token.
+server.post('/auth/refresh', async (req, res, next) => {
+  try {
+    const refreshToken = getCookie(req, REFRESH_TOKEN_COOKIE);
+    if (!refreshToken) {
+      throw new UnauthorizedError('No refresh token provided');
+    }
+
+    await rotateSession(res, refreshToken);
+
+    res.json({ message: 'Token refreshed' as const });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/logout — revoke the refresh token and clear cookies.
+server.post('/auth/logout', async (req, res, next) => {
+  try {
+    const refreshToken = getCookie(req, REFRESH_TOKEN_COOKIE);
+    await clearSession(res, refreshToken);
+
+    res.json({ message: 'Logged out' as const });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/ws-ticket — issue a short-lived JWT for the market-data WebSocket
+// (the WS server authenticates the handshake via this subprotocol token).
+server.post(
+  '/auth/ws-ticket',
+  route(wsTicketEndpoint, ({ user }) => {
+    return Promise.resolve({ ticket: issueWsTicket({ userId: user.userId, email: user.email }) });
   }),
 );
 
@@ -155,6 +267,8 @@ server.post(
 server.delete(
   '/user/me',
   route(deleteAccountEndpoint, async ({ user }) => {
+    await revokeAllRefreshTokens(user.userId);
+    await revokeAllAuthCodes(user.userId);
     await deleteUser(user.userId);
     return { message: 'Account deleted successfully' as const };
   }),
