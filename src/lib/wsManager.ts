@@ -2,10 +2,19 @@
 This class will manage multiple websockets connection with auto reconnect
 */
 
+/** Retry delay when no WS ticket can be fetched (e.g. not signed in yet). */
+const TICKET_RETRY_DELAY = 30_000;
+
 export interface ConnectionEntry {
   url: string;
+  /** Short-lived WS ticket JWT, sent as a subprotocol (cookies are HttpOnly). */
+  token?: string;
+  /** Fetches a fresh ticket before every (re)connect. */
+  getToken?: () => Promise<string | undefined>;
   reconnectDelay: number;
   shouldReconnect: boolean;
+  /** Consecutive failed connect attempts — drives the reconnect backoff. */
+  consecutiveFailures: number;
   ws: WebSocket | null;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
   subscribers: Record<string, Set<(data: WebSocketMessage) => void>>;
@@ -63,38 +72,67 @@ export class WebSocketManager {
    * Connect to a WebSocket endpoint
    * @param name - label for the connection
    * @param url - WebSocket endpoint URL
-   * @param options - optional settings (reconnectDelay)
+   * @param options - optional settings (reconnectDelay, token)
    */
-  connect(name: string, url: string, options: { reconnectDelay?: number } = {}): void {
-    const { reconnectDelay = 3000 } = options;
+  connect(
+    name: string,
+    url: string,
+    options: {
+      reconnectDelay?: number;
+      token?: string;
+      getToken?: () => Promise<string | undefined>;
+    } = {},
+  ): void {
+    const { reconnectDelay = 3000, token, getToken } = options;
 
     if (this.connections[name]?.ws?.readyState === WebSocket.OPEN) return;
 
     const entry: ConnectionEntry = {
       url,
+      token,
+      getToken,
       reconnectDelay,
       shouldReconnect: true,
+      consecutiveFailures: 0,
       ws: null,
       reconnectTimer: null,
       subscribers: {},
       indicatorSubscriptions: {},
     };
     this.connections[name] = entry;
-    this._open(name);
+    void this._open(name);
   }
 
-  private _open(name: string): void {
+  private async _open(name: string): Promise<void> {
     const entry = this.connections[name];
     if (!entry || !entry.shouldReconnect) return;
 
-    const token = localStorage.getItem('token') ?? '';
-    // Only pass protocol array if token exists (empty string is not a valid subprotocol)
+    // The WS server expects the ticket JWT as a subprotocol. The session
+    // cookie is HttpOnly, so it cannot be read from JS — a fresh ticket is
+    // fetched from POST /auth/ws-ticket on every (re)connect via getToken().
+    let token = entry.token;
+    if (entry.getToken) {
+      try {
+        token = await entry.getToken();
+        entry.token = token;
+      } catch (error) {
+        // 401 = not signed in: stop polling for tickets entirely — the feeds
+        // reconnect via the `auth:session-started` event after a login.
+        // Other failures (network, 5xx) retry after a delay.
+        if ((error as { status?: number }).status === 401) return;
+        entry.reconnectTimer = setTimeout(() => void this._open(name), TICKET_RETRY_DELAY);
+        return;
+      }
+    }
+
+    // Only pass a protocol array if a ticket exists (empty string is not a valid subprotocol)
     const ws = token ? new WebSocket(entry.url, [token]) : new WebSocket(entry.url);
     entry.ws = ws;
 
     ws.onopen = () => {
       console.log(`[WS:${name}] connected`);
       clearTimeout(entry.reconnectTimer ?? undefined);
+      entry.consecutiveFailures = 0;
 
       // Resubscribe all tickers after reconnecting
       Object.keys(entry.subscribers).forEach((key) => {
@@ -209,9 +247,17 @@ export class WebSocketManager {
     };
 
     ws.onclose = () => {
-      console.log(`[WS:${name}] closed — retrying in ${entry.reconnectDelay}ms`);
+      // Exponential backoff on consecutive failed connects so a rejected /
+      // unreachable WS server cannot flood the auth endpoints with ticket
+      // requests (24+/min per tab at a fixed 5s delay).
+      entry.consecutiveFailures += 1;
+      const backoffDelay = Math.min(
+        entry.reconnectDelay * 2 ** (entry.consecutiveFailures - 1),
+        60_000,
+      );
+      console.log(`[WS:${name}] closed — retrying in ${backoffDelay}ms`);
       if (entry.shouldReconnect) {
-        entry.reconnectTimer = setTimeout(() => this._open(name), entry.reconnectDelay);
+        entry.reconnectTimer = setTimeout(() => void this._open(name), backoffDelay);
       }
     };
 

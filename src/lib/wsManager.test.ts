@@ -69,7 +69,6 @@ class FakeWebSocket {
 beforeEach(() => {
   instances.length = 0;
   vi.stubGlobal('WebSocket', FakeWebSocket);
-  localStorage.clear();
 });
 
 afterEach(() => {
@@ -87,21 +86,64 @@ describe('WebSocketManager.connect', () => {
     expect(instances[0].url).toBe('ws://localhost:8001/ws/quote');
   });
 
-  it('passes the stored token as a subprotocol', () => {
-    localStorage.setItem('token', 'jwt-token');
+  it('passes the provided ws ticket as a subprotocol', () => {
     const manager = new WebSocketManager();
 
-    manager.connect('quote', 'ws://localhost:8001/ws/quote');
+    manager.connect('quote', 'ws://localhost:8001/ws/quote', { token: 'ws-ticket-jwt' });
 
-    expect(instances[0].protocols).toEqual(['jwt-token']);
+    expect(instances[0].protocols).toEqual(['ws-ticket-jwt']);
   });
 
-  it('omits the subprotocol when no token is stored', () => {
+  it('omits the subprotocol when no ticket is provided', () => {
     const manager = new WebSocketManager();
 
     manager.connect('quote', 'ws://localhost:8001/ws/quote');
 
     expect(instances[0].protocols).toBeUndefined();
+  });
+
+  it('fetches a fresh ticket via getToken before connecting', async () => {
+    const manager = new WebSocketManager();
+    manager.connect('quote', 'ws://localhost:8001/ws/quote', {
+      getToken: vi.fn().mockResolvedValue('fresh-ticket'),
+    });
+
+    await vi.waitFor(() => {
+      expect(instances).toHaveLength(1);
+    });
+    expect(instances[0].protocols).toEqual(['fresh-ticket']);
+  });
+
+  it('does not connect while no ticket can be fetched and retries later', async () => {
+    vi.useFakeTimers();
+    const getToken = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('no session'))
+      .mockResolvedValueOnce('fresh-ticket');
+    const manager = new WebSocketManager();
+    manager.connect('quote', 'ws://localhost:8001/ws/quote', { getToken });
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(instances).toHaveLength(0);
+
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(instances).toHaveLength(1);
+    expect(instances[0].protocols).toEqual(['fresh-ticket']);
+  });
+
+  it('stops retrying entirely when the ticket fetch is rejected as unauthenticated', async () => {
+    vi.useFakeTimers();
+    const getToken = vi.fn().mockRejectedValue({ status: 401 });
+    const manager = new WebSocketManager();
+    manager.connect('quote', 'ws://localhost:8001/ws/quote', { getToken });
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(instances).toHaveLength(0);
+
+    // No retry is scheduled for a 401 (logged out) — zero wasted requests.
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(instances).toHaveLength(0);
+    expect(getToken).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -273,6 +315,22 @@ describe('WebSocketManager reconnect behaviour', () => {
     instances[1].open();
 
     expect(instances[1].payloads).toContainEqual({ action: 'subscribe', ticker: 'AAPL' });
+  });
+
+  it('reuses the ws ticket as subprotocol after a reconnect', () => {
+    vi.useFakeTimers();
+    const manager = new WebSocketManager();
+    manager.connect('quote', 'ws://localhost:8001/ws/quote', {
+      reconnectDelay: 10,
+      token: 'ws-ticket-jwt',
+    });
+    instances[0].open();
+
+    instances[0].onclose?.();
+    vi.advanceTimersByTime(20);
+
+    expect(instances).toHaveLength(2);
+    expect(instances[1].protocols).toEqual(['ws-ticket-jwt']);
   });
 
   it('does not reconnect after an explicit disconnect', () => {
