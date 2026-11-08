@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect } from 'react';
 import { wsManager } from './lib/wsManager';
-import api from './services/api';
+import { AUTH_SESSION_STARTED_EVENT } from './lib/authEvents';
+import api, { fetchUserData } from './services/api';
+import { fetchWsTicket } from './services/auth';
 import AppRouter from './routes/AppRouter';
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -14,11 +16,42 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-export function App() {
-  useEffect(() => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+/**
+ * Run `callback` once the visitor has an authenticated session: immediately
+ * when the session check succeeds, otherwise when the login page fires
+ * `auth:session-started` after a login or session restore. Returns a cleanup
+ * function. Keeps logged-out tabs from touching authenticated endpoints.
+ */
+function whenAuthenticated(callback: () => void): () => void {
+  let cancelled = false;
 
+  const onSessionStarted = () => {
+    if (!cancelled) callback();
+  };
+
+  void fetchUserData()
+    .then(() => {
+      if (!cancelled) callback();
+    })
+    .catch(() => {
+      if (!cancelled) {
+        window.addEventListener(AUTH_SESSION_STARTED_EVENT, onSessionStarted, { once: true });
+      }
+    });
+
+  return () => {
+    cancelled = true;
+    window.removeEventListener(AUTH_SESSION_STARTED_EVENT, onSessionStarted);
+  };
+}
+
+export function App() {
+  // Push subscription sync — authenticated sessions only (save-subscription
+  // is a protected endpoint).
+  useEffect(() => {
     const syncSubscription = async () => {
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
       try {
         const reg = await navigator.serviceWorker.ready;
         let subscription = await reg.pushManager.getSubscription();
@@ -36,7 +69,7 @@ export function App() {
           return;
         }
 
-        // 4. Check LocalStorage to see if we already synced this specific subscription
+        // Check LocalStorage to see if we already synced this specific subscription
         const lastSyncedSub = localStorage.getItem('last_synced_subscription');
         const currentSubString = JSON.stringify(subscription);
 
@@ -53,28 +86,42 @@ export function App() {
       }
     };
 
-    // Only run if permission is granted
-    if (Notification.permission === 'granted') {
-      void syncSubscription();
-    } else if (Notification.permission === 'default') {
-      void Notification.requestPermission().then((permission) => {
-        if (permission === 'granted') void syncSubscription();
-      });
-    }
+    const requestAndSync = () => {
+      if (Notification.permission === 'granted') {
+        void syncSubscription();
+      } else if (Notification.permission === 'default') {
+        void Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') void syncSubscription();
+        });
+      }
+    };
+
+    return whenAuthenticated(requestAndSync);
   }, []);
 
-  //code to connect to websockets data feed
+  //code to connect to websockets data feed — authenticated sessions only:
+  // a logged-out tab must not poll /auth/ws-ticket. The feeds connect when
+  // the session check succeeds, or when the login page fires
+  // `auth:session-started` after a login / session restore.
   useLayoutEffect(() => {
-    try {
-      wsManager.connect('quote', 'ws://127.0.0.1:8001/ws/quote');
-      wsManager.connect('indicator', 'ws://127.0.0.1:8001/ws/indicator');
-    } catch (error) {
-      console.warn('WebSocket connection failed (backend may not be running):', error);
-    }
-    return () => {
-      wsManager.disconnect('quote');
-      wsManager.disconnect('indicator');
-    };
+    return whenAuthenticated(() => {
+      try {
+        // The WS server authenticates via a short-lived ticket JWT passed as
+        // a subprotocol (the session cookie is HttpOnly and cannot be read by
+        // JS). getToken fetches a fresh ticket on every (re)connect;
+        // reconnectDelay stays under the 30 req/min auth rate limit (2 feeds).
+        wsManager.connect('quote', 'ws://127.0.0.1:8001/ws/quote', {
+          reconnectDelay: 5000,
+          getToken: fetchWsTicket,
+        });
+        wsManager.connect('indicator', 'ws://127.0.0.1:8001/ws/indicator', {
+          reconnectDelay: 5000,
+          getToken: fetchWsTicket,
+        });
+      } catch (error) {
+        console.warn('WebSocket connection failed (backend may not be running):', error);
+      }
+    });
   }, []);
 
   return (
