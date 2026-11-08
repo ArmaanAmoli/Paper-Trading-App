@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import supertest from 'supertest';
 import jwt from 'jsonwebtoken';
-import { makeApp, authHeader, createTestUser } from './helpers/index.js';
+import { makeApp, authCookie, createTestUser } from './helpers/index.js';
 import { User } from '../Schemas/mongoSchema.ts';
 import { findOrCreateGoogleUser, saveSubscription } from '../queryManager.ts';
 
@@ -31,7 +31,7 @@ describe('POST /save-subscription', () => {
   it('stores the push notification subscription on the user', async () => {
     const res = await supertest(app)
       .post('/save-subscription')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ data: subscription });
 
     expect(res.status).toBe(200);
@@ -48,7 +48,7 @@ describe('POST /save-subscription', () => {
   it('rejects a subscription without keys', async () => {
     const res = await supertest(app)
       .post('/save-subscription')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ data: { endpoint: 'https://push.example.com/endpoint', expirationTime: null } });
 
     expect(res.status).toBe(400);
@@ -77,7 +77,7 @@ describe('GET /user-data with a notification subscription', () => {
   it('returns the stored subscription', async () => {
     await supertest(app)
       .post('/save-subscription')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({
         data: {
           endpoint: 'https://push.example.com/endpoint',
@@ -86,7 +86,7 @@ describe('GET /user-data with a notification subscription', () => {
         },
       });
 
-    const res = await supertest(app).get('/user-data').set(authHeader(token));
+    const res = await supertest(app).get('/user-data').set(authCookie(token));
 
     expect(res.status).toBe(200);
     expect(res.body.notificationSubscription).toEqual({
@@ -97,7 +97,7 @@ describe('GET /user-data with a notification subscription', () => {
   });
 
   it('returns null when the user has no subscription', async () => {
-    const res = await supertest(app).get('/user-data').set(authHeader(token));
+    const res = await supertest(app).get('/user-data').set(authCookie(token));
 
     expect(res.status).toBe(200);
     expect(res.body.notificationSubscription).toBeNull();

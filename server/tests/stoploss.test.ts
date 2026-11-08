@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import supertest from 'supertest';
 import jwt from 'jsonwebtoken';
-import { makeApp, authHeader, createTestUser } from './helpers/index.js';
+import { makeApp, authCookie, createTestUser } from './helpers/index.js';
 import { StopLoss } from '../Schemas/mongoSchema.ts';
 import { StopLossExecuter } from '../queryManager.ts';
 
@@ -36,7 +36,7 @@ describe('POST /stopLoss', () => {
     const startDate = new Date('2026-01-01T00:00:00.000Z').toISOString();
     const res = await supertest(app)
       .post('/stopLoss')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL', price: 90, startDate, qty: 5, type: 'sell' });
 
     expect(res.status).toBe(200);
@@ -52,7 +52,7 @@ describe('POST /stopLoss', () => {
   });
 
   it('rejects a non-positive price', async () => {
-    const res = await supertest(app).post('/stopLoss').set(authHeader(token)).send({
+    const res = await supertest(app).post('/stopLoss').set(authCookie(token)).send({
       symbol: 'AAPL',
       price: 0,
       startDate: new Date().toISOString(),
@@ -67,7 +67,7 @@ describe('POST /stopLoss', () => {
   it('rejects a missing startDate', async () => {
     const res = await supertest(app)
       .post('/stopLoss')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL', price: 90, qty: 5, type: 'sell' });
 
     expect(res.status).toBe(400);
@@ -75,7 +75,7 @@ describe('POST /stopLoss', () => {
   });
 
   it('rejects an unknown type', async () => {
-    const res = await supertest(app).post('/stopLoss').set(authHeader(token)).send({
+    const res = await supertest(app).post('/stopLoss').set(authCookie(token)).send({
       symbol: 'AAPL',
       price: 90,
       startDate: new Date().toISOString(),
@@ -123,7 +123,7 @@ describe('GET /stopLoss', () => {
       type: 'buy',
     });
 
-    const res = await supertest(app).get('/stopLoss').set(authHeader(token));
+    const res = await supertest(app).get('/stopLoss').set(authCookie(token));
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
@@ -139,7 +139,7 @@ describe('GET /stopLoss', () => {
   });
 
   it('returns an empty array when there are no stop loss orders', async () => {
-    const res = await supertest(app).get('/stopLoss').set(authHeader(token));
+    const res = await supertest(app).get('/stopLoss').set(authCookie(token));
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
@@ -164,7 +164,7 @@ describe('DELETE /stopLoss/:id', () => {
 
     const res = await supertest(app)
       .delete(`/stopLoss/${created._id.toString()}`)
-      .set(authHeader(token));
+      .set(authCookie(token));
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: 'Stop loss cancelled' });
@@ -188,7 +188,7 @@ describe('DELETE /stopLoss/:id', () => {
 
     const res = await supertest(app)
       .delete(`/stopLoss/${created._id.toString()}`)
-      .set(authHeader(token));
+      .set(authCookie(token));
 
     // The delete is scoped to the authenticated user, so nothing is removed and the
     // handler throws a plain Error (500) instead of a 404.
@@ -200,7 +200,7 @@ describe('DELETE /stopLoss/:id', () => {
   it('reports an error for an unknown id', async () => {
     const res = await supertest(app)
       .delete('/stopLoss/000000000000000000000000')
-      .set(authHeader(token));
+      .set(authCookie(token));
 
     expect(res.status).toBe(500);
     expect(res.body.message).toBe('Stop loss not found');

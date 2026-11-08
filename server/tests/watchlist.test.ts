@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import supertest from 'supertest';
 import jwt from 'jsonwebtoken';
-import { makeApp, authHeader, createTestUser } from './helpers/index.js';
+import { makeApp, authCookie, createTestUser } from './helpers/index.js';
 import { Watchlist } from '../Schemas/mongoSchema.ts';
 
 let app: ReturnType<typeof makeApp>['app'];
@@ -24,7 +24,7 @@ describe('POST /user-watchlist/add', () => {
   it('adds a symbol to the watchlist', async () => {
     const res = await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL' });
 
     expect(res.status).toBe(200);
@@ -38,11 +38,11 @@ describe('POST /user-watchlist/add', () => {
   it('is idempotent — adding the same symbol twice does not duplicate it', async () => {
     await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL' });
     await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL' });
 
     const watchlist = await Watchlist.findOne({ userId: user._id });
@@ -52,11 +52,11 @@ describe('POST /user-watchlist/add', () => {
   it('keeps multiple symbols on one watchlist document', async () => {
     await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL' });
     await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'MSFT' });
 
     const watchlists = await Watchlist.find({ userId: user._id });
@@ -67,7 +67,7 @@ describe('POST /user-watchlist/add', () => {
   it('rejects an empty symbol', async () => {
     const res = await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: '' });
 
     expect(res.status).toBe(400);
@@ -84,16 +84,16 @@ describe('DELETE /user-watchlist/delete', () => {
   it('removes a symbol from the watchlist', async () => {
     await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL' });
     await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'MSFT' });
 
     const res = await supertest(app)
       .delete('/user-watchlist/delete')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL' });
 
     expect(res.status).toBe(200);
@@ -106,7 +106,7 @@ describe('DELETE /user-watchlist/delete', () => {
   it('reports success even when the symbol is not on the watchlist', async () => {
     const res = await supertest(app)
       .delete('/user-watchlist/delete')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'NOPE' });
 
     expect(res.status).toBe(200);
@@ -123,10 +123,10 @@ describe('GET /user-watchlist', () => {
   it('returns the watchlist of the authenticated user', async () => {
     await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL' });
 
-    const res = await supertest(app).get('/user-watchlist').set(authHeader(token));
+    const res = await supertest(app).get('/user-watchlist').set(authCookie(token));
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
@@ -138,7 +138,7 @@ describe('GET /user-watchlist', () => {
   });
 
   it('returns an empty array when the user has no watchlist', async () => {
-    const res = await supertest(app).get('/user-watchlist').set(authHeader(token));
+    const res = await supertest(app).get('/user-watchlist').set(authCookie(token));
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
@@ -152,7 +152,7 @@ describe('GET /user-watchlist', () => {
     });
     await supertest(app)
       .post('/user-watchlist/add')
-      .set(authHeader(token))
+      .set(authCookie(token))
       .send({ symbol: 'AAPL' });
 
     const otherToken = jwt.sign(
@@ -160,7 +160,7 @@ describe('GET /user-watchlist', () => {
       process.env.JWT_SECRET!,
       { expiresIn: '1h' },
     );
-    const res = await supertest(app).get('/user-watchlist').set(authHeader(otherToken));
+    const res = await supertest(app).get('/user-watchlist').set(authCookie(otherToken));
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);

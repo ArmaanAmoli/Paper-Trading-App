@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import supertest from 'supertest';
-import { makeApp, authHeader, createTestUser } from './helpers/index.js';
+import { makeApp, authCookie, createTestUser } from './helpers/index.js';
 import { executeTrade } from '../queryManager.ts';
 import { User, Trade, Portfolio } from '../Schemas/mongoSchema.ts';
 
@@ -40,11 +40,9 @@ beforeEach(async () => {
 
 async function tokenFor(userId: string) {
   const jwt = (await import('jsonwebtoken')).default;
-  return jwt.sign(
-    { userId, email: 'trader@example.com' },
-    process.env.JWT_SECRET!,
-    { expiresIn: '1h' },
-  );
+  return jwt.sign({ userId, email: 'trader@example.com' }, process.env.JWT_SECRET!, {
+    expiresIn: '1h',
+  });
 }
 
 describe('executeTrade (direct)', () => {
@@ -224,7 +222,7 @@ describe('GET /portfolio', () => {
     );
 
     const auth = await tokenFor(user._id.toString());
-    const res = await supertest(app).get('/portfolio').set(authHeader(auth));
+    const res = await supertest(app).get('/portfolio').set(authCookie(auth));
 
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(1);
@@ -239,7 +237,7 @@ describe('GET /portfolio', () => {
 
   it('returns an empty portfolio for a user without positions', async () => {
     const auth = await tokenFor(user._id.toString());
-    const res = await supertest(app).get('/portfolio').set(authHeader(auth));
+    const res = await supertest(app).get('/portfolio').set(authCookie(auth));
 
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(0);
@@ -264,7 +262,7 @@ describe('GET /trade-history', () => {
       user._id.toString(),
     );
 
-    const res = await supertest(app).get('/trade-history').set(authHeader(auth));
+    const res = await supertest(app).get('/trade-history').set(authCookie(auth));
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(2);
@@ -283,7 +281,7 @@ describe('POST /buy and POST /sell', () => {
     const auth = await tokenFor(user._id.toString());
     const res = await supertest(app)
       .post('/buy')
-      .set(authHeader(auth))
+      .set(authCookie(auth))
       .send({ symbol: 'AAPL', qty: 10, side: 'buy' });
 
     expect(res.status).toBe(200);
@@ -303,7 +301,7 @@ describe('POST /buy and POST /sell', () => {
     const auth = await tokenFor(user._id.toString());
     const res = await supertest(app)
       .post('/sell')
-      .set(authHeader(auth))
+      .set(authCookie(auth))
       .send({ symbol: 'AAPL', qty: 4, side: 'sell' });
 
     expect(res.status).toBe(200);
@@ -321,7 +319,7 @@ describe('POST /buy and POST /sell', () => {
     const auth = await tokenFor(user._id.toString());
     const res = await supertest(app)
       .post('/buy')
-      .set(authHeader(auth))
+      .set(authCookie(auth))
       .send({ symbol: 'AAPL', qty: 0, side: 'buy' });
 
     expect(res.status).toBe(400);
@@ -332,7 +330,7 @@ describe('POST /buy and POST /sell', () => {
     const auth = await tokenFor(user._id.toString());
     const res = await supertest(app)
       .post('/buy')
-      .set(authHeader(auth))
+      .set(authCookie(auth))
       .send({ symbol: 'AAPL', qty: 1, side: 'hodl' });
 
     expect(res.status).toBe(400);
@@ -340,9 +338,7 @@ describe('POST /buy and POST /sell', () => {
   });
 
   it('requires authentication', async () => {
-    const res = await supertest(app)
-      .post('/buy')
-      .send({ symbol: 'AAPL', qty: 1, side: 'buy' });
+    const res = await supertest(app).post('/buy').send({ symbol: 'AAPL', qty: 1, side: 'buy' });
     expect(res.status).toBe(401);
   });
 });

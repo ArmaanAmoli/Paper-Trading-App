@@ -1,7 +1,16 @@
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { MongoClient } from 'mongodb';
 import mongoose from 'mongoose';
-import { User, Trade, Portfolio, Watchlist, StopLoss } from '../Schemas/mongoSchema.ts';
+import {
+  AuthCode,
+  OAuthTransaction,
+  RefreshToken,
+  User,
+  Trade,
+  Portfolio,
+  Watchlist,
+  StopLoss,
+} from '../Schemas/mongoSchema.ts';
 
 let replSet: MongoMemoryReplSet | undefined;
 
@@ -53,7 +62,16 @@ export default async function globalSetup() {
  * still enforcing the unique indexes the tests rely on.
  */
 async function preCreateCollectionsAndIndexes(uri: string) {
-  const models = [User, Trade, Portfolio, Watchlist, StopLoss];
+  const models = [
+    User,
+    Trade,
+    Portfolio,
+    Watchlist,
+    StopLoss,
+    AuthCode,
+    RefreshToken,
+    OAuthTransaction,
+  ];
 
   await mongoose.connect(uri);
   const db = mongoose.connection.db;
