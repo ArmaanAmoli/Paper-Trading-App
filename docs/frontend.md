@@ -16,7 +16,7 @@ Defined in `src/routes/AppRouter.tsx`.
 | User Profile | `/userprofile` | Yes | `src/pages/userProfile.tsx` |
 | Market | (embedded in LandingPage) | Yes | `src/pages/market.tsx` |
 
-Auth guard: `src/routes/protectedRoutes.tsx` checks for a valid, non-expired token in `localStorage`. Missing/expired token redirects to `/`.
+Auth guard: `src/routes/protectedRoutes.tsx` calls `GET /user-data` on mount (cookie credentials) and renders a loading state while checking; authenticated → `<Outlet/>`, otherwise `<Navigate to="/" />`. No token is read from `localStorage`.
 
 ## Folder Conventions
 
@@ -61,14 +61,15 @@ Auth guard: `src/routes/protectedRoutes.tsx` checks for a valid, non-expired tok
 | `MarketDataContext` | `src/Context/MarketPageContextProvider.tsx` | Market-wide quote map for all symbols, subscribed via WebSocket |
 | `IndicatorsListContext` | `src/Context/context.ts` | Indicator configuration list |
 
-Auth state is managed via `localStorage` key `token`. The `ProtectedRoutes` component and `api.ts` interceptor handle token presence and expiry.
+Auth state is cookie-based: the HttpOnly `access_token` / `refresh_token` cookies are sent automatically. `src/services/auth.ts` implements `loginWithPkce()` (two-step PKCE login) and `fetchWsTicket()`. The `ProtectedRoutes` component and the `api.ts` interceptor handle session validity and refresh.
 
 ## API Client Setup
 
-- `src/services/api.ts`: Axios instance with `baseURL` from `VITE_API_BASE_URL`.
-- Request interceptor: attaches `Authorization: Bearer <token>` from `localStorage`.
-- Response interceptor: on 401, removes token and redirects to `/` (unless on `/` or `/signup`).
-- `src/services/dataRequesterForCharts.ts`: Separate Axios calls for chart data (`/data`, `/quote`, `/data/indicator`) with manual auth headers.
+- **Same-origin in development:** `VITE_API_BASE_URL` is empty, so all calls use relative URLs and the **Vite dev proxy** (`vite.config.ts`) forwards them to `http://localhost:3001`. This keeps auth cookies first-party — cross-origin cookie setting/sending is blocked by modern browsers.
+- `src/services/api.ts`: Axios instance with `withCredentials: true` (cookies are sent automatically; no Authorization header).
+- Response interceptor: on 401 (except `/auth/refresh` and `/auth/logout`), calls `POST /auth/refresh` once (shared promise), retries the original request; if refresh fails, redirects to `/` (unless on `/` or `/signup`).
+- `src/services/auth.ts`: `loginWithPkce(email, password)` — creates a PKCE pair (`src/lib/pkce.ts`, WebCrypto), POSTs `/auth/login` then `/auth/token` with `credentials: 'include'`; `fetchWsTicket()` POSTs `/auth/ws-ticket`.
+- `src/services/dataRequesterForCharts.ts`: Axios calls for chart data (`/data`, `/quote`, `/data/indicator`) with `withCredentials: true`.
 - `src/services/placeOrder.ts`: Combined trade + stop-loss placement with sound feedback.
 - `src/services/watchlist.ts`: Watchlist CRUD operations.
 - `src/services/tradeHistory.ts`: Trade history fetch.
@@ -77,9 +78,9 @@ Vite proxy (`vite.config.ts`) forwards specific API paths to `http://localhost:3
 
 ## WebSocket
 
-- `src/lib/wsManager.ts`: `WebSocketManager` class with auto-reconnect, subscription management, and indicator subscription tracking.
+- `src/lib/wsManager.ts`: `WebSocketManager` class with auto-reconnect (exponential backoff up to 60s on consecutive failed connects, reset on success), subscription management, and indicator subscription tracking. `connect(name, url, { getToken })` fetches a fresh ticket before every (re)connect and sends it as a subprotocol.
 - Two persistent connections: `quote` (`ws://127.0.0.1:8001/ws/quote`) and `indicator` (`ws://127.0.0.1:8001/ws/indicator`).
-- Token is passed as a WebSocket subprotocol from `localStorage`.
+- Auth: `src/App.tsx` passes `getToken: fetchWsTicket` (from `POST /auth/ws-ticket`, cookie-authenticated) to `wsManager.connect(...)`; the ticket JWT is sent as the WebSocket subprotocol (the session cookie is HttpOnly and cannot be read by JS). While no ticket can be fetched (e.g. logged out), no connection is attempted and the retry is backed off to 30s — no 403 retry spam against the WS server.
 - `useTicker` hook (`src/hooks/useTicker.ts`) subscribes to quote updates for a specific ticker.
 
 ## Theme Tokens

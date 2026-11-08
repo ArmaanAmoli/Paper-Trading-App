@@ -9,10 +9,10 @@ One-sentence purpose: API conventions, standard response shapes, and a master ta
 
 ## Auth Mechanism
 
-- Protected endpoints require `Authorization: Bearer <token>` header.
-- Token is a JWT signed with `JWT_SECRET`, expires in 1 hour.
-- Token is obtained from `POST /login`, `POST /sign-up` (indirectly), or Google OAuth callback.
-- Frontend stores token in `localStorage` under key `token`.
+- Cookie-based sessions. After login the server sets HttpOnly cookies `access_token` (JWT signed with `JWT_SECRET`, 15-minute expiry, path `/`) and `refresh_token` (opaque UUID, 7-day expiry, path `/auth`).
+- Protected endpoints read the `access_token` cookie (via `verifyToken` in `server/lib/auth.ts`); no `Authorization` header is used.
+- Login is a two-step PKCE flow: `POST /auth/login` (credentials + `code_challenge`, returns a one-time code) then `POST /auth/token` (code + `code_verifier`, sets the cookies). `POST /auth/refresh` rotates the refresh token; `POST /auth/logout` revokes it and clears the cookies. See [authentication.md](../authentication.md) and [auth.md](./auth.md).
+- The frontend sends cookies automatically (`withCredentials` / `credentials: 'include'`); nothing is stored in `localStorage`.
 
 ## Standard Response Shapes
 
@@ -53,9 +53,13 @@ Not used. All list endpoints return full arrays (trade history, portfolio, watch
 | Method | Path | Auth Required | Description | Doc Link |
 |--------|------|---------------|-------------|----------|
 | POST | `/sign-up` | No | Register a new user | [auth.md](./auth.md) |
-| POST | `/login` | No | Email/password login, returns JWT | [auth.md](./auth.md) |
-| GET | `/api/auth/google` | No | Start Google OAuth flow | [authentication.md](../authentication.md) |
-| GET | `/api/auth/google/callback` | No | Google OAuth callback | [authentication.md](../authentication.md) |
+| POST | `/auth/login` | No | PKCE login step 1: credentials + `code_challenge` → one-time code | [auth.md](./auth.md) |
+| POST | `/auth/token` | No | PKCE login step 2: code + `code_verifier` → session cookies | [auth.md](./auth.md) |
+| POST | `/auth/refresh` | No (cookie) | Rotate refresh token, issue new session cookies | [auth.md](./auth.md) |
+| POST | `/auth/logout` | No (cookie) | Revoke refresh token, clear cookies | [auth.md](./auth.md) |
+| POST | `/auth/ws-ticket` | Yes | Short-lived JWT for the market-data WebSocket | [auth.md](./auth.md) |
+| GET | `/api/auth/google` | No | Start Google OAuth flow (server-side PKCE) | [authentication.md](../authentication.md) |
+| GET | `/api/auth/google/callback` | No | Google OAuth callback, sets session cookies | [authentication.md](../authentication.md) |
 | GET | `/user-data` | Yes | Get authenticated user's account data | [auth.md](./auth.md) |
 | POST | `/save-subscription` | Yes | Save push notification subscription | [auth.md](./auth.md) |
 | DELETE | `/user/me` | Yes | Delete account and all associated data | [auth.md](./auth.md) |

@@ -97,7 +97,7 @@ There is no seed script. A new user signing up gets a default starting balance o
 |---------|-----|
 | MongoDB connection fails | Ensure `mongod` is running or your MongoDB Atlas cluster is accessible; verify `MONGO_URL` in `.env`. |
 | Missing market data | Ensure the FastAPI server is running on port 8000/8001. Check `yfinance` rate limits. |
-| 401 errors on API calls | Ensure the JWT token is in `localStorage` under key `token` and not expired. |
+| 401 errors on API calls | Ensure the `access_token` cookie is present and not expired; the frontend should auto-refresh via `POST /auth/refresh` using the `refresh_token` cookie. Check that `VITE_API_BASE_URL` matches the API origin (CORS allowlist). |
 | CORS/proxy issues | Verify `vite.config.ts` proxy targets point to `http://localhost:3001`. |
 | Google OAuth not working | Ensure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, and `FRONTEND_URL` are set in `.env`. |
 | Build fails | Run `npm run typecheck` to see TypeScript errors. |

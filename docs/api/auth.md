@@ -19,9 +19,9 @@ Register a new user.
 - **Handler:** `SignUp` in `server/queryManager.ts`
 - **Side effects:** Creates a `User` document with `passwordHash` (bcrypt, salt 10), default balance 1,000,000, `authProvider: 'local'`.
 
-## POST /login
+## POST /auth/login (PKCE step 1)
 
-Email/password login. Returns a JWT.
+Email/password login, step 1 of the PKCE flow. Validates credentials and returns a one-time authorization code bound to the client's `code_challenge`.
 
 - **Auth required:** No
 - **Request body:**
@@ -29,11 +29,64 @@ Email/password login. Returns a JWT.
   |-------|------|----------|------------|
   | `email` | string | Yes | Must be a valid email |
   | `password` | string | Yes | Min 1 character |
-- **Response (200):** `{ message: 'Login Success', token: string }`
-- **Errors:** 400 if user uses Google-only login; 401 if password doesn't match; 500 on server error
-- **Schema:** `loginEndpoint` in `shared/contract/auth.ts`
-- **Handler:** Inline in `server/server.ts`
-- **JWT payload:** `{ userId: string, email: string }`, expires in 1 hour
+  | `code_challenge` | string | Yes | 43–128 chars, base64url |
+  | `code_challenge_method` | string | Yes | Literal `'S256'` (`plain` is rejected) |
+- **Response (200):** `{ message: 'Login Success', code: string }` — the plaintext code is returned exactly once; only its SHA-256 hash is stored (`AuthCode`, 90-second TTL)
+- **Errors:** 400 validation failed / Google-only account; 401 wrong password or unknown user
+- **Schema:** `loginPkceEndpoint` in `shared/contract/auth.ts`
+- **Handler:** Inline in `server/server.ts` via `login()` in `server/queryManager.ts` + `createAuthCode` in `server/lib/authStore.ts`
+
+## POST /auth/token (PKCE step 2)
+
+Exchanges the one-time code + `code_verifier` for the session cookies.
+
+- **Auth required:** No
+- **Request body:**
+  | Field | Type | Required | Validation |
+  |-------|------|----------|------------|
+  | `code` | string | Yes | Min 1 character |
+  | `code_verifier` | string | Yes | 43–128 chars, base64url |
+- **Response (200):** `{ message: 'Tokens issued' }` plus `Set-Cookie` headers: `access_token` (JWT, 15 min, HttpOnly, path `/`) and `refresh_token` (UUID, 7 days, HttpOnly, path `/auth`). No tokens in the body.
+- **Errors:** 400 invalid `code_verifier` format; 401 invalid/expired/reused code or verifier mismatch (`code_verifier does not match the authorization code`)
+- **Schema:** `tokenExchangeEndpoint` in `shared/contract/auth.ts`
+- **Handler:** Inline in `server/server.ts` via `consumeAuthCode` (`server/lib/authStore.ts`) + `issueSession` (`server/lib/session.ts`)
+- **JWT payload:** `{ userId: string, email: string }`, expires in 15 minutes
+
+## POST /auth/refresh
+
+Rotates the refresh token and issues a new access token. Requires the `refresh_token` cookie.
+
+- **Auth required:** No (cookie-based)
+- **Request body:** none
+- **Response (200):** `{ message: 'Token refreshed' }` + fresh `Set-Cookie` for both cookies
+- **Errors:** 401 if the cookie is missing/invalid, or if a revoked token is reused (reuse revokes the whole token family)
+- **Schema:** `refreshEndpoint` in `shared/contract/auth.ts`
+- **Handler:** `rotateSession` in `server/lib/session.ts` + `rotateRefreshToken` in `server/lib/authStore.ts`
+
+## POST /auth/logout
+
+Revokes the refresh-token family and clears both session cookies.
+
+- **Auth required:** No (cookie-based)
+- **Request body:** none
+- **Response (200):** `{ message: 'Logged out' }` + expired `Set-Cookie` headers
+- **Schema:** `logoutEndpoint` in `shared/contract/auth.ts`
+- **Handler:** `clearSession` in `server/lib/session.ts`
+
+## POST /auth/ws-ticket
+
+Issues a short-lived (5-minute) JWT with `scope: 'ws'` for authenticating the market-data WebSocket handshake as a subprotocol.
+
+- **Auth required:** Yes (via the `access_token` cookie)
+- **Request body:** none
+- **Response (200):** `{ ticket: string }`
+- **Errors:** 401 if unauthenticated; the ticket itself is rejected as an API access token
+- **Schema:** `wsTicketEndpoint` in `shared/contract/auth.ts`
+- **Handler:** `issueWsTicket` in `server/lib/session.ts`
+
+## GET /api/auth/google and GET /api/auth/google/callback
+
+Google OAuth with server-side PKCE (S256) and state. The verifier/state are stored server-side in an `OAuthTransaction` document; the browser only holds an opaque `google_oauth_tx` HttpOnly cookie (10 min). On success the session cookies are set and the user is redirected to the frontend origin with no token in the URL; on failure to `<origin>/?error=google_failed`. See [authentication.md](../authentication.md).
 
 ## GET /user-data
 
@@ -86,7 +139,7 @@ Delete the authenticated user's account and all associated data.
 - **Errors:** 404 if user not found; 401 if unauthenticated
 - **Schema:** `deleteAccountEndpoint` in `shared/contract/auth.ts`
 - **Handler:** `deleteUser` in `server/queryManager.ts`
-- **Side effects:** Deletes all `Trade`, `Portfolio`, `Watchlist`, and `StopLoss` documents for the user, then deletes the `User` document.
+- **Side effects:** Revokes all `RefreshToken` documents and outstanding `AuthCode` documents for the user, then deletes all `Trade`, `Portfolio`, `Watchlist`, and `StopLoss` documents and the `User` document (in a transaction).
 
 ---
 

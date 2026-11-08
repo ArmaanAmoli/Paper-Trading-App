@@ -11,20 +11,27 @@ One-sentence purpose: Security rules for secrets, cookies, input validation, COR
 
 ## Cookie Settings
 
-| Cookie | httpOnly | sameSite | secure | maxAge |
-|--------|----------|----------|--------|--------|
-| `google_oauth_state` | Yes | lax | production only | 10 minutes |
-| `google_oauth_origin` | Yes | lax | production only | 10 minutes |
+| Cookie | httpOnly | sameSite | secure | path | maxAge |
+|--------|----------|----------|--------|------|--------|
+| `access_token` | Yes | lax | production only | `/` | 15 minutes |
+| `refresh_token` | Yes | lax | production only | `/auth` | 7 days |
+| `google_oauth_tx` | Yes | lax | production only | `/` | 10 minutes |
 
-- OAuth state cookies are cleared immediately after the callback.
-- JWTs are **not** stored in cookies; they are in `localStorage` on the frontend (see known gap in [authentication.md](../authentication.md)).
+- Cookie options are centralized in `server/lib/cookies.ts`; clearing uses matching attributes.
+- `google_oauth_tx` only holds an opaque transaction id — the PKCE verifier and state live server-side in the `OAuthTransaction` collection. It is cleared immediately after the callback.
+- JWTs are stored **only** in HttpOnly cookies, never in `localStorage` or URLs.
 
 ## Token Handling
 
-- **Never store the token in `localStorage`** — but the current code does (`src/services/api.ts`, `src/pages/login.tsx`). This is a known gap to fix.
-- Never log tokens or authorization codes.
-- Tokens are sent as `Authorization: Bearer <token>` headers.
-- On 401, the frontend removes the token and redirects to login.
+- **Never store tokens in `localStorage`** — sessions are HttpOnly cookies (`access_token`, `refresh_token`); the frontend sends them automatically via `withCredentials` / `credentials: 'include'`.
+- Never log tokens or authorization codes. Authorization codes and refresh tokens are stored only as SHA-256 hashes (`server/lib/authStore.ts`).
+- Protected endpoints read the `access_token` cookie via `verifyToken` (`server/lib/auth.ts`); `Authorization: Bearer` headers are not used.
+- On 401, the frontend attempts one `POST /auth/refresh` (cookie-based) and retries; if that fails it redirects to login.
+- WS tickets (`scope: 'ws'` JWTs from `POST /auth/ws-ticket`) are rejected as API access tokens.
+
+## CSRF
+
+- `csrfMiddleware` (`server/lib/csrf.ts`) enforces an Origin/Referer allowlist on all state-changing requests (POST/PUT/PATCH/DELETE), built from `FRONTEND_URL`, `VITE_API_BASE_URL`, and `PRODUCTION_FRONTEND_URL` (production) — SameSite=Lax cookies alone do not protect cross-site POSTs.
 
 ## Input Validation
 
@@ -36,12 +43,11 @@ One-sentence purpose: Security rules for secrets, cookies, input validation, COR
 
 ## CORS Configuration
 
-- `cors()` middleware is applied globally in `server/server.ts` (no custom options — allows all origins by default).
-- This is a potential security concern for production.
+- `cors()` in `server/server.ts` uses an explicit origin allowlist (`buildAllowedOrigins()` in `server/lib/csrf.ts`) with `credentials: true` — no wildcard, so cookies are only sent from allowed origins.
 
 ## Rate Limiting
 
-- **No rate limiting is currently implemented.** This is a known gap.
+- `rateLimit` (`server/lib/rateLimit.ts`) is an in-memory fixed-window limiter applied to `/auth/*` (30 req/min per IP+path) and `/api/auth/google` (20 req/min). Note: per-process only; a multi-instance deployment needs a shared store.
 
 ## Auth-Related Changes
 
@@ -51,11 +57,8 @@ One-sentence purpose: Security rules for secrets, cookies, input validation, COR
 
 **Open Questions / Known Gaps**
 
-- CORS allows all origins by default.
-- No rate limiting on auth endpoints (brute-force protection).
-- JWT stored in `localStorage` (XSS risk).
-- No refresh token mechanism.
 - No email verification for new accounts.
+- The in-memory rate limiter is per-process (not shared across instances).
 
 ---
 
