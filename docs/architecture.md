@@ -86,12 +86,17 @@ sequenceDiagram
     participant DB as MongoDB
     participant PY as FastAPI Market Service
 
-    UI->>API: POST /sign-up or POST /login (email/password)
-    API->>DB: Create user or verify password
-    API-->>UI: JWT token (1h expiry)
-    UI->>UI: Store token in localStorage
+    UI->>API: POST /sign-up (email/password)
+    API->>DB: Create user (bcrypt hash)
 
-    UI->>API: GET /quote?ticker=AAPL (Authorization: Bearer <token>)
+    UI->>API: POST /auth/login { email, password, code_challenge } (PKCE step 1)
+    API->>DB: Verify password, store hashed one-time AuthCode
+    API-->>UI: { message: 'Login Success', code }
+    UI->>API: POST /auth/token { code, code_verifier } (PKCE step 2)
+    API->>DB: Consume AuthCode (S256 verifier check, single-use)
+    API-->>UI: Set-Cookie: access_token (JWT 15m) + refresh_token (7d), both HttpOnly
+
+    UI->>API: GET /quote?ticker=AAPL (access_token cookie sent automatically)
     API->>PY: GET /quote?ticker=AAPL
     PY-->>API: Quote data
     API-->>UI: JSON response
@@ -102,7 +107,9 @@ sequenceDiagram
     API->>DB: Update portfolio, insert trade, adjust balance/margin
     API-->>UI: Trade result
 
-    UI->>PY: WebSocket ws://localhost:8001/ws/quote (token in subprotocol)
+    UI->>API: POST /auth/ws-ticket (access_token cookie)
+    API-->>UI: { ticket } (5m ws-scoped JWT)
+    UI->>PY: WebSocket ws://localhost:8001/ws/quote (ticket in subprotocol)
     PY-->>UI: Real-time quote updates
 
     UI->>API: DELETE /user/me (account deletion)
