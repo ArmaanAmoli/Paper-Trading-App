@@ -1,8 +1,14 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import ProtectedRoutes from './protectedRoutes';
-import { createExpiredToken, createValidToken } from '../lib/testHelpers';
+import { fetchUserData } from '../services/api';
+
+vi.mock('../services/api', () => ({
+  fetchUserData: vi.fn(),
+}));
+
+const mockedFetchUserData = vi.mocked(fetchUserData);
 
 function renderProtectedRoutes() {
   const router = createMemoryRouter(
@@ -29,39 +35,37 @@ function renderProtectedRoutes() {
   return router;
 }
 
+beforeEach(() => {
+  mockedFetchUserData.mockReset();
+});
+
 describe('ProtectedRoutes', () => {
-  it('renders the protected outlet when a valid token is stored', async () => {
-    localStorage.setItem('token', createValidToken());
+  it('renders the protected outlet when the cookie session is valid', async () => {
+    mockedFetchUserData.mockResolvedValue({
+      _id: 'user-1',
+      username: 'trader',
+      email: 'trader@example.com',
+      balance: 1000,
+      blockedMargin: 0,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      lastLogin: null,
+      notificationSubscription: null,
+    });
 
     const router = renderProtectedRoutes();
 
     expect(await screen.findByText('Protected content')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/protected/secret');
+    expect(mockedFetchUserData).toHaveBeenCalledTimes(1);
   });
 
-  it('redirects to the root when no token is stored', async () => {
+  it('redirects to the root when there is no valid session', async () => {
+    mockedFetchUserData.mockRejectedValue(new Error('Unauthorized'));
+
     const router = renderProtectedRoutes();
 
     expect(await screen.findByText('Public landing page')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/');
     expect(screen.queryByText('Protected content')).not.toBeInTheDocument();
-  });
-
-  it('redirects to the root when the stored token is expired', async () => {
-    localStorage.setItem('token', createExpiredToken());
-
-    const router = renderProtectedRoutes();
-
-    expect(await screen.findByText('Public landing page')).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/');
-  });
-
-  it('redirects to the root when the stored token is malformed', async () => {
-    localStorage.setItem('token', 'not-a-jwt');
-
-    const router = renderProtectedRoutes();
-
-    expect(await screen.findByText('Public landing page')).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/');
   });
 });
