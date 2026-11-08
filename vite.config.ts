@@ -7,6 +7,11 @@ import { dirname, resolve } from 'node:path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// All API calls are made same-origin (relative URLs) and proxied to the
+// Express server. This keeps auth cookies first-party in the browser —
+// cross-origin cookie setting/sending is blocked by modern browsers.
+const API_TARGET = 'http://localhost:3001';
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -20,19 +25,21 @@ export default defineConfig({
       usePolling: true,
     },
     proxy: {
-      '/sign-up': 'http://localhost:3001',
-      '/login': 'http://localhost:3001',
-      '/portfolio': 'http://localhost:3001',
-      '/buy': 'http://localhost:3001',
-      '/sell': 'http://localhost:3001',
-      '/user-data': 'http://localhost:3001',
-      '/trade-history': 'http://localhost:3001',
-      '/search': 'http://localhost:3001',
-      '/user-watchlist': 'http://localhost:3001',
-      '/user-watchlist/add': 'http://localhost:3001',
-      '/user-watchlist/delete': 'http://localhost:3001',
-      '/data/indicator': 'http://localhost:3001',
-      '/save-subscription': 'http://localhost:3001',
+      '/sign-up': API_TARGET,
+      '/auth': API_TARGET,
+      '/api/auth': API_TARGET,
+      '/user-data': API_TARGET,
+      '/save-subscription': API_TARGET,
+      '/user/me': API_TARGET,
+      '/quote': API_TARGET,
+      '/data': API_TARGET,
+      '/search': API_TARGET,
+      '/portfolio': API_TARGET,
+      '/trade-history': API_TARGET,
+      '/user-watchlist': API_TARGET,
+      '/stopLoss': API_TARGET,
+      '/buy': API_TARGET,
+      '/sell': API_TARGET,
     },
   },
 });
