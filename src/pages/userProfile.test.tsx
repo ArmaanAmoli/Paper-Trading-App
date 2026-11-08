@@ -7,6 +7,8 @@ import type { UserAccountContextValue, UserEquityContextValue } from '../Context
 import { getTradeHistory } from '../services/tradeHistory';
 import type { TradeHistoryResponse } from '@shared/contract/trade';
 import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
+import api from '../services/api';
 import UserProfile from './userProfile';
 
 vi.mock('../services/tradeHistory', () => ({
@@ -22,8 +24,17 @@ vi.mock('react-toastify', () => ({
   },
 }));
 
+vi.mock('../services/api', () => ({
+  default: {
+    post: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
+
 const mockedGetTradeHistory = vi.mocked(getTradeHistory);
 const mockedToastSuccess = vi.mocked(toast.success);
+const mockedApiPost = vi.mocked(api.post);
+const mockedApiDelete = vi.mocked(api.delete);
 
 const accountValue: UserAccountContextValue = {
   userAccountInformation: {
@@ -96,6 +107,8 @@ function renderProfile() {
 beforeEach(() => {
   mockedGetTradeHistory.mockReset();
   mockedToastSuccess.mockReset();
+  mockedApiPost.mockReset();
+  mockedApiDelete.mockReset();
   mockedGetTradeHistory.mockResolvedValue(tradeHistoryFixture);
 });
 
@@ -165,14 +178,14 @@ describe('UserProfile', () => {
     });
   });
 
-  it('clears the token and navigates to the login page on logout', async () => {
+  it('logs out through the API and navigates to the login page', async () => {
+    mockedApiPost.mockResolvedValue({ data: { message: 'Logged out' } });
     const user = userEvent.setup();
-    localStorage.setItem('token', 'jwt-token');
     const router = renderProfile();
 
     await user.click(screen.getByRole('button', { name: 'Log out' }));
 
-    expect(localStorage.getItem('token')).toBeNull();
+    expect(mockedApiPost).toHaveBeenCalledWith('/auth/logout');
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/');
     });
@@ -194,8 +207,6 @@ describe('UserProfile', () => {
 
   it('does not send a delete request when the confirmation text does not match', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
-    vi.stubGlobal('fetch', fetchMock);
     renderProfile();
 
     await user.click(screen.getByRole('button', { name: 'Delete Account' }));
@@ -203,17 +214,12 @@ describe('UserProfile', () => {
     await user.type(within(dialog).getByLabelText('Type "DELETE" to confirm:'), 'delete');
 
     expect(within(dialog).getByRole('button', { name: 'Delete account' })).toBeDisabled();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockedApiDelete).not.toHaveBeenCalled();
   });
 
-  it('deletes the account, clears the token and redirects home', async () => {
+  it('deletes the account and redirects home', async () => {
+    mockedApiDelete.mockResolvedValue({ data: { message: 'Account deleted' } });
     const user = userEvent.setup();
-    localStorage.setItem('token', 'jwt-token');
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ message: 'Account deleted' }),
-    });
-    vi.stubGlobal('fetch', fetchMock);
     const router = renderProfile();
 
     await user.click(screen.getByRole('button', { name: 'Delete Account' }));
@@ -222,18 +228,9 @@ describe('UserProfile', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete account' }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/user/me', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer jwt-token',
-        },
-      });
+      expect(mockedApiDelete).toHaveBeenCalledWith('/user/me');
     });
 
-    await waitFor(() => {
-      expect(localStorage.getItem('token')).toBeNull();
-    });
     expect(mockedToastSuccess).toHaveBeenCalledWith('Account deleted');
 
     await waitFor(() => {
@@ -243,11 +240,16 @@ describe('UserProfile', () => {
 
   it('shows the server error when the account cannot be deleted', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({ message: 'Deletion not allowed' }),
-    });
-    vi.stubGlobal('fetch', fetchMock);
+    const config = { url: '/user/me' } as never;
+    mockedApiDelete.mockRejectedValue(
+      new AxiosError('Request failed', 'ERR_BAD_REQUEST', config, undefined, {
+        data: { message: 'Deletion not allowed' },
+        status: 400,
+        statusText: 'Bad Request',
+        headers: {},
+        config,
+      }),
+    );
     const router = renderProfile();
 
     await user.click(screen.getByRole('button', { name: 'Delete Account' }));
@@ -263,9 +265,7 @@ describe('UserProfile', () => {
 
   it('shows a generic error when the delete request throws', async () => {
     const user = userEvent.setup();
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const fetchMock = vi.fn().mockRejectedValue(new Error('network down'));
-    vi.stubGlobal('fetch', fetchMock);
+    mockedApiDelete.mockRejectedValue(new Error('network down'));
     renderProfile();
 
     await user.click(screen.getByRole('button', { name: 'Delete Account' }));
@@ -278,7 +278,5 @@ describe('UserProfile', () => {
         'Something went wrong. Please try again.',
       );
     });
-
-    consoleErrorSpy.mockRestore();
   });
 });
