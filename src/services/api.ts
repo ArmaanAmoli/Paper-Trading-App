@@ -23,31 +23,52 @@ import type {
 
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
+  withCredentials: true,
 });
 
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.set('authorization', `Bearer ${token}`);
-    }
-    return config;
-  },
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  },
-);
+type RetriableRequestConfig = InternalAxiosRequestConfig & { _retried?: boolean };
+
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshSession(): Promise<boolean> {
+  try {
+    await api.post('/auth/refresh');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function shouldRedirectToLogin(): boolean {
+  const { pathname } = window.location;
+  return pathname !== '/' && pathname !== '/signup';
+}
 
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: AxiosError) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      if (window.location.pathname !== '/' && window.location.pathname !== '/signup') {
+  async (error: AxiosError) => {
+    const config = error.config as RetriableRequestConfig | undefined;
+    const isAuthEndpoint = config?.url === '/auth/refresh' || config?.url === '/auth/logout';
+    const isUnauthorized = error.response?.status === 401;
+
+    if (!isUnauthorized || !config || config._retried || isAuthEndpoint) {
+      return Promise.reject(error);
+    }
+
+    config._retried = true;
+    refreshPromise ??= refreshSession().finally(() => {
+      refreshPromise = null;
+    });
+
+    const refreshed = await refreshPromise;
+    if (!refreshed) {
+      if (shouldRedirectToLogin()) {
         window.location.href = '/';
       }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    return api.request(config);
   },
 );
 
