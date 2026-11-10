@@ -24,10 +24,12 @@ import {
   clearSession,
   issueWsTicket,
   REFRESH_TOKEN_COOKIE,
+  AUTH_CODE_COOKIE,
+  AUTH_CODE_PATH,
 } from './lib/session.js';
 import { csrfMiddleware, buildAllowedOrigins } from './lib/csrf.js';
 import { rateLimit } from './lib/rateLimit.js';
-import { getCookie } from './lib/cookies.js';
+import { getCookie, authCodeCookieOptions, clearCookieOptions } from './lib/cookies.js';
 import {
   SignUp,
   login,
@@ -143,10 +145,11 @@ server.post(
 // --- PKCE-based email/password login ---
 
 // Step 1: POST /auth/login — validate credentials + code_challenge,
-// return a one-time, short-lived authorization code in the body.
+// set a one-time, short-lived authorization code as an HttpOnly cookie.
+// The code is never placed in the response body, so frontend JS cannot read it.
 server.post(
   '/auth/login',
-  route(loginPkceEndpoint, async ({ body }) => {
+  route(loginPkceEndpoint, async ({ body, res }) => {
     const user = await login({ email: body.email, password: body.password });
     if (!user) {
       throw new UnauthorizedError('Incorrect Password');
@@ -157,17 +160,28 @@ server.post(
       codeChallenge: body.code_challenge,
     });
 
-    return { message: 'Login Success' as const, code };
+    res.cookie(AUTH_CODE_COOKIE, code, authCodeCookieOptions(AUTH_CODE_PATH));
+
+    return { message: 'Login Success' as const };
   }),
 );
 
-// Step 2: POST /auth/token — exchange code + code_verifier for HttpOnly cookies.
+// Step 2: POST /auth/token — exchange the auth_code cookie + code_verifier
+// for HttpOnly session cookies.
 server.post('/auth/token', async (req, res, next) => {
   try {
     const body = tokenExchangeBodySchema.parse(req.body);
 
+    const code = getCookie(req, AUTH_CODE_COOKIE);
+    // The code is single-use: clear the cookie on every attempt so it cannot
+    // be replayed from the browser, whatever the outcome of this exchange.
+    res.clearCookie(AUTH_CODE_COOKIE, clearCookieOptions(AUTH_CODE_PATH));
+    if (!code) {
+      throw new UnauthorizedError('Invalid or expired authorization code');
+    }
+
     const { userId } = await consumeAuthCode({
-      code: body.code,
+      code,
       codeVerifier: body.code_verifier,
     });
 

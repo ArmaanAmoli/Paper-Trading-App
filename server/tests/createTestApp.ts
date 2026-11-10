@@ -17,10 +17,12 @@ import {
   clearSession,
   issueWsTicket,
   REFRESH_TOKEN_COOKIE,
+  AUTH_CODE_COOKIE,
+  AUTH_CODE_PATH,
 } from '../lib/session.ts';
 import { csrfMiddleware, buildAllowedOrigins } from '../lib/csrf.ts';
 import { rateLimit } from '../lib/rateLimit.ts';
-import { getCookie } from '../lib/cookies.ts';
+import { getCookie, authCodeCookieOptions, clearCookieOptions } from '../lib/cookies.ts';
 import {
   signUpEndpoint,
   userDataEndpoint,
@@ -113,7 +115,7 @@ function buildApp() {
 
   app.post(
     '/auth/login',
-    route(loginPkceEndpoint, async ({ body }) => {
+    route(loginPkceEndpoint, async ({ body, res }) => {
       const user = await login({ email: body.email, password: body.password });
       if (!user) {
         throw new UnauthorizedError('Incorrect Password');
@@ -124,7 +126,9 @@ function buildApp() {
         codeChallenge: body.code_challenge,
       });
 
-      return { message: 'Login Success' as const, code };
+      res.cookie(AUTH_CODE_COOKIE, code, authCodeCookieOptions(AUTH_CODE_PATH));
+
+      return { message: 'Login Success' as const };
     }),
   );
 
@@ -132,8 +136,14 @@ function buildApp() {
     try {
       const body = tokenExchangeBodySchema.parse(req.body);
 
+      const code = getCookie(req, AUTH_CODE_COOKIE);
+      res.clearCookie(AUTH_CODE_COOKIE, clearCookieOptions(AUTH_CODE_PATH));
+      if (!code) {
+        throw new UnauthorizedError('Invalid or expired authorization code');
+      }
+
       const { userId } = await consumeAuthCode({
-        code: body.code,
+        code,
         codeVerifier: body.code_verifier,
       });
 

@@ -64,6 +64,21 @@ export function pkceCookieOptions(path: string = '/'): AuthCookieOptions {
 }
 
 /**
+ * Cookie options for the one-time PKCE authorization code. Short-lived (90s,
+ * matching the AuthCode TTL) and scoped to /auth so it is only sent to the
+ * auth endpoints. HttpOnly: the code must never be readable by frontend JS.
+ */
+export function authCodeCookieOptions(path: string = '/auth'): AuthCookieOptions {
+  return {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: isProduction(),
+    path,
+    maxAge: 90 * 1000, // 90 seconds, matches AUTH_CODE_TTL_MS
+  };
+}
+
+/**
  * Options used when clearing a cookie. They must match the attributes of the
  * original cookie (path, secure, sameSite) or the browser will not remove it.
  */

@@ -20,6 +20,7 @@ export function route<
     query: z.output<TQuery>;
     body: z.output<TBody>;
     user: { userId: string; email: string };
+    res: Response;
   }) => Promise<z.output<TResponse>>,
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -48,6 +49,7 @@ export function route<
         query,
         body,
         user: user as { userId: string; email: string },
+        res,
       });
 
       // In development, validate response against schema

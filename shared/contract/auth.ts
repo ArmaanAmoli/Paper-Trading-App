@@ -93,8 +93,10 @@ export type DeleteAccountResponse = z.infer<typeof deleteAccountEndpoint.respons
 // --- PKCE-based email/password login ---
 
 // Step 1: POST /auth/login - credentials + code_challenge -> one-time code
+// The code is delivered ONLY as an HttpOnly cookie (auth_code, path=/auth,
+// 90s), never in the response body, so frontend JS cannot read it.
 export const loginPkceBodySchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(1),
   code_challenge: z.string().min(43).max(128),
   code_challenge_method: z.literal('S256'),
@@ -107,16 +109,15 @@ export const loginPkceEndpoint = defineEndpoint({
   body: loginPkceBodySchema,
   response: z.object({
     message: z.literal('Login Success'),
-    code: z.string(),
   }),
 });
 
 export type LoginPkceBody = z.infer<typeof loginPkceBodySchema>;
 export type LoginPkceResponse = z.infer<typeof loginPkceEndpoint.response>;
 
-// Step 2: POST /auth/token - code + code_verifier -> sets HttpOnly cookies
+// Step 2: POST /auth/token - code (from the HttpOnly auth_code cookie) +
+// code_verifier in the body -> sets HttpOnly session cookies
 export const tokenExchangeBodySchema = z.object({
-  code: z.string().min(1),
   code_verifier: z.string().min(43).max(128),
 });
 

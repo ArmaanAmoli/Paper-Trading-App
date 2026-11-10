@@ -18,6 +18,13 @@ export const REFRESH_TOKEN_COOKIE = 'refresh_token';
 export const REFRESH_TOKEN_PATH = '/auth';
 
 /**
+ * Cookie carrying the one-time PKCE authorization code from /auth/login to
+ * /auth/token. HttpOnly, so frontend JS never sees the code.
+ */
+export const AUTH_CODE_COOKIE = 'auth_code';
+export const AUTH_CODE_PATH = '/auth';
+
+/**
  * Access token lifetime: 15 minutes.
  */
 export const ACCESS_TOKEN_TTL = '15m';

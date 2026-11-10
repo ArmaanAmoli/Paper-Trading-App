@@ -38,6 +38,13 @@ async function createPkceLogin(payload: {
   return { verifier, challenge, loginRes };
 }
 
+/** Extract the HttpOnly auth_code cookie (as a Cookie header value) from a login response. */
+function authCodeCookie(loginRes: supertest.Response): string {
+  const cookie = setCookies(loginRes).find((c) => c.startsWith('auth_code='));
+  expect(cookie).toBeTruthy();
+  return cookie!.split(';')[0];
+}
+
 describe('POST /sign-up', () => {
   it('registers a new user with default balance and authProvider local', async () => {
     const res = await signup({
@@ -93,16 +100,21 @@ describe('POST /auth/login', () => {
     await signup({ email: 'dave@example.com', password: 'Password123!', username: 'dave' });
   });
 
-  it('returns a one-time authorization code for valid credentials', async () => {
+  it('sets a one-time authorization code as an HttpOnly cookie, never in the body', async () => {
     const { loginRes } = await createPkceLogin({
       email: 'dave@example.com',
       password: 'Password123!',
     });
 
     expect(loginRes.status).toBe(200);
-    expect(loginRes.body.message).toBe('Login Success');
-    expect(typeof loginRes.body.code).toBe('string');
-    expect(loginRes.body.code.length).toBeGreaterThan(0);
+    expect(loginRes.body).toEqual({ message: 'Login Success' });
+    expect(loginRes.body.code).toBeUndefined();
+
+    const cookies = setCookies(loginRes);
+    const authCode = cookies.find((c) => c.startsWith('auth_code='));
+    expect(authCode).toBeTruthy();
+    expect(authCode).toContain('HttpOnly');
+    expect(authCode).toContain('Path=/auth');
     expect(await AuthCode.countDocuments({ used: false })).toBe(1);
   });
 
@@ -171,16 +183,16 @@ describe('POST /auth/token', () => {
     await signup({ email: 'eve@example.com', password: 'Password123!', username: 'eve' });
   });
 
-  it('exchanges a valid code and verifier for HttpOnly session cookies', async () => {
+  it('exchanges the auth_code cookie and verifier for HttpOnly session cookies', async () => {
     const { verifier, loginRes } = await createPkceLogin({
       email: 'eve@example.com',
       password: 'Password123!',
     });
 
-    const res = await supertest(app).post('/auth/token').send({
-      code: loginRes.body.code,
-      code_verifier: verifier,
-    });
+    const res = await supertest(app)
+      .post('/auth/token')
+      .set('Cookie', authCodeCookie(loginRes))
+      .send({ code_verifier: verifier });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: 'Tokens issued' });
@@ -189,8 +201,22 @@ describe('POST /auth/token', () => {
     expect(cookies.some((cookie) => cookie.startsWith('access_token='))).toBe(true);
     expect(cookies.some((cookie) => cookie.startsWith('refresh_token='))).toBe(true);
     expect(cookies.some((cookie) => cookie.includes('HttpOnly'))).toBe(true);
+    // the one-time auth_code cookie is cleared on exchange
+    expect(cookies.some((cookie) => cookie.startsWith('auth_code=;'))).toBe(true);
     expect(res.body.token).toBeUndefined();
     expect(await AuthCode.countDocuments({})).toBe(0);
+  });
+
+  it('rejects when the auth_code cookie is missing', async () => {
+    const { verifier } = await createPkceLogin({
+      email: 'eve@example.com',
+      password: 'Password123!',
+    });
+
+    const res = await supertest(app).post('/auth/token').send({ code_verifier: verifier });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Invalid or expired authorization code');
   });
 
   it('rejects an invalid verifier', async () => {
@@ -199,10 +225,10 @@ describe('POST /auth/token', () => {
       password: 'Password123!',
     });
 
-    const res = await supertest(app).post('/auth/token').send({
-      code: loginRes.body.code,
-      code_verifier: generateCodeVerifier(),
-    });
+    const res = await supertest(app)
+      .post('/auth/token')
+      .set('Cookie', authCodeCookie(loginRes))
+      .send({ code_verifier: generateCodeVerifier() });
 
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('code_verifier does not match the authorization code');
@@ -214,16 +240,17 @@ describe('POST /auth/token', () => {
       password: 'Password123!',
     });
 
-    const first = await supertest(app).post('/auth/token').send({
-      code: loginRes.body.code,
-      code_verifier: verifier,
-    });
+    const cookie = authCodeCookie(loginRes);
+    const first = await supertest(app)
+      .post('/auth/token')
+      .set('Cookie', cookie)
+      .send({ code_verifier: verifier });
     expect(first.status).toBe(200);
 
-    const second = await supertest(app).post('/auth/token').send({
-      code: loginRes.body.code,
-      code_verifier: verifier,
-    });
+    const second = await supertest(app)
+      .post('/auth/token')
+      .set('Cookie', cookie)
+      .send({ code_verifier: verifier });
     expect(second.status).toBe(401);
   });
 });
@@ -239,10 +266,10 @@ describe('session cookies and protected routes', () => {
       password: 'Password123!',
     });
 
-    const tokenRes = await supertest(app).post('/auth/token').send({
-      code: loginRes.body.code,
-      code_verifier: verifier,
-    });
+    const tokenRes = await supertest(app)
+      .post('/auth/token')
+      .set('Cookie', authCodeCookie(loginRes))
+      .send({ code_verifier: verifier });
     expect(tokenRes.status).toBe(200);
 
     const cookies = setCookies(tokenRes);
@@ -359,10 +386,10 @@ describe('POST /auth/ws-ticket', () => {
       password: 'Password123!',
     });
 
-    const tokenRes = await supertest(app).post('/auth/token').send({
-      code: loginRes.body.code,
-      code_verifier: verifier,
-    });
+    const tokenRes = await supertest(app)
+      .post('/auth/token')
+      .set('Cookie', authCodeCookie(loginRes))
+      .send({ code_verifier: verifier });
     expect(tokenRes.status).toBe(200);
 
     const cookies = setCookies(tokenRes);
