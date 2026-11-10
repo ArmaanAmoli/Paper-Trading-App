@@ -1,10 +1,6 @@
 import { createPkcePair } from '../lib/pkce';
 import api from './api';
-import type {
-  LoginPkceResponse,
-  TokenExchangeResponse,
-  WsTicketResponse,
-} from '@shared/contract/auth';
+import type { TokenExchangeResponse, WsTicketResponse } from '@shared/contract/auth';
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '';
 
@@ -29,8 +25,10 @@ async function toAuthError(response: Response, fallbackMessage: string): Promise
 
 /**
  * Log in with the two-step PKCE flow:
- * 1. exchange credentials + code_challenge for a one-time code
- * 2. exchange the code + code_verifier for HttpOnly session cookies
+ * 1. exchange credentials + code_challenge; the server sets the one-time
+ *    authorization code as an HttpOnly cookie (never readable by JS)
+ * 2. exchange code_verifier for HttpOnly session cookies — the browser
+ *    attaches the auth_code cookie automatically (credentials: 'include')
  */
 export async function loginWithPkce(
   email: string,
@@ -54,14 +52,13 @@ export async function loginWithPkce(
     throw await toAuthError(loginResponse, 'Invalid credentials');
   }
 
-  const loginData = (await loginResponse.json()) as LoginPkceResponse;
-
+  // The one-time code arrives as an HttpOnly cookie, not in the body —
+  // nothing to read here.
   const tokenResponse = await fetch(`${API_BASE_URL}/auth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({
-      code: loginData.code,
       code_verifier: verifier,
     }),
   });

@@ -35,7 +35,7 @@ describe('loginWithPkce', () => {
       if (url.endsWith('/auth/login')) {
         return Promise.resolve({
           ok: true,
-          json: async () => ({ message: 'Login Success', code: 'one-time-code' }),
+          json: async () => ({ message: 'Login Success' }),
         });
       }
       return Promise.resolve({
@@ -70,7 +70,6 @@ describe('loginWithPkce', () => {
         method: 'POST',
         credentials: 'include',
         body: JSON.stringify({
-          code: 'one-time-code',
           code_verifier: 'test-verifier',
         }),
       }),
@@ -104,7 +103,7 @@ describe('loginWithPkce', () => {
         if (url.endsWith('/auth/login')) {
           return Promise.resolve({
             ok: true,
-            json: async () => ({ message: 'Login Success', code: 'one-time-code' }),
+            json: async () => ({ message: 'Login Success' }),
           });
         }
         return Promise.resolve({
@@ -127,7 +126,7 @@ describe('loginWithPkce', () => {
         if (url.endsWith('/auth/login')) {
           return Promise.resolve({
             ok: true,
-            json: async () => ({ message: 'Login Success', code: 'one-time-code' }),
+            json: async () => ({ message: 'Login Success' }),
           });
         }
         if (url.endsWith('/auth/token')) {
