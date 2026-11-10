@@ -21,6 +21,7 @@ import {
   AUTH_CODE_PATH,
 } from '../lib/session.ts';
 import { csrfMiddleware, buildAllowedOrigins } from '../lib/csrf.ts';
+import { cspMiddleware } from '../lib/csp.ts';
 import { rateLimit } from '../lib/rateLimit.ts';
 import { getCookie, authCodeCookieOptions, clearCookieOptions } from '../lib/cookies.ts';
 import {
@@ -85,6 +86,7 @@ function buildApp() {
 
   app.use(express.json());
   app.use(cookieParser());
+  app.use(cspMiddleware);
 
   const allowedOrigins = buildAllowedOrigins();
   app.use(
