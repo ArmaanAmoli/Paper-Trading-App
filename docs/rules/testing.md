@@ -24,10 +24,10 @@ No test runner is configured. If adding one, consider Vitest (matches Vite) or J
 Before every commit, manually verify these critical flows:
 
 1. **Signup:** Create a new account with email/password; verify user is created and redirected to login.
-2. **Login:** Log in with valid credentials; verify JWT is stored and user is redirected to landing page.
-3. **Google login:** Click "Continue with Google"; verify redirect to Google consent and back with token.
-4. **Persistent session after browser restart:** Close and reopen the browser; verify token persists in `localStorage` and user remains logged in.
-5. **Logout:** Click logout; verify token is removed and user is redirected to login.
+2. **Login (PKCE):** Log in with valid credentials; verify the two-step flow (`/auth/login` → `/auth/token`) sets HttpOnly `access_token`/`refresh_token` cookies and the user is redirected to the landing page.
+3. **Google login:** Click "Continue with Google"; verify redirect to Google consent and back with session cookies set (no token in the URL).
+4. **Persistent session after browser restart:** Close and reopen the browser; verify the `refresh_token` cookie persists and the user remains logged in after an automatic `/auth/refresh`.
+5. **Logout:** Click logout; verify `POST /auth/logout` is called, cookies are cleared, and the user is redirected to login.
 6. **Delete account:** Type "DELETE", confirm; verify account and all data are removed, user is redirected to login.
 7. **Placing a trade:** Buy/sell a stock; verify portfolio updates, balance changes, and trade appears in history.
 8. **Stop-loss:** Place a stop-loss; verify it appears in the portfolio page and can be cancelled.

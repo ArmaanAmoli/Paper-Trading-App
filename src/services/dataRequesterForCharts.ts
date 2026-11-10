@@ -1,13 +1,13 @@
 import axios from 'axios';
 import type { DataResponse as OhlcvArrayResponse, QuoteResponse } from '@shared/contract/market';
 
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '';
 
-function getAuthHeaders() {
-  const token = localStorage.getItem('token');
-  return token ? { authorization: `Bearer ${token}` } : {};
-}
-
+/**
+ * Auth is cookie-based: every request is sent with credentials so the
+ * HttpOnly access_token cookie is attached automatically by the browser.
+ * No token is read from localStorage or sent as an Authorization header.
+ */
 export async function fetchData(
   ticker: string,
   interval: string,
@@ -15,10 +15,9 @@ export async function fetchData(
 ): Promise<OhlcvArrayResponse> {
   const url = `${API_BASE_URL}/data`;
   try {
-    const headers = getAuthHeaders();
     const response = await axios.get<OhlcvArrayResponse>(url, {
       params: { ticker, period, interval },
-      headers,
+      withCredentials: true,
     });
     const data = response.data;
     console.log('Data: ', data);
@@ -32,10 +31,9 @@ export async function fetchData(
 export async function fetchQuote(ticker: string): Promise<QuoteResponse> {
   const url = `${API_BASE_URL}/quote`;
   try {
-    const headers = getAuthHeaders();
     const response = await axios.get<QuoteResponse>(url, {
       params: { ticker },
-      headers,
+      withCredentials: true,
     });
     const data = response.data;
     console.log(data);
@@ -51,10 +49,9 @@ export async function fetchIndicatorData(
 ): Promise<Record<string, unknown>> {
   const url = `${API_BASE_URL}/data/indicator`;
   try {
-    const headers = getAuthHeaders();
     const response = await axios.get<Record<string, unknown>>(url, {
       params: properties,
-      headers,
+      withCredentials: true,
     });
     const data = response.data;
     console.log('Fetching Indicator data: ', data);

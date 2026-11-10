@@ -4,7 +4,7 @@ import { route } from '../lib/route.ts';
 import { defineEndpoint } from '../../shared/contract/define.ts';
 
 describe('route()', () => {
-  it('calls the handler with parsed params, query, body, and user', async () => {
+  it('calls the handler with parsed params, query, body, user, and res', async () => {
     const endpoint = defineEndpoint({
       method: 'POST',
       path: '/test',
@@ -34,6 +34,7 @@ describe('route()', () => {
       query: { q: 'search' },
       body: { name: 'test' },
       user: undefined,
+      res,
     });
     expect(res.json).toHaveBeenCalledWith({ ok: true });
     expect(next).not.toHaveBeenCalled();

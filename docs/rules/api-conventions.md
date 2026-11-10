@@ -43,7 +43,7 @@ There is no single global envelope. Each endpoint returns its own JSON shape mat
 
 ## Auth Requirement Default
 
-**Protected unless explicitly public.** Only `/sign-up`, `/login`, and Google OAuth routes are public (`auth: false` in the endpoint definition). All other endpoints require authentication.
+**Protected unless explicitly public.** Only `/sign-up`, the `/auth/login`, `/auth/token`, `/auth/refresh`, `/auth/logout` endpoints, and the Google OAuth routes are public (`auth: false` in the endpoint definition). All other endpoints require the `access_token` cookie.
 
 ## Documentation Rule
 

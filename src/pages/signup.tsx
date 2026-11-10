@@ -1,9 +1,9 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
-import isTokenExpired from '../routes/checkTokenExpiry';
 import PasswordInput from '../Components/PasswordInput';
+import { fetchUserData } from '../services/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '';
 
 interface SignupResponse {
   message: string;
@@ -11,7 +11,6 @@ interface SignupResponse {
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const usernameRef = useRef<HTMLInputElement>(null);
   const [userInfo, setUserInfo] = useState({
     username: '',
@@ -19,39 +18,43 @@ export default function Signup() {
     password: '',
     confirmPassword: '',
   });
-  const [err, setErr] = useState<string>(() => {
-    const error = searchParams.get('error');
-    return error === 'google_failed' ? 'Google sign-in failed. Please try again.' : '';
-  });
+  const [err, setErr] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
-    // Check for token in URL (from Google OAuth callback)
-    const token = searchParams.get('token');
-    if (token) {
-      localStorage.setItem('token', token);
-      // Remove token from URL
-      setSearchParams({}, { replace: true });
-      void navigate('/', { replace: true });
-      return;
+    // Sessions are cookie-based, so ask the server whether the user is
+    // already signed in instead of reading a token from localStorage.
+    let active = true;
+
+    async function redirectIfAuthenticated() {
+      // Uses the api client, so an expired access token is refreshed
+      // automatically via POST /auth/refresh (refresh_token cookie) before
+      // the check — this is what restores the session after a reopen.
+      // A transient failure (e.g. a rate-limited refresh) must not leave the
+      // user stuck on the signup page, so retry briefly before giving up.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          await fetchUserData();
+          if (active) {
+            void navigate('/landing-page', { replace: true });
+          }
+          return;
+        } catch {
+          if (!active || attempt === 2) return;
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      }
     }
 
-    // Check for error from Google OAuth
-    const error = searchParams.get('error');
-    if (error === 'google_failed') {
-      setSearchParams({}, { replace: true });
-    }
-
-    // Check for existing valid token in localStorage
-    const storedToken = localStorage.getItem('token');
-    if (storedToken && !isTokenExpired(storedToken)) {
-      void navigate('/');
-    }
-    // Focus username input on mount
+    void redirectIfAuthenticated();
     usernameRef.current?.focus();
-  }, [navigate, searchParams, setSearchParams]);
+
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -87,8 +90,9 @@ export default function Signup() {
   };
 
   const RegisterUser = async () => {
-    if (!userInfo.username || !userInfo.email || !userInfo.password || !userInfo.confirmPassword) return;
-    
+    if (!userInfo.username || !userInfo.email || !userInfo.password || !userInfo.confirmPassword)
+      return;
+
     setIsLoading(true);
     setErr('');
     setConfirmPasswordError('');
@@ -96,6 +100,7 @@ export default function Signup() {
       const res = await fetch(`${API_BASE_URL}/sign-up`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           email: userInfo.email,
           username: userInfo.username,
@@ -103,15 +108,13 @@ export default function Signup() {
         }),
       });
       const data = (await res.json()) as SignupResponse;
-      console.log(data);
 
       if (data.message === 'User Registered') {
         void navigate('/');
       } else {
         setErr(data.message || 'Registration failed');
       }
-    } catch (Error) {
-      console.error(Error);
+    } catch {
       setErr('Something went wrong please try again.');
     } finally {
       setIsLoading(false);
@@ -155,11 +158,17 @@ export default function Signup() {
 
         <div className="auth-divider">or</div>
 
-        {err && <p className="auth-error" role="alert">{err}</p>}
+        {err && (
+          <p className="auth-error" role="alert">
+            {err}
+          </p>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="auth-input-wrapper">
-            <label htmlFor="username" className="auth-label">Username</label>
+            <label htmlFor="username" className="auth-label">
+              Username
+            </label>
             <input
               ref={usernameRef}
               id="username"
@@ -176,7 +185,9 @@ export default function Signup() {
           </div>
 
           <div className="auth-input-wrapper">
-            <label htmlFor="email" className="auth-label">Email</label>
+            <label htmlFor="email" className="auth-label">
+              Email
+            </label>
             <input
               id="email"
               type="email"
@@ -221,15 +232,21 @@ export default function Signup() {
           <button
             type="submit"
             className="auth-submit"
-            disabled={isLoading || !userInfo.username || !userInfo.email || !userInfo.password || !userInfo.confirmPassword || userInfo.password !== userInfo.confirmPassword}
+            disabled={
+              isLoading ||
+              !userInfo.username ||
+              !userInfo.email ||
+              !userInfo.password ||
+              !userInfo.confirmPassword ||
+              userInfo.password !== userInfo.confirmPassword
+            }
           >
             {isLoading ? 'Creating account…' : 'Sign up'}
           </button>
         </form>
 
         <footer className="auth-footer">
-          Already have an account?{' '}
-          <Link to="/">Log in</Link>
+          Already have an account? <Link to="/">Log in</Link>
         </footer>
       </div>
     </div>

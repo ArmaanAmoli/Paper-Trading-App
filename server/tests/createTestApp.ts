@@ -6,11 +6,31 @@ import { route } from '../lib/route.ts';
 import { getEnv } from '../lib/env.ts';
 import { UnauthorizedError } from '../lib/errors.ts';
 import {
+  createAuthCode,
+  consumeAuthCode,
+  revokeAllRefreshTokens,
+  revokeAllAuthCodes,
+} from '../lib/authStore.ts';
+import {
+  issueSession,
+  rotateSession,
+  clearSession,
+  issueWsTicket,
+  REFRESH_TOKEN_COOKIE,
+  AUTH_CODE_COOKIE,
+  AUTH_CODE_PATH,
+} from '../lib/session.ts';
+import { csrfMiddleware, buildAllowedOrigins } from '../lib/csrf.ts';
+import { rateLimit } from '../lib/rateLimit.ts';
+import { getCookie, authCodeCookieOptions, clearCookieOptions } from '../lib/cookies.ts';
+import {
   signUpEndpoint,
-  loginEndpoint,
   userDataEndpoint,
   saveSubscriptionEndpoint,
   deleteAccountEndpoint,
+  loginPkceEndpoint,
+  tokenExchangeBodySchema,
+  wsTicketEndpoint,
 } from '../../shared/contract/auth.ts';
 import {
   buyEndpoint,
@@ -49,7 +69,7 @@ import {
 } from '../queryManager.ts';
 import { pythonClient } from '../lib/pythonClient.ts';
 import { googleAuthStart, googleAuthCallback } from '../lib/googleAuth.ts';
-import { StopLoss } from '../Schemas/mongoSchema.ts';
+import { StopLoss, User } from '../Schemas/mongoSchema.ts';
 
 import type { NextFunction, Request, Response } from 'express';
 
@@ -65,7 +85,23 @@ function buildApp() {
 
   app.use(express.json());
   app.use(cookieParser());
-  app.use(cors());
+
+  const allowedOrigins = buildAllowedOrigins();
+  app.use(
+    cors({
+      origin: allowedOrigins,
+      credentials: true,
+    }),
+  );
+  app.use(csrfMiddleware(allowedOrigins));
+  app.use(
+    '/auth',
+    rateLimit({
+      windowMs: 60 * 1000,
+      max: 30,
+      message: 'Too many auth requests, please try again later',
+    }),
+  );
 
   app.post(
     '/sign-up',
@@ -75,19 +111,88 @@ function buildApp() {
     }),
   );
 
+  // --- PKCE-based email/password login ---
+
   app.post(
-    '/login',
-    route(loginEndpoint, async ({ body }) => {
-      const user = await login(body);
+    '/auth/login',
+    route(loginPkceEndpoint, async ({ body, res }) => {
+      const user = await login({ email: body.email, password: body.password });
       if (!user) {
-        throw new Error('Incorrect Password');
+        throw new UnauthorizedError('Incorrect Password');
       }
-      const token = jwt.sign(
-        { userId: user._id.toString(), email: user.email },
-        env.JWT_SECRET,
-        { expiresIn: '1h' },
-      );
-      return { message: 'Login Success' as const, token };
+
+      const code = await createAuthCode({
+        userId: user._id.toString(),
+        codeChallenge: body.code_challenge,
+      });
+
+      res.cookie(AUTH_CODE_COOKIE, code, authCodeCookieOptions(AUTH_CODE_PATH));
+
+      return { message: 'Login Success' as const };
+    }),
+  );
+
+  app.post('/auth/token', async (req, res, next) => {
+    try {
+      const body = tokenExchangeBodySchema.parse(req.body);
+
+      const code = getCookie(req, AUTH_CODE_COOKIE);
+      res.clearCookie(AUTH_CODE_COOKIE, clearCookieOptions(AUTH_CODE_PATH));
+      if (!code) {
+        throw new UnauthorizedError('Invalid or expired authorization code');
+      }
+
+      const { userId } = await consumeAuthCode({
+        code,
+        codeVerifier: body.code_verifier,
+      });
+
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new UnauthorizedError('User not found');
+      }
+
+      await issueSession(res, {
+        id: user._id.toString(),
+        email: user.email,
+      });
+
+      res.json({ message: 'Tokens issued' as const });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post('/auth/refresh', async (req, res, next) => {
+    try {
+      const refreshToken = getCookie(req, REFRESH_TOKEN_COOKIE);
+      if (!refreshToken) {
+        throw new UnauthorizedError('No refresh token provided');
+      }
+
+      await rotateSession(res, refreshToken);
+
+      res.json({ message: 'Token refreshed' as const });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post('/auth/logout', async (req, res, next) => {
+    try {
+      const refreshToken = getCookie(req, REFRESH_TOKEN_COOKIE);
+      await clearSession(res, refreshToken);
+
+      res.json({ message: 'Logged out' as const });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post(
+    '/auth/ws-ticket',
+    route(wsTicketEndpoint, ({ user }) => {
+      return Promise.resolve({ ticket: issueWsTicket({ userId: user.userId, email: user.email }) });
     }),
   );
 
@@ -134,6 +239,8 @@ function buildApp() {
   app.delete(
     '/user/me',
     route(deleteAccountEndpoint, async ({ user }) => {
+      await revokeAllRefreshTokens(user.userId);
+      await revokeAllAuthCodes(user.userId);
       await deleteUser(user.userId);
       return { message: 'Account deleted successfully' as const };
     }),
