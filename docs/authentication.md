@@ -21,21 +21,21 @@ sequenceDiagram
     participant API as Express API
     participant DB as MongoDB
 
-    UI->>UI: createPkcePair() -> verifier + S256 challenge
+    UI->>UI: createPkcePair() returns verifier and S256 challenge
     UI->>API: POST /auth/login { email, password, code_challenge, code_challenge_method: 'S256' }
     API->>DB: verify bcrypt password
-    API->>DB: store AuthCode { codeHash, userId, codeChallenge, expiresAt: +90s }
-    API-->>UI: { message: 'Login Success', code }  (one-time code, plaintext only here)
-    UI->>API: POST /auth/token { code, code_verifier }
-    API->>DB: consume AuthCode: hash lookup, derive S256(verifier) == codeChallenge, single-use delete
-    API->>API: sign access JWT (15m) + create RefreshToken (familyId, 7d)
-    API-->>UI: Set-Cookie: access_token=...; refresh_token=... (HttpOnly) + { message: 'Tokens issued' }
+    API->>DB: store AuthCode { codeHash, userId, codeChallenge, expiresAt 90s }
+    API-->>UI: Set-Cookie auth_code (HttpOnly, 90s), body { message: 'Login Success' }
+    UI->>API: POST /auth/token { code_verifier } (browser attaches the auth_code cookie)
+    API->>DB: consume AuthCode, hash lookup, S256(verifier) equals codeChallenge, single-use delete
+    API->>API: sign access JWT (15m) and create RefreshToken (familyId, 7d)
+    API-->>UI: Set-Cookie access_token and refresh_token (HttpOnly), body { message: 'Tokens issued' }
 ```
 
 ### Endpoints
 
-- `POST /auth/login` (public) — body `{ email, password, code_challenge (43–128 chars), code_challenge_method: 'S256' }`. Validates credentials (bcrypt, salt 10). Google-only accounts (no `passwordHash`) get a 400 directing them to Google sign-in. On success creates a one-time `AuthCode` (hashed, 90-second TTL) bound to the user and the `code_challenge`. Response: `{ message: 'Login Success', code }`.
-- `POST /auth/token` (public) — body `{ code, code_verifier (43–128 chars) }`. Consumes the code: SHA-256 hash lookup, `base64url(SHA-256(verifier))` must equal the stored challenge, expiry check, then the code is deleted (single-use). Wrong verifier → 401 `code_verifier does not match the authorization code`. On success issues the session cookies. Response body contains **no tokens**: `{ message: 'Tokens issued' }`.
+- `POST /auth/login` (public) — body `{ email, password, code_challenge (43–128 chars), code_challenge_method: 'S256' }`. Validates credentials (bcrypt, salt 10). Google-only accounts (no `passwordHash`) get a 400 directing them to Google sign-in. On success creates a one-time `AuthCode` (hashed, 90-second TTL) bound to the user and the `code_challenge`, and sets it as an **HttpOnly `auth_code` cookie** (`path=/auth`, 90s) — the code is never in the response body, so frontend JS cannot read it. Response: `{ message: 'Login Success' }`.
+- `POST /auth/token` (public) — body `{ code_verifier (43–128 chars) }`; the code comes from the `auth_code` cookie, which the browser attaches automatically. The server clears the `auth_code` cookie on every attempt (single-use) and consumes the code: SHA-256 hash lookup, `base64url(SHA-256(verifier))` must equal the stored challenge, expiry check, then the code is deleted. Wrong verifier → 401 `code_verifier does not match the authorization code`. On success issues the session cookies. Response body contains **no tokens**: `{ message: 'Tokens issued' }`.
 - `POST /auth/refresh` (public, but requires the `refresh_token` cookie) — rotates the refresh token: the presented token is revoked and a new one is issued in the same `familyId`. **Reuse detection:** presenting a revoked token revokes the entire family and returns 401 — except within a 30-second grace window of its revocation, which tolerates concurrent refreshes from multiple open tabs (logout sets `familyRevoked`, so logged-out families can never be revived). Sets fresh `access_token` + `refresh_token` cookies. Response: `{ message: 'Token refreshed' }`.
 - `POST /auth/logout` (public) — revokes the presented refresh token's family and clears both cookies. Response: `{ message: 'Logged out' }`.
 - `POST /auth/ws-ticket` (protected by the `access_token` cookie) — returns `{ ticket }`, a 5-minute JWT with a `scope: 'ws'` claim. Used only to authenticate the market-data WebSocket handshake (see below). The ticket is rejected as an API access token.
@@ -52,15 +52,15 @@ sequenceDiagram
     participant DB as MongoDB
 
     UI->>API: GET /api/auth/google (full page redirect)
-    API->>API: generate code_verifier + S256 challenge + state nonce
-    API->>DB: store OAuthTransaction { transactionId, codeVerifier, state, origin, expiresAt: +10min }
-    API-->>UI: Set-Cookie: google_oauth_tx=<transactionId> (HttpOnly, 10 min); redirect to Google (with code_challenge + state)
-    G-->>UI: user consents, redirects to /api/auth/google/callback?code=...&state=...
-    API->>DB: consume OAuthTransaction by cookie id; verify state; single-use delete
+    API->>API: generate code_verifier, S256 challenge, and state nonce
+    API->>DB: store OAuthTransaction { transactionId, codeVerifier, state, origin, expiresAt 10min }
+    API-->>UI: Set-Cookie google_oauth_tx (HttpOnly, 10 min), redirect to Google with code_challenge and state
+    G-->>UI: user consents, redirects to the callback with code and state
+    API->>DB: consume OAuthTransaction by cookie id, verify state, single-use delete
     API->>G: exchange code with code_verifier
     API->>G: verify ID token (signature, iss, aud, exp, email_verified)
     API->>DB: findOrCreateGoogleUser (create or link account)
-    API-->>UI: Set-Cookie: access_token + refresh_token; redirect to frontend origin (no token in URL)
+    API-->>UI: Set-Cookie access_token and refresh_token, redirect to frontend origin (no token in URL)
 ```
 
 - `GET /api/auth/google` — starts the flow. The PKCE verifier, state and callback URL live **server-side** in an `OAuthTransaction` document; the browser only gets an opaque `google_oauth_tx` cookie. Redirects to Google's consent screen with `code_challenge` (S256), `state`, and a `redirect_uri` derived from the request's own origin (the host of `GOOGLE_CALLBACK_URL` swapped for the allowlisted Referer origin, keeping its path). The login button navigates to `/api/auth/google` **same-origin** (Vite proxy), so the callback lands on the exact host the user is browsing — cookies are host-specific, so `localhost` and `127.0.0.1` each need their own registered callback URI and their own session; a callback on `localhost:3001` would never be sent to a tab on `localhost:5173` or `127.0.0.1:5173`.
@@ -73,9 +73,10 @@ sequenceDiagram
 |--------|---------|----------|----------|--------|------|--------|
 | `access_token` | Session JWT (15 min) | Yes | lax | production only | `/` | 15 minutes |
 | `refresh_token` | Refresh token (7 days) | Yes | lax | production only | `/auth` | 7 days |
+| `auth_code` | One-time PKCE authorization code | Yes | lax | production only | `/auth` | 90 seconds |
 | `google_oauth_tx` | Opaque OAuth transaction id | Yes | lax | production only | `/` | 10 minutes |
 
-Options are centralized in `server/lib/cookies.ts` (`accessTokenCookieOptions`, `refreshTokenCookieOptions`, `pkceCookieOptions`, `clearCookieOptions`). Clearing uses matching attributes so the browser actually removes the cookie.
+Options are centralized in `server/lib/cookies.ts` (`accessTokenCookieOptions`, `refreshTokenCookieOptions`, `authCodeCookieOptions`, `pkceCookieOptions`, `clearCookieOptions`). Clearing uses matching attributes so the browser actually removes the cookie.
 
 ## Protected Route Middleware
 
@@ -91,7 +92,7 @@ Options are centralized in `server/lib/cookies.ts` (`accessTokenCookieOptions`, 
 
 ## Frontend Auth
 
-- `src/services/auth.ts` — `loginWithPkce(email, password)`: creates a PKCE pair (`src/lib/pkce.ts`, WebCrypto `getRandomValues` + `crypto.subtle`), POSTs `/auth/login` then `/auth/token`, both with `credentials: 'include'`. `fetchWsTicket()` POSTs `/auth/ws-ticket` with cookie credentials.
+- `src/services/auth.ts` — `loginWithPkce(email, password)`: creates a PKCE pair (`src/lib/pkce.ts`, WebCrypto `getRandomValues` + `crypto.subtle`), POSTs `/auth/login` then `/auth/token`, both with `credentials: 'include'`. The one-time code travels only in the HttpOnly `auth_code` cookie (set by `/auth/login`, attached automatically to `/auth/token`), so the frontend never handles it; `/auth/token` sends only `code_verifier`. `fetchWsTicket()` POSTs `/auth/ws-ticket` with cookie credentials.
 - `src/services/api.ts` — Axios instance with `withCredentials: true`. Response interceptor: on 401 (except `/auth/refresh` and `/auth/logout`), calls `POST /auth/refresh` once (deduplicated via a shared promise), retries the original request; if refresh fails, redirects to `/` when not already on `/` or `/signup`.
 - `src/pages/login.tsx` / `signup.tsx` — on mount, check the session via `fetchUserData()` (the api client), so an expired `access_token` is refreshed automatically from the `refresh_token` cookie and the user is redirected to `/landing-page` without logging in again — this is what restores the session after closing and reopening the browser or opening a second window. The check retries up to 3 times (2s apart) so a transient failure (e.g. a rate-limited refresh) cannot leave the user stuck on the login form. Login itself uses `loginWithPkce` / `POST /sign-up` with `credentials: 'include'`; the login page also surfaces `?error=google_failed`.
 - `src/services/dataRequesterForCharts.ts` — chart data calls (`/data`, `/quote`, `/data/indicator`) use `withCredentials: true`; no Authorization header.
