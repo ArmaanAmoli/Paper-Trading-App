@@ -29,4 +29,9 @@ describe('CSP middleware', () => {
   it('still allows same-origin connections and websockets for the market-data feed', () => {
     expect(CSP_POLICY).toContain("connect-src 'self' ws: wss:");
   });
+
+  it('allows Google Fonts origins used by index.html (Geist)', () => {
+    expect(CSP_POLICY).toContain("font-src 'self' https://fonts.gstatic.com");
+    expect(CSP_POLICY).toContain('https://fonts.googleapis.com');
+  });
 });

@@ -11,14 +11,18 @@ import type { Request, Response, NextFunction } from 'express';
  *
  * connect-src allows ws:/wss: so the market-data WebSocket (which may live
  * on another port/host in dev) keeps working; img-src allows data: URIs
- * used by chart rendering.
+ * used by chart rendering. Google Fonts (Geist) is loaded from
+ * fonts.googleapis.com / fonts.gstatic.com, so those origins are
+ * allowlisted in style-src / font-src.
  */
 export const CSP_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
+  // Google Fonts stylesheet (index.html loads Geist via fonts.googleapis.com)
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data:",
-  "font-src 'self'",
+  // Google Fonts files are served from fonts.gstatic.com
+  "font-src 'self' https://fonts.gstatic.com",
   "connect-src 'self' ws: wss:",
   "object-src 'none'",
   "base-uri 'self'",
