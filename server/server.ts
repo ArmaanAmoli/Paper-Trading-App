@@ -28,6 +28,7 @@ import {
   AUTH_CODE_PATH,
 } from './lib/session.js';
 import { csrfMiddleware, buildAllowedOrigins } from './lib/csrf.js';
+import { cspMiddleware } from './lib/csp.js';
 import { rateLimit } from './lib/rateLimit.js';
 import { getCookie, authCodeCookieOptions, clearCookieOptions } from './lib/cookies.js';
 import {
@@ -102,6 +103,7 @@ allStopLossPromise
 // MIDDLEWARES
 server.use(express.json());
 server.use(cookieParser());
+server.use(cspMiddleware);
 
 // CORS: explicit origin allowlist with credentials (no wildcard)
 const allowedOrigins = buildAllowedOrigins();
